@@ -75,25 +75,17 @@ Edita la clave:
 }
 ```
 
+Si usas Railway MySQL, agrega tambien:
+
+```json
+"MYSQL_SERVER_VERSION": "9.4.0-mysql"
+```
+
 #### 5. Ejecutar el backend
 
-##### Mac o Linux
+Si ya dejaste la conexion en `appsettings.Development.json`, usa:
 
 ```bash
-ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True" dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-```
-
-##### Windows PowerShell
-
-```powershell
-$env:ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True"
-dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-```
-
-##### Windows CMD
-
-```cmd
-set ConnectionStrings__DefaultConnection=Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True
 dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
@@ -157,25 +149,6 @@ MYSQLUSER=bank_user
 MYSQLPASSWORD=bank_password
 ```
 
-#### Opcion 4: Railway MySQL (desarrollo local contra la nube)
-
-Para conectar desde tu maquina al MySQL de Railway:
-
-```text
-MYSQL_PUBLIC_URL=mysql://root:TU_PASSWORD@gondola.proxy.rlwy.net:19286/railway
-MYSQL_SERVER_VERSION=9.4.0-mysql
-```
-
-Reemplaza `TU_PASSWORD` con la contraseña de Railway (Variables o Database > Credentials).
-
-Para desplegar el Backend en Railway: agrega el servicio MySQL como Variable Reference a tu Backend. Railway inyectara `MYSQL_URL` automaticamente.
-
-Con tu base actual en Railway usa tambien:
-
-```text
-MYSQL_SERVER_VERSION=9.4.0-mysql
-```
-
 ### Endpoints principales
 
 - `GET /api/clients`
@@ -190,56 +163,10 @@ MYSQL_SERVER_VERSION=9.4.0-mysql
 - `POST /api/transactions`
 - `GET /api/reports/clients/{clientId}/portfolio`
 
-### Conexion a Railway MySQL
-
-**Desarrollo local conectando a Railway:**
-
-```bash
-dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj --launch-profile Railway
-```
-
-La conexion esta guardada en User Secrets (no se sube al repo). Para cambiarla:
-
-```bash
-dotnet user-secrets set "MYSQL_PUBLIC_URL" "mysql://root:TU_PASSWORD@gondola.proxy.rlwy.net:19286/railway" --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-dotnet user-secrets set "MYSQL_SERVER_VERSION" "9.4.0-mysql" --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-```
-
-**Backend desplegado en Railway:** En el servicio del Backend, Variables > Add Variable Reference > selecciona el MySQL y vincula `MYSQL_URL`. Ademas agrega esta variable manual:
-
-```text
-MYSQL_SERVER_VERSION=9.4.0-mysql
-```
-
-Con la configuracion que mostraste, tu backend debe usar estas variables:
-
-```text
-MYSQL_URL=${{MySQL.MYSQL_URL}}
-MYSQL_SERVER_VERSION=9.4.0-mysql
-```
-
 ### Resumen corto
 
-#### Mac o Linux
-
 ```bash
 dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True" dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-```
-
-#### Windows PowerShell
-
-```powershell
-dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-$env:ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True"
-dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-```
-
-#### Windows CMD
-
-```cmd
-dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-set ConnectionStrings__DefaultConnection=Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True
 dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
