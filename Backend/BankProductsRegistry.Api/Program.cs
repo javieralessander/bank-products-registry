@@ -91,6 +91,8 @@ static async Task EnsureDatabaseAsync(IServiceProvider services)
         {
             await dbContext.Database.EnsureCreatedAsync();
         }
+
+        await BankProductsDbSeeder.SeedAsync(dbContext);
     }
     catch (Exception ex)
     {

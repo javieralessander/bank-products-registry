@@ -97,6 +97,7 @@ Now listening on: http://localhost:5039
 
 La base de datos se crea automaticamente la primera vez.
 Las migraciones se aplican automaticamente al arrancar el backend.
+Si las tablas principales estan vacias, el sistema carga datos iniciales de prueba.
 
 #### 6. Abrir Swagger
 
