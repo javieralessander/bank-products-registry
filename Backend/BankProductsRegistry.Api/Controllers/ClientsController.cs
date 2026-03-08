@@ -11,6 +11,8 @@ namespace BankProductsRegistry.Api.Controllers;
 [Route("api/clients")]
 public sealed class ClientsController(BankProductsDbContext dbContext) : ControllerBase
 {
+    private const string GetClientByIdRoute = "GetClientById";
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<ClientResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -24,7 +26,7 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
         return Ok(clients);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}", Name = GetClientByIdRoute)]
     public async Task<ActionResult<ClientResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var client = await dbContext.Clients
@@ -62,7 +64,7 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
         dbContext.Clients.Add(client);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = client.Id }, Map(client));
+        return CreatedAtRoute(GetClientByIdRoute, new { id = client.Id }, Map(client));
     }
 
     [HttpPut("{id:int}")]

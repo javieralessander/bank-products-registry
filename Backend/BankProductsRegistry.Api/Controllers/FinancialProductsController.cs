@@ -11,6 +11,8 @@ namespace BankProductsRegistry.Api.Controllers;
 [Route("api/financial-products")]
 public sealed class FinancialProductsController(BankProductsDbContext dbContext) : ControllerBase
 {
+    private const string GetFinancialProductByIdRoute = "GetFinancialProductById";
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<FinancialProductResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -24,7 +26,7 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
         return Ok(products);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}", Name = GetFinancialProductByIdRoute)]
     public async Task<ActionResult<FinancialProductResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var product = await dbContext.FinancialProducts
@@ -55,7 +57,7 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
         dbContext.FinancialProducts.Add(product);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = product.Id }, Map(product));
+        return CreatedAtRoute(GetFinancialProductByIdRoute, new { id = product.Id }, Map(product));
     }
 
     [HttpPut("{id:int}")]

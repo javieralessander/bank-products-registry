@@ -11,6 +11,8 @@ namespace BankProductsRegistry.Api.Controllers;
 [Route("api/account-products")]
 public sealed class AccountProductsController(BankProductsDbContext dbContext) : ControllerBase
 {
+    private const string GetAccountProductByIdRoute = "GetAccountProductById";
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<AccountProductResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -25,7 +27,7 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
         return Ok(accountProducts.Select(Map).ToList());
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}", Name = GetAccountProductByIdRoute)]
     public async Task<ActionResult<AccountProductResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var accountProduct = await dbContext.AccountProducts
@@ -74,7 +76,7 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await LoadRelationsAsync(accountProduct, cancellationToken);
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = accountProduct.Id }, Map(accountProduct));
+        return CreatedAtRoute(GetAccountProductByIdRoute, new { id = accountProduct.Id }, Map(accountProduct));
     }
 
     [HttpPut("{id:int}")]

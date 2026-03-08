@@ -12,6 +12,8 @@ namespace BankProductsRegistry.Api.Controllers;
 [Route("api/transactions")]
 public sealed class TransactionsController(BankProductsDbContext dbContext) : ControllerBase
 {
+    private const string GetTransactionByIdRoute = "GetTransactionById";
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<TransactionResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -24,7 +26,7 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
         return Ok(transactions.Select(Map).ToList());
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}", Name = GetTransactionByIdRoute)]
     public async Task<ActionResult<TransactionResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var transaction = await dbContext.Transactions
@@ -78,7 +80,7 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await dbContext.Entry(transaction).Reference(currentTransaction => currentTransaction.AccountProduct).LoadAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = transaction.Id }, Map(transaction));
+        return CreatedAtRoute(GetTransactionByIdRoute, new { id = transaction.Id }, Map(transaction));
     }
 
     [HttpPut("{id:int}")]

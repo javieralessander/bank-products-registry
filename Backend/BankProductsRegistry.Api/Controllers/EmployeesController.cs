@@ -11,6 +11,8 @@ namespace BankProductsRegistry.Api.Controllers;
 [Route("api/employees")]
 public sealed class EmployeesController(BankProductsDbContext dbContext) : ControllerBase
 {
+    private const string GetEmployeeByIdRoute = "GetEmployeeById";
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<EmployeeResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -24,7 +26,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
         return Ok(employees);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}", Name = GetEmployeeByIdRoute)]
     public async Task<ActionResult<EmployeeResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var employee = await dbContext.Employees
@@ -62,7 +64,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
         dbContext.Employees.Add(employee);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = employee.Id }, Map(employee));
+        return CreatedAtRoute(GetEmployeeByIdRoute, new { id = employee.Id }, Map(employee));
     }
 
     [HttpPut("{id:int}")]
