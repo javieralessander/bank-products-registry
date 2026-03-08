@@ -15,7 +15,7 @@ public static class MySqlConnectionResolver
             return NormalizeConnectionString(connectionString);
         }
 
-        var mysqlUrl = configuration["MYSQL_URL"] ?? configuration["DATABASE_URL"];
+        var mysqlUrl = configuration["MYSQL_URL"] ?? configuration["MYSQL_PUBLIC_URL"] ?? configuration["DATABASE_URL"];
         if (!string.IsNullOrWhiteSpace(mysqlUrl))
         {
             return BuildFromConnectionUrl(mysqlUrl);
@@ -97,8 +97,11 @@ public static class MySqlConnectionResolver
             return parsedSslMode;
         }
 
-        return IsLocalHost(host)
-            ? MySqlSslMode.None
+        if (IsLocalHost(host))
+            return MySqlSslMode.None;
+
+        return host.Contains("rlwy.net", StringComparison.OrdinalIgnoreCase)
+            ? MySqlSslMode.Required
             : MySqlSslMode.Preferred;
     }
 
