@@ -1,100 +1,109 @@
 # Sistema de Registro de Productos Bancarios
 
-Backend RESTful API desarrollado con .NET 9, Entity Framework Core y SQL Server.
+Proyecto academico dividido en dos partes:
 
-El proyecto actual incluye solo el backend.
+- [Backend](#backend)
+- [Frontend](#frontend)
 
-## Requisitos
+Actualmente solo esta implementado el backend.
+
+## Estructura del proyecto
+
+```text
+bank-products-registry/
+  Backend/
+    BankProductsRegistry.Api/
+  Frontend/
+  docker-compose.yml
+```
+
+## Backend
+
+API RESTful desarrollada con .NET 9, Entity Framework Core y MySQL.
+
+### Requisitos
 
 - Git
 - Docker Desktop
 - .NET SDK 9 o superior
 - Terminal o PowerShell
 
-## Despues de clonar el repositorio
+### Pasos despues de clonar el repositorio
 
-### 1. Entrar al proyecto
+#### 1. Entrar al proyecto
 
 ```bash
 cd bank-products-registry
 ```
 
-### 2. Crear el contenedor de SQL Server
-
-Ejecuta este comando solo la primera vez:
+#### 2. Levantar MySQL con Docker
 
 ```bash
-docker run -e "ACCEPT_EULA=Y" \
-  -e "MSSQL_SA_PASSWORD=Unapec@2026" \
-  -p 1433:1433 \
-  --name bank-products-sqlserver \
-  -d mcr.microsoft.com/mssql/server:2022-latest
+docker compose up -d mysql
 ```
 
-Nota:
-- Si usas Mac con chip Apple Silicon y sale un warning de plataforma `amd64`, es normal.
+Este comando crea e inicia un contenedor llamado `bank-products-mysql`.
 
-### 3. Si el contenedor ya existe, solo inícialo
-
-Si ya lo habías creado antes, no vuelvas a usar `docker run`. Usa esto:
+Si vienes de una version anterior con PostgreSQL o con otra base local vieja, limpia primero los datos locales una sola vez:
 
 ```bash
-docker start bank-products-sqlserver
+docker compose down -v
+docker compose up -d mysql
 ```
 
-### 4. Verificar que la base de datos este encendida
+#### 3. Verificar que MySQL este encendido
 
 ```bash
 docker ps
 ```
 
-Debes ver un contenedor llamado `bank-products-sqlserver` en estado `Up`.
+Debes ver `bank-products-mysql` en estado `Up`.
 
-### 5. Restaurar dependencias del backend
+#### 4. Restaurar dependencias
 
 ```bash
 dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
-### 6. Ejecutar el backend con la conexion correcta
+#### 5. Ejecutar el backend
 
-#### Opcion A: Mac o Linux
+##### Mac o Linux
 
 ```bash
-ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Unapec@2026;Encrypt=False;TrustServerCertificate=True;" dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
+ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True" dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
-#### Opcion B: Windows PowerShell
+##### Windows PowerShell
 
 ```powershell
-$env:ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Unapec@2026;Encrypt=False;TrustServerCertificate=True;"
+$env:ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True"
 dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
-#### Opcion C: Windows CMD
+##### Windows CMD
 
 ```cmd
-set ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Unapec@2026;Encrypt=False;TrustServerCertificate=True;
+set ConnectionStrings__DefaultConnection=Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True
 dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
-Cuando todo este bien, veras algo parecido a esto:
+Si todo sale bien, veras algo parecido a esto:
 
 ```text
 Now listening on: http://localhost:5039
 ```
 
-La base de datos se crea automaticamente al iniciar por primera vez.
+La base de datos se crea automaticamente la primera vez.
 
-### 7. Abrir Swagger
+#### 6. Abrir Swagger
 
 ```text
 http://localhost:5039/swagger
 ```
 
-## Pruebas rapidas
+### Pruebas rapidas
 
-Abre otra terminal y prueba:
+En otra terminal:
 
 ```bash
 curl http://localhost:5039/health
@@ -103,56 +112,74 @@ curl http://localhost:5039/api/employees
 curl http://localhost:5039/api/financial-products
 ```
 
-## Comandos utiles
+### Comandos utiles
 
-### Detener el backend
-
-En la terminal donde esta corriendo:
+#### Detener el backend
 
 ```bash
 Ctrl + C
 ```
 
-### Detener SQL Server
+#### Detener MySQL
 
 ```bash
-docker stop bank-products-sqlserver
+docker compose stop mysql
 ```
 
-### Volver a iniciar SQL Server
+#### Volver a iniciar MySQL
 
 ```bash
-docker start bank-products-sqlserver
+docker compose start mysql
 ```
 
-### Ver logs de SQL Server
+#### Ver logs de MySQL
 
 ```bash
-docker logs bank-products-sqlserver
+docker compose logs mysql
 ```
 
-### Borrar el contenedor y crearlo de nuevo
+#### Borrar el contenedor y el volumen
 
 ```bash
-docker rm -f bank-products-sqlserver
+docker compose down -v
 ```
 
-Luego vuelve a ejecutar el comando del paso 2.
+### Variables de entorno compatibles
 
-## Estructura del backend
+El backend acepta cualquiera de estas opciones:
+
+#### Opcion 1: Connection string directa
 
 ```text
-Backend/
-  BankProductsRegistry.Api/
-    Controllers/
-    Data/
-    Dtos/
-    Models/
-    Services/
-    Utilities/
+ConnectionStrings__DefaultConnection=Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True
 ```
 
-## Endpoints principales
+#### Opcion 2: MYSQL_URL
+
+```text
+MYSQL_URL=mysql://usuario:clave@host:3306/base_de_datos
+```
+
+#### Opcion 3: Variables MYSQL
+
+```text
+MYSQLHOST=localhost
+MYSQLPORT=3306
+MYSQLDATABASE=bank_products_registry_db
+MYSQLUSER=bank_user
+MYSQLPASSWORD=bank_password
+```
+
+### Railway
+
+Para Railway, usa MySQL nativo.
+
+1. Crea un servicio MySQL dentro del proyecto en Railway.
+2. Copia las variables `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER` y `MYSQLPASSWORD`, o usa `MYSQL_URL` si Railway te la muestra.
+3. En el servicio del backend agrega esas variables.
+4. Despliega el backend con el `Dockerfile` de la raiz del repositorio.
+
+### Endpoints principales
 
 - `GET /api/clients`
 - `POST /api/clients`
@@ -166,32 +193,46 @@ Backend/
 - `POST /api/transactions`
 - `GET /api/reports/clients/{clientId}/portfolio`
 
-## Resumen corto
+### Resumen corto
 
-Si quieres la version mas corta posible en Mac o Linux, despues de clonar ejecuta esto:
+#### Mac o Linux
 
 ```bash
-docker run -e "ACCEPT_EULA=Y" \
-  -e "MSSQL_SA_PASSWORD=Unapec@2026" \
-  -p 1433:1433 \
-  --name bank-products-sqlserver \
-  -d mcr.microsoft.com/mssql/server:2022-latest
-
+docker compose up -d mysql
 dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
-
-ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Unapec@2026;Encrypt=False;TrustServerCertificate=True;" dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
+ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True" dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
-Si usas Windows PowerShell, el ultimo paso cambia a este:
+#### Windows PowerShell
 
 ```powershell
-$env:ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Unapec@2026;Encrypt=False;TrustServerCertificate=True;"
+docker compose up -d mysql
+dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
+$env:ConnectionStrings__DefaultConnection="Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True"
 dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
 ```
 
-Si usas Windows CMD, el ultimo paso cambia a este:
+#### Windows CMD
 
 ```cmd
-set ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Unapec@2026;Encrypt=False;TrustServerCertificate=True;
+docker compose up -d mysql
+dotnet restore Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
+set ConnectionStrings__DefaultConnection=Server=localhost;Port=3306;Database=bank_products_registry_db;User=bank_user;Password=bank_password;SslMode=None;AllowPublicKeyRetrieval=True
 dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
+```
+
+## Frontend
+
+La carpeta `Frontend/` existe para la segunda parte del proyecto.
+
+Estado actual:
+
+- No esta implementado todavia.
+- No tiene dependencias configuradas.
+- No afecta la ejecucion del backend.
+
+Cuando se desarrolle el frontend, debera consumir el backend en:
+
+```text
+http://localhost:5039
 ```
