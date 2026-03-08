@@ -1,3 +1,4 @@
+using BankProductsRegistry.Api.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -19,13 +20,11 @@ public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Ban
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection") ??
-            configuration["DATABASE_URL"] ??
-            "Server=localhost,1433;Database=BankProductsRegistryDb;User Id=sa;Password=Your_password123;Encrypt=False;TrustServerCertificate=True;";
+        var connectionString = MySqlConnectionResolver.ResolveConnectionString(configuration);
+        var serverVersion = MySqlConnectionResolver.ResolveServerVersion(configuration);
 
         var optionsBuilder = new DbContextOptionsBuilder<BankProductsDbContext>();
-        optionsBuilder.UseSqlServer(connectionString);
+        optionsBuilder.UseMySql(connectionString, serverVersion);
 
         return new BankProductsDbContext(optionsBuilder.Options);
     }

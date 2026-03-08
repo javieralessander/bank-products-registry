@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BankProductsRegistry.Api.Configuration;
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Services;
 using BankProductsRegistry.Api.Services.Interfaces;
@@ -14,7 +15,8 @@ if (!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 }
 
-var connectionString = ResolveConnectionString(builder.Configuration);
+var connectionString = MySqlConnectionResolver.ResolveConnectionString(builder.Configuration);
+var serverVersion = MySqlConnectionResolver.ResolveServerVersion(builder.Configuration);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
@@ -40,9 +42,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<BankProductsDbContext>(options =>
 {
-    options.UseSqlServer(connectionString, sqlOptions =>
+    options.UseMySql(
+        connectionString,
+        serverVersion,
+        mySqlOptions =>
     {
-        sqlOptions.EnableRetryOnFailure();
+        mySqlOptions.EnableRetryOnFailure();
     });
 });
 builder.Services.AddHealthChecks();
@@ -59,7 +64,6 @@ if (enableSwagger)
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
@@ -68,36 +72,6 @@ await EnsureDatabaseAsync(app.Services);
 app.Run();
 
 return;
-
-static string ResolveConnectionString(IConfiguration configuration)
-{
-    var connectionString = configuration.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrWhiteSpace(connectionString))
-    {
-        return connectionString;
-    }
-
-    var databaseUrl = configuration["DATABASE_URL"];
-    if (!string.IsNullOrWhiteSpace(databaseUrl))
-    {
-        return databaseUrl;
-    }
-
-    var host = configuration["SQLSERVER_HOST"];
-    var port = configuration["SQLSERVER_PORT"] ?? "1433";
-    var database = configuration["SQLSERVER_DATABASE"] ?? "BankProductsRegistryDb";
-    var username = configuration["SQLSERVER_USER"] ?? "sa";
-    var password = configuration["SQLSERVER_PASSWORD"];
-
-    if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(password))
-    {
-        throw new InvalidOperationException(
-            "No se configuro la conexion a SQL Server. Define ConnectionStrings__DefaultConnection o las variables SQLSERVER_*.");
-    }
-
-    return
-        $"Server={host},{port};Database={database};User Id={username};Password={password};Encrypt=True;TrustServerCertificate=True;";
-}
 
 static async Task EnsureDatabaseAsync(IServiceProvider services)
 {
