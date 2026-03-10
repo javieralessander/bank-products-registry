@@ -164,6 +164,9 @@ MYSQLPASSWORD=bank_password
 - `POST /api/transactions`
 - `GET /api/reports/clients/{clientId}/portfolio`
 
+### HOSTING EN RAILWAY
+-'https://bank-products-registry-production.up.railway.app/swagger/index.html'
+
 ### Resumen corto
 
 ```bash
