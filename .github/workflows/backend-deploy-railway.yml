@@ -31,12 +31,10 @@ jobs:
       - name: Desplegar servicio
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
           RAILWAY_ENVIRONMENT_NAME: ${{ vars.RAILWAY_ENVIRONMENT_NAME }}
           RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
         run: |
           railway up \
             --ci \
             --service "$RAILWAY_SERVICE_NAME" \
-            --environment "$RAILWAY_ENVIRONMENT_NAME" \
-            --project "$RAILWAY_PROJECT_ID"
+            --environment "$RAILWAY_ENVIRONMENT_NAME"
