@@ -1,0 +1,42 @@
+name: Backend Deploy Railway
+
+on:
+  workflow_run:
+    workflows:
+      - Backend CI
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Desplegar backend en Railway
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Desplegar servicio
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT_NAME: ${{ vars.RAILWAY_ENVIRONMENT_NAME }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+        run: |
+          railway up \
+            --ci \
+            --service "$RAILWAY_SERVICE_NAME" \
+            --environment "$RAILWAY_ENVIRONMENT_NAME" \
+            --project "$RAILWAY_PROJECT_ID"
