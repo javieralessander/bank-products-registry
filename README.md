@@ -7,6 +7,14 @@ Proyecto academico dividido en dos partes:
 
 Actualmente solo esta implementado el backend.
 
+## Enlaces principales
+
+- Repositorio GitHub: `https://github.com/javieralessander/bank-products-registry`
+- URL de produccion en Railway: `https://bank-products-registry-production.up.railway.app`
+- Swagger en produccion: `https://bank-products-registry-production.up.railway.app/swagger`
+- Documento de requerimientos cumplidos: [Backend/Documento-Requerimientos-ejemplo.md](/Users/comunicaciones/Desktop/ALL/UNAPEC/bank-products-registry/Backend/Documento-Requerimientos-ejemplo.md)
+- Documento de descripcion del proyecto: [Backend/Documento-Descripcion-Proyecto.md](/Users/comunicaciones/Desktop/ALL/UNAPEC/bank-products-registry/Backend/Documento-Descripcion-Proyecto.md)
+
 ## Estructura del proyecto
 
 ```text
@@ -163,9 +171,6 @@ MYSQLPASSWORD=bank_password
 - `GET /api/transactions`
 - `POST /api/transactions`
 - `GET /api/reports/clients/{clientId}/portfolio`
-
-### HOSTING EN RAILWAY
--'https://bank-products-registry-production.up.railway.app/swagger/index.html'
 
 ### Resumen corto
 
