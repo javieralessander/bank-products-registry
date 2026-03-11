@@ -5,7 +5,7 @@
 - **Nombre del proyecto:** Sistema de Registro de Productos Bancarios
 - **Repositorio GitHub:** `https://github.com/javieralessander/bank-products-registry`
 - **URL del aplicativo en produccion:** `https://bank-products-registry-production.up.railway.app`
-- **Swagger en produccion:** `https://bank-products-registry-production.up.railway.app/swagger`
+- **Swagger en produccion:** `https://bank-products-registry-production.up.railway.app/swagger/index.html`
 - **Alcance actual:** Backend
 
 ## 2. Descripcion del proyecto
