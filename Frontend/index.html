@@ -1,12 +1,361 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API de Registro de Productos Bancarios</title>
-</head>
-<body>
-    <h1>Bienvenido a la API de Registro de Productos Bancarios</h1>
-    <p>Esta es una aplicación de ejemplo para demostrar la integración de una API RESTful con un frontend simple.</p>
-</body>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bank Products Registry - UI Preview</title>
+    <style>
+      :root {
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --line: #e2e8f0;
+        --text: #0f172a;
+        --muted: #475569;
+        --brand: #4f46e5;
+        --brand-dark: #3730a3;
+        --success-bg: #ecfdf3;
+        --success-text: #16a34a;
+        --warning-bg: #fffbeb;
+        --warning-text: #d97706;
+        --danger-bg: #fef2f2;
+        --danger-text: #dc2626;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 264px 1fr;
+      }
+
+      .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        padding: 24px 16px;
+      }
+
+      .brand {
+        margin: 0 0 24px;
+        font-size: 20px;
+        line-height: 28px;
+      }
+
+      .menu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+
+      .menu li {
+        padding: 10px 12px;
+        border-radius: 12px;
+        color: var(--muted);
+      }
+
+      .menu li.active {
+        background: #eef2ff;
+        color: var(--brand-dark);
+        font-weight: 600;
+      }
+
+      .main {
+        padding: 32px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 12px;
+        height: 44px;
+        padding: 0 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: var(--brand-dark);
+      }
+
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      .kpi-label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .kpi-value {
+        margin: 0;
+        font-size: 30px;
+        line-height: 38px;
+      }
+
+      .kpi-meta {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #334155;
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 16px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 600;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .badge.success {
+        background: var(--success-bg);
+        color: var(--success-text);
+      }
+
+      .badge.warning {
+        background: var(--warning-bg);
+        color: var(--warning-text);
+      }
+
+      .badge.danger {
+        background: var(--danger-bg);
+        color: var(--danger-text);
+      }
+
+      .alerts {
+        display: grid;
+        gap: 12px;
+      }
+
+      .alert-item {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+      }
+
+      .subtitle {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .screen-notes {
+        margin-top: 24px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      .screen-notes h2 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      .screen-notes ol {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .screen-notes li {
+        margin: 8px 0;
+      }
+
+      @media (max-width: 1200px) {
+        .kpis {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .content-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <h2 class="brand">Bank Registry</h2>
+        <ul class="menu">
+          <li class="active">Dashboard</li>
+          <li>Clientes</li>
+          <li>Empleados</li>
+          <li>Productos</li>
+          <li>Cuentas</li>
+          <li>Transacciones</li>
+          <li>Reportes</li>
+        </ul>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <h1>Dashboard Operativo</h1>
+          <button class="btn btn-primary">Nueva transaccion</button>
+        </div>
+
+        <section class="kpis">
+          <article class="card">
+            <p class="kpi-label">Clientes activos</p>
+            <p class="kpi-value">1,248</p>
+            <p class="kpi-meta">+8.4% vs mes anterior</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Productos activos</p>
+            <p class="kpi-value">42</p>
+            <p class="kpi-meta">3 en estado borrador</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Cuentas activas</p>
+            <p class="kpi-value">3,501</p>
+            <p class="kpi-meta">17 en mora</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Transacciones hoy</p>
+            <p class="kpi-value">286</p>
+            <p class="kpi-meta">DOP 9.2M procesados</p>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="card">
+            <h3 class="subtitle">Ultimas transacciones</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Cuenta</th>
+                  <th>Tipo</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026-03-25 10:30</td>
+                  <td>00123984</td>
+                  <td>deposito</td>
+                  <td>DOP 75,000.00</td>
+                  <td><span class="badge success">procesada</span></td>
+                </tr>
+                <tr>
+                  <td>2026-03-25 10:18</td>
+                  <td>98372100</td>
+                  <td>retiro</td>
+                  <td>DOP 12,500.00</td>
+                  <td><span class="badge warning">revision</span></td>
+                </tr>
+                <tr>
+                  <td>2026-03-25 09:52</td>
+                  <td>99821240</td>
+                  <td>pago</td>
+                  <td>DOP 2,340.00</td>
+                  <td><span class="badge success">procesada</span></td>
+                </tr>
+                <tr>
+                  <td>2026-03-25 09:40</td>
+                  <td>66120098</td>
+                  <td>transferencia</td>
+                  <td>DOP 180,000.00</td>
+                  <td><span class="badge danger">alerta</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card">
+            <h3 class="subtitle">Alertas</h3>
+            <div class="alerts">
+              <div class="alert-item">
+                <strong>12 cuentas en mora</strong>
+                <p>Requieren gestion del ejecutivo hoy.</p>
+              </div>
+              <div class="alert-item">
+                <strong>3 productos suspendidos</strong>
+                <p>Validar fecha de reactivacion y comunicacion interna.</p>
+              </div>
+              <div class="alert-item">
+                <strong>7 transacciones manuales</strong>
+                <p>Esperando aprobacion de supervisor.</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen-notes">
+          <h2>Pantallas Figma sugeridas</h2>
+          <ol>
+            <li>SCR-01 Login</li>
+            <li>SCR-02 Dashboard</li>
+            <li>SCR-03 Clientes</li>
+            <li>SCR-04 Empleados</li>
+            <li>SCR-05 Productos</li>
+            <li>SCR-06 Cuentas</li>
+            <li>SCR-07 Transacciones</li>
+            <li>SCR-08 Reporte Portafolio</li>
+          </ol>
+        </section>
+      </main>
+    </div>
+  </body>
 </html>
