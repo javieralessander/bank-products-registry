@@ -1,20 +1,25 @@
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Models.Auth;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Data;
 
-public sealed class BankProductsDbContext(DbContextOptions<BankProductsDbContext> options) : DbContext(options)
+public sealed class BankProductsDbContext(DbContextOptions<BankProductsDbContext> options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>(options)
 {
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<FinancialProduct> FinancialProducts => Set<FinancialProduct>();
     public DbSet<AccountProduct> AccountProducts => Set<AccountProduct>();
     public DbSet<BankTransaction> Transactions => Set<BankTransaction>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BankProductsDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BankProductsDbContext).Assembly);
     }
 
     public override int SaveChanges()
