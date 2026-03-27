@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using BankProductsRegistry.Api.Dtos.Auth;
 using BankProductsRegistry.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -6,13 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/auth")]
 [Authorize]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService) : ApiControllerBase
 {
     [AllowAnonymous]
     [HttpPost("login")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> LoginAsync(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
@@ -31,6 +31,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("refresh")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> RefreshAsync(
         [FromBody] RefreshTokenRequest request,
         CancellationToken cancellationToken)
@@ -48,6 +50,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("revoke")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeAsync(
         [FromBody] RevokeRefreshTokenRequest request,
         CancellationToken cancellationToken)
@@ -76,6 +80,8 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpGet("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AuthenticatedUserResponse>> GetCurrentUserAsync(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -96,17 +102,4 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
             : Ok(user);
     }
 
-    private int? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(userIdClaim, out var userId) ? userId : null;
-    }
-
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
-        };
 }

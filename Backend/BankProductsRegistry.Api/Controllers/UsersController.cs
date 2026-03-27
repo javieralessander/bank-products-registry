@@ -10,15 +10,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/users")]
 [Authorize(Policy = AuthPolicies.AdminOnly)]
 public sealed class UsersController(
     BankProductsDbContext dbContext,
     UserManager<ApplicationUser> userManager,
-    RoleManager<IdentityRole<int>> roleManager) : ControllerBase
+    RoleManager<IdentityRole<int>> roleManager) : ApiControllerBase
 {
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<UserManagementResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var users = await dbContext.Users
@@ -37,6 +37,8 @@ public sealed class UsersController(
     }
 
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserManagementResponse>> CreateAsync(
         [FromBody] UserCreateRequest request,
         CancellationToken cancellationToken)
@@ -107,6 +109,9 @@ public sealed class UsersController(
     }
 
     [HttpPatch("{id:int}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserManagementResponse>> UpdateStatusAsync(
         int id,
         [FromBody] UserStatusUpdateRequest request,
@@ -145,6 +150,9 @@ public sealed class UsersController(
     }
 
     [HttpPatch("{id:int}/role")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserManagementResponse>> UpdateRoleAsync(
         int id,
         [FromBody] UserRoleUpdateRequest request,
@@ -219,6 +227,8 @@ public sealed class UsersController(
     }
 
     [HttpPost("{id:int}/reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetPasswordAsync(
         int id,
         [FromBody] UserResetPasswordRequest request,
@@ -326,19 +336,4 @@ public sealed class UsersController(
     private static string? TryResolveRole(string role) =>
         AuthRoles.All.FirstOrDefault(currentRole => currentRole.Equals(role.Trim(), StringComparison.OrdinalIgnoreCase));
 
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
-        };
-
-    private static ProblemDetails BuildIdentityProblem(int statusCode, string title, IdentityResult result) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = string.Join("; ", result.Errors.Select(error => error.Description))
-        };
 }

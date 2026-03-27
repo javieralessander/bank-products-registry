@@ -9,11 +9,13 @@ using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Auth;
 using BankProductsRegistry.Api.Services;
 using BankProductsRegistry.Api.Services.Interfaces;
+using BankProductsRegistry.Api.Swagger;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -41,7 +43,10 @@ var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)
 
 builder.Services.AddProblemDetails();
 builder.Services.Configure<JwtOptions>(jwtOptionsSection);
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.OutputFormatters.RemoveType<StringOutputFormatter>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -93,6 +98,8 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+    options.OperationFilter<JsonOnlyOperationFilter>();
+    options.OperationFilter<DefaultProblemResponsesOperationFilter>();
 });
 builder.Services.AddDbContext<BankProductsDbContext>(options =>
 {
@@ -172,6 +179,9 @@ builder.Services.AddAuthorizationBuilder()
         policy.RequireRole(AuthRoles.Admin));
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IAccountProductBlockService, AccountProductBlockService>();
+builder.Services.AddScoped<IAccountProductLimitService, AccountProductLimitService>();
+builder.Services.AddScoped<IAccountProductTravelNoticeService, AccountProductTravelNoticeService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 

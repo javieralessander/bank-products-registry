@@ -2,6 +2,7 @@ using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.AccountProducts;
 using BankProductsRegistry.Api.Models;
 using BankProductsRegistry.Api.Security;
+using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,28 +10,41 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/account-products")]
 [Authorize]
-public sealed class AccountProductsController(BankProductsDbContext dbContext) : ControllerBase
+public sealed class AccountProductsController(
+    BankProductsDbContext dbContext,
+    IAccountProductBlockService blockService) : ApiControllerBase
 {
     private const string GetAccountProductByIdRoute = "GetAccountProductById";
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyCollection<AccountProductResponse>>> GetAllAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<AccountProductListItemResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var accountProducts = await dbContext.AccountProducts
             .AsNoTracking()
             .Include(accountProduct => accountProduct.Client)
-            .Include(accountProduct => accountProduct.Employee)
             .Include(accountProduct => accountProduct.FinancialProduct)
             .OrderBy(accountProduct => accountProduct.AccountNumber)
             .ToListAsync(cancellationToken);
 
-        return Ok(accountProducts.Select(Map).ToList());
+        var activeBlocks = await blockService.GetActiveBlocksAsync(
+            accountProducts.Select(accountProduct => accountProduct.Id).ToArray(),
+            cancellationToken);
+
+        var response = accountProducts
+            .Select(accountProduct => MapList(
+                accountProduct,
+                activeBlocks.GetValueOrDefault(accountProduct.Id)))
+            .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}", Name = GetAccountProductByIdRoute)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AccountProductResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var accountProduct = await dbContext.AccountProducts
@@ -40,13 +54,19 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
             .Include(currentAccountProduct => currentAccountProduct.FinancialProduct)
             .FirstOrDefaultAsync(currentAccountProduct => currentAccountProduct.Id == id, cancellationToken);
 
+        var activeBlock = accountProduct is null
+            ? null
+            : await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+
         return accountProduct is null
             ? NotFound(BuildProblem(StatusCodes.Status404NotFound, "Producto contratado no encontrado", $"No existe un producto contratado con el id {id}."))
-            : Ok(Map(accountProduct));
+            : Ok(MapDetail(accountProduct, activeBlock));
     }
 
     [HttpPost]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AccountProductResponse>> CreateAsync(
         [FromBody] AccountProductCreateRequest request,
         CancellationToken cancellationToken)
@@ -80,11 +100,15 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await LoadRelationsAsync(accountProduct, cancellationToken);
-        return CreatedAtRoute(GetAccountProductByIdRoute, new { id = accountProduct.Id }, Map(accountProduct));
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        return CreatedAtRoute(GetAccountProductByIdRoute, new { id = accountProduct.Id }, MapDetail(accountProduct, activeBlock));
     }
 
     [HttpPut("{id:int}")]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AccountProductResponse>> UpdateAsync(
         int id,
         [FromBody] AccountProductUpdateRequest request,
@@ -126,11 +150,15 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
         await dbContext.SaveChangesAsync(cancellationToken);
         await LoadRelationsAsync(accountProduct, cancellationToken);
 
-        return Ok(Map(accountProduct));
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        return Ok(MapDetail(accountProduct, activeBlock));
     }
 
     [HttpPatch("{id:int}")]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AccountProductResponse>> PatchAsync(
         int id,
         [FromBody] AccountProductPatchRequest request,
@@ -210,11 +238,15 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
         await dbContext.SaveChangesAsync(cancellationToken);
         await LoadRelationsAsync(accountProduct, cancellationToken);
 
-        return Ok(Map(accountProduct));
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        return Ok(MapDetail(accountProduct, activeBlock));
     }
 
     [HttpDelete("{id:int}")]
     [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var accountProduct = await dbContext.AccountProducts
@@ -286,7 +318,21 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
         await dbContext.Entry(accountProduct).Reference(currentAccountProduct => currentAccountProduct.FinancialProduct).LoadAsync(cancellationToken);
     }
 
-    private static AccountProductResponse Map(AccountProduct accountProduct) =>
+    private static AccountProductListItemResponse MapList(AccountProduct accountProduct, AccountProductBlock? activeBlock) =>
+        new(
+            accountProduct.Id,
+            accountProduct.ClientId,
+            accountProduct.Client is null ? string.Empty : $"{accountProduct.Client.FirstName} {accountProduct.Client.LastName}",
+            accountProduct.FinancialProductId,
+            accountProduct.FinancialProduct?.ProductName ?? string.Empty,
+            accountProduct.AccountNumber,
+            accountProduct.Amount,
+            accountProduct.OpenDate,
+            accountProduct.Status,
+            activeBlock is not null,
+            MapActiveBlock(activeBlock));
+
+    private static AccountProductResponse MapDetail(AccountProduct accountProduct, AccountProductBlock? activeBlock) =>
         new(
             accountProduct.Id,
             accountProduct.ClientId,
@@ -301,13 +347,18 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
             accountProduct.MaturityDate,
             accountProduct.Status,
             accountProduct.CreatedAt,
-            accountProduct.UpdatedAt);
+            accountProduct.UpdatedAt,
+            activeBlock is not null,
+            MapActiveBlock(activeBlock));
 
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
-        };
+    private static AccountProductBlockSummaryResponse? MapActiveBlock(AccountProductBlock? activeBlock) =>
+        activeBlock is null
+            ? null
+            : new AccountProductBlockSummaryResponse(
+                activeBlock.Id,
+                activeBlock.BlockType,
+                activeBlock.Reason,
+                activeBlock.StartsAt,
+                activeBlock.EndsAt);
+
 }

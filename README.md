@@ -195,9 +195,23 @@ MYSQLPASSWORD=bank_password
 - `POST /api/financial-products`
 - `GET /api/account-products`
 - `POST /api/account-products`
+- `GET /api/account-products/{id}`
+- `GET /api/account-products/{accountProductId}/blocks`
+- `POST /api/account-products/{accountProductId}/blocks`
+- `POST /api/account-products/{accountProductId}/blocks/{blockId}/release`
+- `GET /api/account-products/{accountProductId}/audits`
+- `GET /api/account-products/{accountProductId}/limits`
+- `PUT /api/account-products/{accountProductId}/limits`
+- `POST /api/account-products/{accountProductId}/limits/temporary-adjustments`
+- `GET /api/account-products/{accountProductId}/limits/history`
+- `GET /api/account-products/{accountProductId}/travel-notices`
+- `POST /api/account-products/{accountProductId}/travel-notices`
+- `POST /api/account-products/{accountProductId}/travel-notices/{noticeId}/cancel`
 - `GET /api/transactions`
 - `POST /api/transactions`
 - `GET /api/reports/clients/{clientId}/portfolio`
+- `GET /api/reports/clients/{clientId}/credit-history`
+- `GET /api/reports/clients/{clientId}/credit-score`
 
 ### Seguridad del API
 
@@ -209,13 +223,39 @@ MYSQLPASSWORD=bank_password
 - Los endpoints de escritura requieren `Admin` o `Operador`.
 - Los endpoints de eliminacion y la gestion de empleados requieren `Admin`.
 - La gestion de usuarios del sistema se realiza solo desde endpoints administrativos protegidos para `Admin`.
+- Un producto contratado con bloqueo activo no acepta nuevas transacciones, actualizaciones de transacciones ni reversos.
+- Las transacciones ahora consideran `transactionChannel` y `countryCode` para validar limites por transaccion, diarios, ATM e internacionales.
+- Las transacciones internacionales de consumo requieren un aviso de viaje vigente para el pais y la fecha de la operacion.
+- El sistema expone un historial crediticio interno y un score interno calculado desde productos, pagos, mora, bloqueos y uso de limites.
 
 #### Resumen de proteccion de endpoints
 
 - Publicos: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /health`
 - Requieren cualquier usuario autenticado: todos los `GET` de clientes, empleados, productos, cuentas, transacciones, reportes y `GET /api/auth/me`
-- Requieren `Admin` u `Operador`: todos los `POST`, `PUT` y `PATCH` de clientes, productos financieros, productos contratados y transacciones
-- Requieren solo `Admin`: todos los `POST`, `PUT`, `PATCH` y `DELETE` de empleados, todos los `DELETE` del resto de entidades y toda la administracion de usuarios en `/api/users`
+- Requieren cualquier usuario autenticado: `GET /api/account-products/{accountProductId}/blocks`, `GET /api/account-products/{accountProductId}/audits`, `GET /api/account-products/{accountProductId}/limits`, `GET /api/account-products/{accountProductId}/limits/history` y `GET /api/account-products/{accountProductId}/travel-notices`
+- Requieren cualquier usuario autenticado: `GET /api/reports/clients/{clientId}/credit-history` y `GET /api/reports/clients/{clientId}/credit-score`
+- Requieren `Admin` u `Operador`: todos los `POST`, `PUT` y `PATCH` de clientes, productos financieros, productos contratados y transacciones, incluyendo `POST /api/account-products/{accountProductId}/blocks`, `POST /api/account-products/{accountProductId}/travel-notices` y `POST /api/account-products/{accountProductId}/travel-notices/{noticeId}/cancel`
+- Requieren solo `Admin`: todos los `POST`, `PUT`, `PATCH` y `DELETE` de empleados, todos los `DELETE` del resto de entidades, toda la administracion de usuarios en `/api/users`, `POST /api/account-products/{accountProductId}/blocks/{blockId}/release`, `PUT /api/account-products/{accountProductId}/limits` y `POST /api/account-products/{accountProductId}/limits/temporary-adjustments`
+
+#### Limites de consumo
+
+- Los limites se configuran por producto contratado.
+- El sistema soporta limite total, limite diario, limite por transaccion, limite ATM y limite internacional.
+- Se pueden programar ajustes temporales con fecha de inicio y fin.
+- Cada cambio queda registrado con usuario, motivo, vigencia y valores anteriores/nuevos.
+
+#### Avisos de viaje
+
+- Cada aviso de viaje se registra por producto contratado, rango de fechas y uno o mas paises en formato ISO.
+- Los avisos pueden cancelarse y conservan su historial.
+- Si una transaccion internacional de consumo no tiene un aviso vigente para ese pais, el API responde `409 Conflict`.
+
+#### Historial y score interno
+
+- `GET /api/reports/clients/{clientId}/credit-history` devuelve resumen crediticio, productos, eventos recientes y score interno.
+- `GET /api/reports/clients/{clientId}/credit-score` devuelve el score, banda de riesgo y los factores que impactaron el calculo.
+- La metodologia actual es `interna_v1`.
+- El score es interno y heuristico; no reemplaza un score de buró externo como TransUnion.
 
 ### Usuarios semilla en desarrollo
 
