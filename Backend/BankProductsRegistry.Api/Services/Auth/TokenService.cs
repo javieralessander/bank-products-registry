@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using BankProductsRegistry.Api.Configuration.Security;
 using BankProductsRegistry.Api.Models.Auth;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Identity;
@@ -42,6 +43,11 @@ public sealed class TokenService(
         if (!string.IsNullOrWhiteSpace(user.FullName))
         {
             claims.Add(new Claim("full_name", user.FullName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
+        {
+            claims.Add(new Claim(CustomClaimTypes.SecurityStamp, user.SecurityStamp));
         }
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

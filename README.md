@@ -182,6 +182,11 @@ MYSQLPASSWORD=bank_password
 - `POST /api/auth/refresh`
 - `POST /api/auth/revoke`
 - `GET /api/auth/me`
+- `GET /api/users`
+- `POST /api/users`
+- `PATCH /api/users/{id}/status`
+- `PATCH /api/users/{id}/role`
+- `POST /api/users/{id}/reset-password`
 - `GET /api/clients`
 - `POST /api/clients`
 - `GET /api/employees`
@@ -203,13 +208,14 @@ MYSQLPASSWORD=bank_password
 - Los roles disponibles son `Admin`, `Operador` y `Consulta`.
 - Los endpoints de escritura requieren `Admin` o `Operador`.
 - Los endpoints de eliminacion y la gestion de empleados requieren `Admin`.
+- La gestion de usuarios del sistema se realiza solo desde endpoints administrativos protegidos para `Admin`.
 
 #### Resumen de proteccion de endpoints
 
 - Publicos: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /health`
 - Requieren cualquier usuario autenticado: todos los `GET` de clientes, empleados, productos, cuentas, transacciones, reportes y `GET /api/auth/me`
 - Requieren `Admin` u `Operador`: todos los `POST`, `PUT` y `PATCH` de clientes, productos financieros, productos contratados y transacciones
-- Requieren solo `Admin`: todos los `POST`, `PUT`, `PATCH` y `DELETE` de empleados, y todos los `DELETE` del resto de entidades
+- Requieren solo `Admin`: todos los `POST`, `PUT`, `PATCH` y `DELETE` de empleados, todos los `DELETE` del resto de entidades y toda la administracion de usuarios en `/api/users`
 
 ### Usuarios semilla en desarrollo
 

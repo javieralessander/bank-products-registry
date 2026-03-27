@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -131,6 +132,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero,
             NameClaimType = ClaimTypes.Name,
             RoleClaimType = ClaimTypes.Role
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                var securityStamp = context.Principal?.FindFirstValue(CustomClaimTypes.SecurityStamp);
+
+                if (string.IsNullOrWhiteSpace(userIdValue) || string.IsNullOrWhiteSpace(securityStamp))
+                {
+                    context.Fail("Token invalido.");
+                    return;
+                }
+
+                var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+                var user = await userManager.FindByIdAsync(userIdValue);
+
+                if (user is null || !user.IsActive)
+                {
+                    context.Fail("Usuario invalido o inactivo.");
+                    return;
+                }
+
+                if (!string.Equals(user.SecurityStamp, securityStamp, StringComparison.Ordinal))
+                {
+                    context.Fail("La sesion ya no es valida.");
+                }
+            }
         };
     });
 builder.Services.AddAuthorizationBuilder()
