@@ -1,7 +1,9 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Employees;
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +11,7 @@ namespace BankProductsRegistry.Api.Controllers;
 
 [ApiController]
 [Route("api/employees")]
+[Authorize]
 public sealed class EmployeesController(BankProductsDbContext dbContext) : ControllerBase
 {
     private const string GetEmployeeByIdRoute = "GetEmployeeById";
@@ -39,6 +42,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     public async Task<ActionResult<EmployeeResponse>> CreateAsync(
         [FromBody] EmployeeCreateRequest request,
         CancellationToken cancellationToken)
@@ -68,6 +72,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     public async Task<ActionResult<EmployeeResponse>> UpdateAsync(
         int id,
         [FromBody] EmployeeUpdateRequest request,
@@ -99,6 +104,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     public async Task<ActionResult<EmployeeResponse>> PatchAsync(
         int id,
         [FromBody] EmployeePatchRequest request,
@@ -169,6 +175,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var employee = await dbContext.Employees

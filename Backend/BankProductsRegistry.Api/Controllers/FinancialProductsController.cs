@@ -1,7 +1,9 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.FinancialProducts;
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +11,7 @@ namespace BankProductsRegistry.Api.Controllers;
 
 [ApiController]
 [Route("api/financial-products")]
+[Authorize]
 public sealed class FinancialProductsController(BankProductsDbContext dbContext) : ControllerBase
 {
     private const string GetFinancialProductByIdRoute = "GetFinancialProductById";
@@ -39,6 +42,7 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<FinancialProductResponse>> CreateAsync(
         [FromBody] FinancialProductCreateRequest request,
         CancellationToken cancellationToken)
@@ -61,6 +65,7 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<FinancialProductResponse>> UpdateAsync(
         int id,
         [FromBody] FinancialProductUpdateRequest request,
@@ -85,6 +90,7 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<FinancialProductResponse>> PatchAsync(
         int id,
         [FromBody] FinancialProductPatchRequest request,
@@ -150,6 +156,7 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var product = await dbContext.FinancialProducts

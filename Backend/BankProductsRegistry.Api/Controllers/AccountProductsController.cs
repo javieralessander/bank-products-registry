@@ -1,7 +1,9 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.AccountProducts;
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +11,7 @@ namespace BankProductsRegistry.Api.Controllers;
 
 [ApiController]
 [Route("api/account-products")]
+[Authorize]
 public sealed class AccountProductsController(BankProductsDbContext dbContext) : ControllerBase
 {
     private const string GetAccountProductByIdRoute = "GetAccountProductById";
@@ -43,6 +46,7 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<AccountProductResponse>> CreateAsync(
         [FromBody] AccountProductCreateRequest request,
         CancellationToken cancellationToken)
@@ -80,6 +84,7 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<AccountProductResponse>> UpdateAsync(
         int id,
         [FromBody] AccountProductUpdateRequest request,
@@ -125,6 +130,7 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<AccountProductResponse>> PatchAsync(
         int id,
         [FromBody] AccountProductPatchRequest request,
@@ -208,6 +214,7 @@ public sealed class AccountProductsController(BankProductsDbContext dbContext) :
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var accountProduct = await dbContext.AccountProducts

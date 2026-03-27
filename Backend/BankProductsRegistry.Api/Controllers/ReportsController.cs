@@ -1,11 +1,14 @@
 using BankProductsRegistry.Api.Dtos.Reports;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankProductsRegistry.Api.Controllers;
 
 [ApiController]
 [Route("api/reports")]
+[Authorize]
 public sealed class ReportsController(IReportService reportService) : ControllerBase
 {
     [HttpGet("clients/{clientId:int}/portfolio")]
