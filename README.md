@@ -89,6 +89,12 @@ Si usas Railway MySQL, agrega tambien:
 "MYSQL_SERVER_VERSION": "9.4.0-mysql"
 ```
 
+Para ejecutar el backend localmente contra Railway, puedes usar una conexion publica como esta:
+
+```text
+Server=centerbeam.proxy.rlwy.net;Port=52379;Database=railway;User=root;Password=TU_PASSWORD;SslMode=Required
+```
+
 #### 5. Ejecutar el backend
 
 Si ya dejaste la conexion en `appsettings.Development.json`, usa:
@@ -148,6 +154,18 @@ ConnectionStrings__DefaultConnection=Server=localhost;Port=3306;Database=bank_pr
 MYSQL_URL=mysql://usuario:clave@host:3306/base_de_datos
 ```
 
+Si estas en Railway y el backend corre dentro del mismo proyecto, normalmente conviene usar la URL interna:
+
+```text
+MYSQL_URL=mysql://root:TU_PASSWORD@mysql.railway.internal:3306/railway
+```
+
+Si estas corriendo el backend desde tu maquina local, usa la URL publica:
+
+```text
+MYSQL_PUBLIC_URL=mysql://root:TU_PASSWORD@centerbeam.proxy.rlwy.net:52379/railway
+```
+
 #### Opcion 3: Variables MYSQL
 
 ```text
@@ -160,6 +178,10 @@ MYSQLPASSWORD=bank_password
 
 ### Endpoints principales
 
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/revoke`
+- `GET /api/auth/me`
 - `GET /api/clients`
 - `POST /api/clients`
 - `GET /api/employees`
@@ -171,6 +193,33 @@ MYSQLPASSWORD=bank_password
 - `GET /api/transactions`
 - `POST /api/transactions`
 - `GET /api/reports/clients/{clientId}/portfolio`
+
+### Seguridad del API
+
+- La API usa autenticacion con usuario y contrasena.
+- El login devuelve un `access token` JWT y un `refresh token`.
+- Todos los endpoints quedan protegidos por defecto.
+- `POST /api/auth/login`, `POST /api/auth/refresh` y `GET /health` permiten acceso anonimo.
+- Los roles disponibles son `Admin`, `Operador` y `Consulta`.
+- Los endpoints de escritura requieren `Admin` o `Operador`.
+- Los endpoints de eliminacion y la gestion de empleados requieren `Admin`.
+
+#### Resumen de proteccion de endpoints
+
+- Publicos: `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /health`
+- Requieren cualquier usuario autenticado: todos los `GET` de clientes, empleados, productos, cuentas, transacciones, reportes y `GET /api/auth/me`
+- Requieren `Admin` u `Operador`: todos los `POST`, `PUT` y `PATCH` de clientes, productos financieros, productos contratados y transacciones
+- Requieren solo `Admin`: todos los `POST`, `PUT`, `PATCH` y `DELETE` de empleados, y todos los `DELETE` del resto de entidades
+
+### Usuarios semilla en desarrollo
+
+Si ejecutas el proyecto con `ASPNETCORE_ENVIRONMENT=Development`, el sistema crea usuarios base para pruebas:
+
+- `admin` / `Admin2026`
+- `operador` / `Operador2026`
+- `consulta` / `Consulta2026`
+
+Estas credenciales son solo para desarrollo y deben reemplazarse en ambientes reales.
 
 ### Resumen corto
 
