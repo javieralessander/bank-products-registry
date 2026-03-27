@@ -5,7 +5,7 @@ Proyecto academico dividido en dos partes:
 - [Backend](#backend)
 - [Frontend](#frontend)
 
-Actualmente solo esta implementado el backend.
+El backend ya esta implementado. El frontend se encuentra en fase de definicion e implementacion inicial.
 
 ## Enlaces principales
 
@@ -181,13 +181,29 @@ dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.c
 
 ## Frontend
 
-La carpeta `Frontend/` existe para la segunda parte del proyecto.
+El frontend corresponde a la segunda parte del proyecto y consumira la API REST desarrollada en el backend.
 
-Estado actual:
+### Tecnologias definidas para el frontend
 
-- No esta implementado todavia.
-- No tiene dependencias configuradas.
-- No afecta la ejecucion del backend.
+- HTML5 para la estructura base de las vistas.
+- CSS3 para estilos complementarios.
+- Bootstrap 5 como framework principal de interfaz.
+- JavaScript para validaciones en cliente, interacciones y consumo de endpoints HTTP.
+- DataTables como libreria de apoyo para tablas filtrables, busquedas y paginacion en el catalogo de productos.
+
+### Enfoque de uso
+
+- La interfaz sera responsive para escritorio, tablet y movil.
+- Se utilizaran componentes de Bootstrap como formularios, tablas, modales, alerts y cards.
+- El catalogo de productos podra consultarse y filtrarse desde la interfaz para reducir duplicidad de registros.
+- El formulario de registro y edicion de productos aplicara validaciones en tiempo real antes de enviar la informacion al backend.
+- El frontend se mantendra ligero y enfocado en la capa de presentacion, delegando la logica de negocio y la persistencia al API en .NET.
+
+### Estado actual del frontend
+
+- La carpeta `Frontend/` contiene por ahora una maqueta base en `Frontend/index.html`.
+- Todavia no hay dependencias instaladas ni un flujo de build configurado.
+- La seleccion tecnologica del frontend ya esta definida, pero su implementacion completa sigue pendiente.
 
 Cuando se desarrolle el frontend, debera consumir el backend en:
 
