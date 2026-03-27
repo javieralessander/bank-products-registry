@@ -4,6 +4,7 @@ using BankProductsRegistry.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BankProductsRegistry.Api.Data.Migrations
 {
     [DbContext(typeof(BankProductsDbContext))]
-    partial class BankProductsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327224733_AddAccountProductBlocksAndAudit")]
+    partial class AddAccountProductBlocksAndAudit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -188,294 +191,6 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.ToTable("AccountProductBlocks", (string)null);
                 });
 
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimit", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("AtmWithdrawalLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("CreditLimitTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("DailyConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("InternationalConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PerTransactionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountProductId")
-                        .IsUnique();
-
-                    b.ToTable("AccountProductLimits", (string)null);
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimitHistoryEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangeType")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("varchar(40)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("EffectiveFrom")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset?>("EffectiveTo")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("NewAtmWithdrawalLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("NewCreditLimitTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("NewDailyConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("NewInternationalConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("NewPerTransactionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("PerformedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PerformedByUserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<decimal?>("PreviousAtmWithdrawalLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PreviousCreditLimitTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PreviousDailyConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PreviousInternationalConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PreviousPerTransactionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<int?>("TemporaryAdjustmentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TemporaryAdjustmentId");
-
-                    b.HasIndex("AccountProductId", "CreatedAt");
-
-                    b.ToTable("AccountProductLimitHistoryEntries", (string)null);
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimitTemporaryAdjustment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountProductId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ApprovedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ApprovedByUserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<decimal?>("AtmWithdrawalLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("CreditLimitTotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("DailyConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTimeOffset>("EndsAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("InternationalConsumptionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("PerTransactionLimit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<DateTimeOffset>("StartsAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountProductId", "StartsAt", "EndsAt");
-
-                    b.ToTable("AccountProductLimitTemporaryAdjustments", (string)null);
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNotice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CancellationReason")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("CancelledByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CancelledByUserName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("EndsAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<int?>("RequestedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RequestedByUserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTimeOffset>("StartsAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountProductId", "StartsAt", "EndsAt");
-
-                    b.ToTable("AccountProductTravelNotices", (string)null);
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNoticeCountry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CountryCode")
-                        .IsRequired()
-                        .HasMaxLength(2)
-                        .HasColumnType("varchar(2)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("TravelNoticeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TravelNoticeId", "CountryCode")
-                        .IsUnique();
-
-                    b.ToTable("AccountProductTravelNoticeCountries", (string)null);
-                });
-
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.ApplicationUser", b =>
                 {
                     b.Property<int>("Id")
@@ -618,10 +333,6 @@ namespace BankProductsRegistry.Api.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("CountryCode")
-                        .HasMaxLength(2)
-                        .HasColumnType("varchar(2)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -632,11 +343,6 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.Property<string>("ReferenceNumber")
                         .HasMaxLength(60)
                         .HasColumnType("varchar(60)");
-
-                    b.Property<string>("TransactionChannel")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTimeOffset>("TransactionDate")
                         .HasColumnType("datetime(6)");
@@ -1005,68 +711,6 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.Navigation("AccountProduct");
                 });
 
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimit", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProduct", "AccountProduct")
-                        .WithOne("LimitProfile")
-                        .HasForeignKey("BankProductsRegistry.Api.Models.AccountProductLimit", "AccountProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AccountProduct");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimitHistoryEntry", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProduct", "AccountProduct")
-                        .WithMany("LimitHistoryEntries")
-                        .HasForeignKey("AccountProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProductLimitTemporaryAdjustment", "TemporaryAdjustment")
-                        .WithMany("HistoryEntries")
-                        .HasForeignKey("TemporaryAdjustmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("AccountProduct");
-
-                    b.Navigation("TemporaryAdjustment");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimitTemporaryAdjustment", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProduct", "AccountProduct")
-                        .WithMany("LimitAdjustments")
-                        .HasForeignKey("AccountProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AccountProduct");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNotice", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProduct", "AccountProduct")
-                        .WithMany("TravelNotices")
-                        .HasForeignKey("AccountProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AccountProduct");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNoticeCountry", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProductTravelNotice", "TravelNotice")
-                        .WithMany("Countries")
-                        .HasForeignKey("TravelNoticeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TravelNotice");
-                });
-
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.RefreshToken", b =>
                 {
                     b.HasOne("BankProductsRegistry.Api.Models.Auth.ApplicationUser", "User")
@@ -1146,25 +790,7 @@ namespace BankProductsRegistry.Api.Data.Migrations
 
                     b.Navigation("Blocks");
 
-                    b.Navigation("LimitAdjustments");
-
-                    b.Navigation("LimitHistoryEntries");
-
-                    b.Navigation("LimitProfile");
-
                     b.Navigation("Transactions");
-
-                    b.Navigation("TravelNotices");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimitTemporaryAdjustment", b =>
-                {
-                    b.Navigation("HistoryEntries");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNotice", b =>
-                {
-                    b.Navigation("Countries");
                 });
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.ApplicationUser", b =>

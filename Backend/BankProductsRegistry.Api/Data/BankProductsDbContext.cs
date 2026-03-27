@@ -13,6 +13,13 @@ public sealed class BankProductsDbContext(DbContextOptions<BankProductsDbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<FinancialProduct> FinancialProducts => Set<FinancialProduct>();
     public DbSet<AccountProduct> AccountProducts => Set<AccountProduct>();
+    public DbSet<AccountProductBlock> AccountProductBlocks => Set<AccountProductBlock>();
+    public DbSet<AccountProductAuditEntry> AccountProductAuditEntries => Set<AccountProductAuditEntry>();
+    public DbSet<AccountProductLimit> AccountProductLimits => Set<AccountProductLimit>();
+    public DbSet<AccountProductLimitTemporaryAdjustment> AccountProductLimitTemporaryAdjustments => Set<AccountProductLimitTemporaryAdjustment>();
+    public DbSet<AccountProductLimitHistoryEntry> AccountProductLimitHistoryEntries => Set<AccountProductLimitHistoryEntry>();
+    public DbSet<AccountProductTravelNotice> AccountProductTravelNotices => Set<AccountProductTravelNotice>();
+    public DbSet<AccountProductTravelNoticeCountry> AccountProductTravelNoticeCountries => Set<AccountProductTravelNoticeCountry>();
     public DbSet<BankTransaction> Transactions => Set<BankTransaction>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

@@ -4,6 +4,7 @@ using BankProductsRegistry.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BankProductsRegistry.Api.Data.Migrations
 {
     [DbContext(typeof(BankProductsDbContext))]
-    partial class BankProductsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327225652_AddAccountProductLimitsAndTransactionContext")]
+    partial class AddAccountProductLimitsAndTransactionContext
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -387,93 +390,6 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.HasIndex("AccountProductId", "StartsAt", "EndsAt");
 
                     b.ToTable("AccountProductLimitTemporaryAdjustments", (string)null);
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNotice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CancellationReason")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("CancelledByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CancelledByUserName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("EndsAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
-
-                    b.Property<int?>("RequestedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RequestedByUserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTimeOffset>("StartsAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountProductId", "StartsAt", "EndsAt");
-
-                    b.ToTable("AccountProductTravelNotices", (string)null);
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNoticeCountry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CountryCode")
-                        .IsRequired()
-                        .HasMaxLength(2)
-                        .HasColumnType("varchar(2)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("TravelNoticeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TravelNoticeId", "CountryCode")
-                        .IsUnique();
-
-                    b.ToTable("AccountProductTravelNoticeCountries", (string)null);
                 });
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.ApplicationUser", b =>
@@ -1045,28 +961,6 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.Navigation("AccountProduct");
                 });
 
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNotice", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProduct", "AccountProduct")
-                        .WithMany("TravelNotices")
-                        .HasForeignKey("AccountProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AccountProduct");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNoticeCountry", b =>
-                {
-                    b.HasOne("BankProductsRegistry.Api.Models.AccountProductTravelNotice", "TravelNotice")
-                        .WithMany("Countries")
-                        .HasForeignKey("TravelNoticeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TravelNotice");
-                });
-
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.RefreshToken", b =>
                 {
                     b.HasOne("BankProductsRegistry.Api.Models.Auth.ApplicationUser", "User")
@@ -1153,18 +1047,11 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.Navigation("LimitProfile");
 
                     b.Navigation("Transactions");
-
-                    b.Navigation("TravelNotices");
                 });
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductLimitTemporaryAdjustment", b =>
                 {
                     b.Navigation("HistoryEntries");
-                });
-
-            modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductTravelNotice", b =>
-                {
-                    b.Navigation("Countries");
                 });
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.ApplicationUser", b =>
