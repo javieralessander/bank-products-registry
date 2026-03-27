@@ -104,6 +104,46 @@
 - Si las tablas principales estan vacias, el sistema carga datos iniciales de prueba.
 - El proyecto ya esta listo para continuar con la logica de negocio y las pruebas de integracion.
 
+### Requerimientos funcionales propuestos para la siguiente iteracion
+
+Estas funcionalidades no forman parte del alcance ya implementado, pero representan la evolucion natural del sistema hacia un escenario bancario mas realista.
+
+| Requerimiento | Estado | Descripcion |
+|---|---|---|
+| RF-06 Bloqueo temporal de productos | Propuesto | Permitir bloquear temporalmente una tarjeta o producto contratado por un periodo definido, con motivo, fecha de inicio y fecha de fin. |
+| RF-07 Bloqueo permanente de productos | Propuesto | Permitir cancelar definitivamente una tarjeta o producto para impedir nuevas operaciones. |
+| RF-08 Bloqueo por fraude | Propuesto | Activar bloqueos preventivos por patrones sospechosos o alertas de fraude. |
+| RF-09 Gestion de limites de credito y consumo | Propuesto | Configurar limite de credito total, limite diario, limite por transaccion, limite de retiros ATM y limite internacional. |
+| RF-10 Ajuste temporal de limites | Propuesto | Permitir aumentar o reducir limites de uso por una vigencia determinada y con autorizacion administrativa. |
+| RF-11 Aviso de viaje | Propuesto | Registrar viajes del cliente con fechas y paises autorizados para evitar rechazos por uso internacional legitimo. |
+| RF-12 Validacion internacional | Propuesto | Evaluar operaciones internacionales tomando en cuenta aviso de viaje, pais de uso, limites y reglas de riesgo. |
+| RF-13 Historial de bloqueos y auditoria | Propuesto | Registrar quien bloqueo, desbloqueo o modifico el estado de un producto, cuando lo hizo y por cual motivo. |
+| RF-14 Historial de cambios de limites | Propuesto | Registrar el valor anterior, nuevo valor, motivo, vigencia y usuario aprobador de cada cambio de limite. |
+| RF-15 Historial crediticio interno | Propuesto | Consolidar el comportamiento financiero del cliente con sus productos activos e historicos, pagos, mora y uso del credito. |
+| RF-16 Score crediticio interno | Propuesto | Calcular un puntaje interno basado en endeudamiento, cumplimiento de pago, antiguedad y uso del credito. |
+| RF-17 Reportes bancarios avanzados | Propuesto | Generar reportes de mora, concentracion, nuevos contratos, bloqueos y exportarlos a PDF, Excel o CSV. |
+
+### Requerimientos no funcionales asociados a la siguiente iteracion
+
+| Requerimiento | Estado | Descripcion |
+|---|---|---|
+| RNF-06 Trazabilidad operativa | Propuesto | Todo bloqueo, ajuste de limite, aprobacion y desbloqueo debe quedar auditado con usuario, fecha, motivo y canal. |
+| RNF-07 Disponibilidad de consultas criticas | Propuesto | La consulta de historial crediticio, limites y estados de bloqueo debe responder en tiempos adecuados para operacion bancaria. |
+| RNF-08 Seguridad reforzada | Propuesto | Los cambios sensibles deben requerir autorizacion por roles y, en escenarios criticos, aprobacion adicional de supervisor. |
+| RNF-09 Exportacion confiable de reportes | Propuesto | Las exportaciones a PDF, Excel y CSV deben mantener integridad, formato consistente y trazabilidad de quien genero el reporte. |
+
+### Entidades sugeridas para soportar la siguiente iteracion
+
+- `ProductBlocks`
+- `BlockHistory`
+- `TravelNotices`
+- `ProductLimits`
+- `LimitChangeHistory`
+- `FraudAlerts`
+- `CreditHistorySnapshots`
+- `CreditScores`
+- `GeneratedReports`
+
 ### Paso a paso para replicar la logica de negocio en Swagger
 
 Esta secuencia sirve para presentar el backend al profesor desde Swagger y demostrar el flujo principal del sistema.

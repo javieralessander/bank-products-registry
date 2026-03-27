@@ -16,6 +16,11 @@ public sealed class BankTransactionConfiguration : IEntityTypeConfiguration<Bank
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(transaction => transaction.TransactionChannel)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         builder.Property(transaction => transaction.Amount)
             .HasPrecision(18, 2);
 
@@ -24,6 +29,9 @@ public sealed class BankTransactionConfiguration : IEntityTypeConfiguration<Bank
 
         builder.Property(transaction => transaction.ReferenceNumber)
             .HasMaxLength(60);
+
+        builder.Property(transaction => transaction.CountryCode)
+            .HasMaxLength(2);
 
         builder.HasIndex(transaction => transaction.ReferenceNumber);
 

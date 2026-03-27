@@ -1,0 +1,339 @@
+using BankProductsRegistry.Api.Data;
+using BankProductsRegistry.Api.Dtos.Users;
+using BankProductsRegistry.Api.Models.Auth;
+using BankProductsRegistry.Api.Security;
+using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace BankProductsRegistry.Api.Controllers;
+
+[Route("api/users")]
+[Authorize(Policy = AuthPolicies.AdminOnly)]
+public sealed class UsersController(
+    BankProductsDbContext dbContext,
+    UserManager<ApplicationUser> userManager,
+    RoleManager<IdentityRole<int>> roleManager) : ApiControllerBase
+{
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<UserManagementResponse>>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        var users = await dbContext.Users
+            .AsNoTracking()
+            .OrderBy(user => user.FullName)
+            .ThenBy(user => user.UserName)
+            .ToListAsync(cancellationToken);
+
+        var response = new List<UserManagementResponse>(users.Count);
+        foreach (var user in users)
+        {
+            response.Add(await MapAsync(user));
+        }
+
+        return Ok(response);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserManagementResponse>> CreateAsync(
+        [FromBody] UserCreateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var roleName = TryResolveRole(request.Role);
+        if (roleName is null)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rol invalido",
+                $"El rol '{request.Role}' no es valido. Usa Admin, Operador o Consulta."));
+        }
+
+        if (!await roleManager.RoleExistsAsync(roleName))
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rol no disponible",
+                $"El rol '{roleName}' no existe en la configuracion actual del sistema."));
+        }
+
+        var normalizedUserName = request.UserName.Trim();
+        var normalizedEmail = NormalizationHelper.NormalizeEmail(request.Email);
+
+        var duplicatedUser = await dbContext.Users.AnyAsync(
+            user => user.NormalizedUserName == normalizedUserName.ToUpperInvariant() ||
+                    user.NormalizedEmail == normalizedEmail.ToUpperInvariant(),
+            cancellationToken);
+
+        if (duplicatedUser)
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Usuario duplicado",
+                "Ya existe un usuario con el mismo nombre o correo."));
+        }
+
+        var user = new ApplicationUser
+        {
+            UserName = normalizedUserName,
+            Email = normalizedEmail,
+            FullName = NormalizationHelper.NormalizeName(request.FullName),
+            IsActive = request.IsActive,
+            EmailConfirmed = true
+        };
+
+        var createResult = await userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+        {
+            return BadRequest(BuildIdentityProblem(
+                StatusCodes.Status400BadRequest,
+                "No se pudo crear el usuario",
+                createResult));
+        }
+
+        var roleResult = await userManager.AddToRoleAsync(user, roleName);
+        if (!roleResult.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+
+            return BadRequest(BuildIdentityProblem(
+                StatusCodes.Status400BadRequest,
+                "No se pudo asignar el rol",
+                roleResult));
+        }
+
+        return StatusCode(StatusCodes.Status201Created, await MapAsync(user));
+    }
+
+    [HttpPatch("{id:int}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserManagementResponse>> UpdateStatusAsync(
+        int id,
+        [FromBody] UserStatusUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.Users.FirstOrDefaultAsync(currentUser => currentUser.Id == id, cancellationToken);
+        if (user is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Usuario no encontrado",
+                $"No existe un usuario con el id {id}."));
+        }
+
+        if (await WouldRemoveLastActiveAdminAsync(user, request.IsActive, null, cancellationToken))
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Operacion no permitida",
+                "No se puede desactivar el ultimo administrador activo del sistema."));
+        }
+
+        user.IsActive = request.IsActive;
+
+        var updateResult = await userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            return BadRequest(BuildIdentityProblem(
+                StatusCodes.Status400BadRequest,
+                "No se pudo actualizar el estado del usuario",
+                updateResult));
+        }
+
+        await InvalidateUserSessionsAsync(user, cancellationToken);
+        return Ok(await MapAsync(user));
+    }
+
+    [HttpPatch("{id:int}/role")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserManagementResponse>> UpdateRoleAsync(
+        int id,
+        [FromBody] UserRoleUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var roleName = TryResolveRole(request.Role);
+        if (roleName is null)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rol invalido",
+                $"El rol '{request.Role}' no es valido. Usa Admin, Operador o Consulta."));
+        }
+
+        if (!await roleManager.RoleExistsAsync(roleName))
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rol no disponible",
+                $"El rol '{roleName}' no existe en la configuracion actual del sistema."));
+        }
+
+        var user = await userManager.Users.FirstOrDefaultAsync(currentUser => currentUser.Id == id, cancellationToken);
+        if (user is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Usuario no encontrado",
+                $"No existe un usuario con el id {id}."));
+        }
+
+        if (await WouldRemoveLastActiveAdminAsync(user, user.IsActive, roleName, cancellationToken))
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Operacion no permitida",
+                "No se puede cambiar el rol del ultimo administrador activo del sistema."));
+        }
+
+        var currentRoles = await userManager.GetRolesAsync(user);
+        var rolesToRemove = currentRoles
+            .Where(currentRole => AuthRoles.All.Contains(currentRole, StringComparer.Ordinal))
+            .Where(currentRole => !string.Equals(currentRole, roleName, StringComparison.Ordinal))
+            .ToArray();
+
+        if (rolesToRemove.Length > 0)
+        {
+            var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
+            if (!removeResult.Succeeded)
+            {
+                return BadRequest(BuildIdentityProblem(
+                    StatusCodes.Status400BadRequest,
+                    "No se pudo actualizar el rol del usuario",
+                    removeResult));
+            }
+        }
+
+        if (!currentRoles.Contains(roleName, StringComparer.Ordinal))
+        {
+            var addResult = await userManager.AddToRoleAsync(user, roleName);
+            if (!addResult.Succeeded)
+            {
+                return BadRequest(BuildIdentityProblem(
+                    StatusCodes.Status400BadRequest,
+                    "No se pudo asignar el nuevo rol al usuario",
+                    addResult));
+            }
+        }
+
+        await InvalidateUserSessionsAsync(user, cancellationToken);
+        return Ok(await MapAsync(user));
+    }
+
+    [HttpPost("{id:int}/reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResetPasswordAsync(
+        int id,
+        [FromBody] UserResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.Users.FirstOrDefaultAsync(currentUser => currentUser.Id == id, cancellationToken);
+        if (user is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Usuario no encontrado",
+                $"No existe un usuario con el id {id}."));
+        }
+
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+        var resetResult = await userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+        if (!resetResult.Succeeded)
+        {
+            return BadRequest(BuildIdentityProblem(
+                StatusCodes.Status400BadRequest,
+                "No se pudo restablecer la contrasena",
+                resetResult));
+        }
+
+        await InvalidateUserSessionsAsync(user, cancellationToken);
+        return NoContent();
+    }
+
+    private async Task<UserManagementResponse> MapAsync(ApplicationUser user)
+    {
+        var roles = await userManager.GetRolesAsync(user);
+
+        return new UserManagementResponse(
+            user.Id,
+            user.UserName ?? string.Empty,
+            user.Email ?? string.Empty,
+            user.FullName,
+            user.IsActive,
+            user.EmailConfirmed,
+            roles.OrderBy(role => role).ToArray());
+    }
+
+    private async Task InvalidateUserSessionsAsync(ApplicationUser user, CancellationToken cancellationToken)
+    {
+        await userManager.UpdateSecurityStampAsync(user);
+
+        var activeRefreshTokens = await dbContext.RefreshTokens
+            .Where(token => token.ApplicationUserId == user.Id && token.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        if (activeRefreshTokens.Count == 0)
+        {
+            return;
+        }
+
+        var revokedAt = DateTimeOffset.UtcNow;
+        var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+        foreach (var refreshToken in activeRefreshTokens)
+        {
+            refreshToken.RevokedAt = revokedAt;
+            refreshToken.RevokedByIp = NormalizationHelper.NormalizeOptionalText(remoteIpAddress);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<bool> WouldRemoveLastActiveAdminAsync(
+        ApplicationUser user,
+        bool targetIsActive,
+        string? targetRole,
+        CancellationToken cancellationToken)
+    {
+        var isAdmin = await userManager.IsInRoleAsync(user, AuthRoles.Admin);
+        var isCurrentActiveAdmin = user.IsActive && isAdmin;
+        var willRemainAdmin = targetRole is null
+            ? isAdmin
+            : string.Equals(targetRole, AuthRoles.Admin, StringComparison.Ordinal);
+
+        if (!isCurrentActiveAdmin || (targetIsActive && willRemainAdmin))
+        {
+            return false;
+        }
+
+        var adminRoleId = await dbContext.Roles
+            .Where(role => role.Name == AuthRoles.Admin)
+            .Select(role => (int?)role.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (adminRoleId is null)
+        {
+            return true;
+        }
+
+        return !await dbContext.Users
+            .Where(activeUser => activeUser.Id != user.Id && activeUser.IsActive)
+            .Join(
+                dbContext.UserRoles.Where(userRole => userRole.RoleId == adminRoleId.Value),
+                activeUser => activeUser.Id,
+                userRole => userRole.UserId,
+                (activeUser, _) => activeUser.Id)
+            .AnyAsync(cancellationToken);
+    }
+
+    private static string? TryResolveRole(string role) =>
+        AuthRoles.All.FirstOrDefault(currentRole => currentRole.Equals(role.Trim(), StringComparison.OrdinalIgnoreCase));
+
+}

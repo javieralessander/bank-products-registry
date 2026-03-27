@@ -1,19 +1,22 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Clients;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Models;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/clients")]
-public sealed class ClientsController(BankProductsDbContext dbContext) : ControllerBase
+[Authorize]
+public sealed class ClientsController(BankProductsDbContext dbContext) : ApiControllerBase
 {
     private const string GetClientByIdRoute = "GetClientById";
 
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<ClientResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var clients = await dbContext.Clients
@@ -27,6 +30,8 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
     }
 
     [HttpGet("{id:int}", Name = GetClientByIdRoute)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ClientResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var client = await dbContext.Clients
@@ -39,6 +44,9 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponse>> CreateAsync(
         [FromBody] ClientCreateRequest request,
         CancellationToken cancellationToken)
@@ -68,6 +76,10 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponse>> UpdateAsync(
         int id,
         [FromBody] ClientUpdateRequest request,
@@ -99,6 +111,10 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponse>> PatchAsync(
         int id,
         [FromBody] ClientPatchRequest request,
@@ -169,6 +185,10 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var client = await dbContext.Clients
@@ -218,11 +238,4 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : Control
             client.CreatedAt,
             client.UpdatedAt);
 
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
-        };
 }

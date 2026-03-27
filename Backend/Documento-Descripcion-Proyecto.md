@@ -84,6 +84,31 @@ La API permite:
 - registrar transacciones financieras
 - consultar el portafolio consolidado de un cliente
 
+## 6.1 Evolucion funcional propuesta
+
+Como siguiente etapa, el sistema puede evolucionar hacia capacidades bancarias mas cercanas a una operacion real:
+
+- bloqueo temporal, permanente y por fraude de productos financieros
+- definicion de limites de credito, consumo diario, retiros ATM y consumo internacional
+- ajustes temporales de limites con trazabilidad administrativa
+- registro de aviso de viaje y validacion de uso internacional de tarjetas
+- historial de bloqueos y auditoria operativa
+- historial crediticio interno del cliente con calculo de score interno
+- reportes gerenciales de mora, concentracion, contratos y bloqueos
+- exportacion de reportes en PDF, Excel y CSV
+
+### Componentes adicionales sugeridos
+
+Para soportar esa evolucion funcional, se recomienda agregar modulos o entidades como:
+
+- gestion de bloqueos
+- gestion de limites
+- aviso de viaje
+- alertas de fraude
+- historial crediticio interno
+- motor de score interno
+- generacion y exportacion de reportes
+
 ## 7. Presentacion de la funcionalidad del sistema
 
 Para presentar el sistema se recomienda esta secuencia:

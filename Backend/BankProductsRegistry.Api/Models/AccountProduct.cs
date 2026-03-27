@@ -17,4 +17,10 @@ public sealed class AccountProduct : BaseEntity
     public FinancialProduct? FinancialProduct { get; set; }
     public Employee? Employee { get; set; }
     public ICollection<BankTransaction> Transactions { get; set; } = new List<BankTransaction>();
+    public ICollection<AccountProductBlock> Blocks { get; set; } = new List<AccountProductBlock>();
+    public ICollection<AccountProductAuditEntry> AuditEntries { get; set; } = new List<AccountProductAuditEntry>();
+    public AccountProductLimit? LimitProfile { get; set; }
+    public ICollection<AccountProductLimitTemporaryAdjustment> LimitAdjustments { get; set; } = new List<AccountProductLimitTemporaryAdjustment>();
+    public ICollection<AccountProductLimitHistoryEntry> LimitHistoryEntries { get; set; } = new List<AccountProductLimitHistoryEntry>();
+    public ICollection<AccountProductTravelNotice> TravelNotices { get; set; } = new List<AccountProductTravelNotice>();
 }

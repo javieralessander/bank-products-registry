@@ -12,6 +12,7 @@ public static class BankProductsDbSeeder
         await SeedClientsAsync(dbContext, cancellationToken);
         await SeedEmployeesAsync(dbContext, cancellationToken);
         await SeedAccountProductsAsync(dbContext, cancellationToken);
+        await SeedAccountProductLimitsAsync(dbContext, cancellationToken);
         await SeedTransactionsAsync(dbContext, cancellationToken);
     }
 
@@ -271,11 +272,11 @@ public static class BankProductsDbSeeder
 
         var transactionSeeds = new[]
         {
-            new TransactionSeed("DEP-0001", "0001002001", TransactionType.Deposit, 20000m, UtcDate(2026, 1, 15), "Deposito inicial de apertura"),
-            new TransactionSeed("DEP-0002", "0001002001", TransactionType.Deposit, 15000m, UtcDate(2026, 2, 3), "Ahorro quincenal"),
-            new TransactionSeed("PRE-0001", "0001002002", TransactionType.Deposit, 200000m, UtcDate(2026, 2, 1), "Desembolso inicial del prestamo"),
-            new TransactionSeed("PAG-0001", "0001002002", TransactionType.Payment, 20000m, UtcDate(2026, 2, 28), "Pago de la primera cuota"),
-            new TransactionSeed("INV-0001", "0001002003", TransactionType.Deposit, 90000m, UtcDate(2026, 1, 20), "Aporte inicial de inversion")
+            new TransactionSeed("DEP-0001", "0001002001", TransactionType.Deposit, TransactionChannel.Branch, 20000m, UtcDate(2026, 1, 15), "Deposito inicial de apertura", "DO"),
+            new TransactionSeed("DEP-0002", "0001002001", TransactionType.Deposit, TransactionChannel.Branch, 15000m, UtcDate(2026, 2, 3), "Ahorro quincenal", "DO"),
+            new TransactionSeed("PRE-0001", "0001002002", TransactionType.Deposit, TransactionChannel.BackOffice, 200000m, UtcDate(2026, 2, 1), "Desembolso inicial del prestamo", "DO"),
+            new TransactionSeed("PAG-0001", "0001002002", TransactionType.Payment, TransactionChannel.Branch, 20000m, UtcDate(2026, 2, 28), "Pago de la primera cuota", "DO"),
+            new TransactionSeed("INV-0001", "0001002003", TransactionType.Deposit, TransactionChannel.Branch, 90000m, UtcDate(2026, 1, 20), "Aporte inicial de inversion", "DO")
         };
 
         var transactionsToAdd = new List<BankTransaction>();
@@ -292,10 +293,12 @@ public static class BankProductsDbSeeder
             {
                 AccountProductId = account.Id,
                 TransactionType = transactionSeed.TransactionType,
+                TransactionChannel = transactionSeed.TransactionChannel,
                 Amount = transactionSeed.Amount,
                 TransactionDate = transactionSeed.TransactionDate,
                 Description = transactionSeed.Description,
-                ReferenceNumber = transactionSeed.ReferenceNumber
+                ReferenceNumber = transactionSeed.ReferenceNumber,
+                CountryCode = transactionSeed.CountryCode
             });
         }
 
@@ -305,6 +308,42 @@ public static class BankProductsDbSeeder
         }
 
         dbContext.Transactions.AddRange(transactionsToAdd);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedAccountProductLimitsAsync(BankProductsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var accounts = await dbContext.AccountProducts
+            .AsNoTracking()
+            .ToDictionaryAsync(account => account.AccountNumber, cancellationToken);
+
+        var existingLimitAccountIds = await dbContext.AccountProductLimits
+            .AsNoTracking()
+            .Select(limit => limit.AccountProductId)
+            .ToListAsync(cancellationToken);
+
+        var knownAccountIds = existingLimitAccountIds.ToHashSet();
+        var limitsToAdd = new List<AccountProductLimit>();
+
+        if (accounts.TryGetValue("0001002004", out var creditCardAccount) && !knownAccountIds.Contains(creditCardAccount.Id))
+        {
+            limitsToAdd.Add(new AccountProductLimit
+            {
+                AccountProductId = creditCardAccount.Id,
+                CreditLimitTotal = 20000m,
+                DailyConsumptionLimit = 15000m,
+                PerTransactionLimit = 12000m,
+                AtmWithdrawalLimit = 6000m,
+                InternationalConsumptionLimit = 8000m
+            });
+        }
+
+        if (limitsToAdd.Count == 0)
+        {
+            return;
+        }
+
+        dbContext.AccountProductLimits.AddRange(limitsToAdd);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -325,7 +364,9 @@ public static class BankProductsDbSeeder
         string ReferenceNumber,
         string AccountNumber,
         TransactionType TransactionType,
+        TransactionChannel TransactionChannel,
         decimal Amount,
         DateTimeOffset TransactionDate,
-        string Description);
+        string Description,
+        string CountryCode);
 }
