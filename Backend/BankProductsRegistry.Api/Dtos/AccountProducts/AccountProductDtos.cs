@@ -46,6 +46,19 @@ public sealed record AccountProductPatchRequest
     public AccountProductStatus? Status { get; init; }
 }
 
+public sealed record AccountProductListItemResponse(
+    int Id,
+    int ClientId,
+    string ClientName,
+    int FinancialProductId,
+    string FinancialProductName,
+    string AccountNumber,
+    decimal Amount,
+    DateTimeOffset OpenDate,
+    AccountProductStatus Status,
+    bool IsBlocked,
+    AccountProductBlockSummaryResponse? ActiveBlock);
+
 public sealed record AccountProductResponse(
     int Id,
     int ClientId,
@@ -60,4 +73,6 @@ public sealed record AccountProductResponse(
     DateTimeOffset? MaturityDate,
     AccountProductStatus Status,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    bool IsBlocked,
+    AccountProductBlockSummaryResponse? ActiveBlock);

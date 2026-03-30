@@ -1,19 +1,22 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.FinancialProducts;
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/financial-products")]
-public sealed class FinancialProductsController(BankProductsDbContext dbContext) : ControllerBase
+[Authorize]
+public sealed class FinancialProductsController(BankProductsDbContext dbContext) : ApiControllerBase
 {
     private const string GetFinancialProductByIdRoute = "GetFinancialProductById";
 
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<FinancialProductResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var products = await dbContext.FinancialProducts
@@ -27,6 +30,8 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpGet("{id:int}", Name = GetFinancialProductByIdRoute)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FinancialProductResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var product = await dbContext.FinancialProducts
@@ -39,6 +44,8 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<ActionResult<FinancialProductResponse>> CreateAsync(
         [FromBody] FinancialProductCreateRequest request,
         CancellationToken cancellationToken)
@@ -61,6 +68,9 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FinancialProductResponse>> UpdateAsync(
         int id,
         [FromBody] FinancialProductUpdateRequest request,
@@ -85,6 +95,9 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FinancialProductResponse>> PatchAsync(
         int id,
         [FromBody] FinancialProductPatchRequest request,
@@ -150,6 +163,10 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var product = await dbContext.FinancialProducts
@@ -188,11 +205,4 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
             product.CreatedAt,
             product.UpdatedAt);
 
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
-        };
 }

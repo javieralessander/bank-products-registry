@@ -1,19 +1,22 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Employees;
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/employees")]
-public sealed class EmployeesController(BankProductsDbContext dbContext) : ControllerBase
+[Authorize]
+public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiControllerBase
 {
     private const string GetEmployeeByIdRoute = "GetEmployeeById";
 
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<EmployeeResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var employees = await dbContext.Employees
@@ -27,6 +30,8 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpGet("{id:int}", Name = GetEmployeeByIdRoute)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EmployeeResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var employee = await dbContext.Employees
@@ -39,6 +44,9 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<EmployeeResponse>> CreateAsync(
         [FromBody] EmployeeCreateRequest request,
         CancellationToken cancellationToken)
@@ -68,6 +76,10 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<EmployeeResponse>> UpdateAsync(
         int id,
         [FromBody] EmployeeUpdateRequest request,
@@ -99,6 +111,10 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<EmployeeResponse>> PatchAsync(
         int id,
         [FromBody] EmployeePatchRequest request,
@@ -169,6 +185,10 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var employee = await dbContext.Employees
@@ -218,11 +238,4 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : Contr
             employee.CreatedAt,
             employee.UpdatedAt);
 
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
-        };
 }

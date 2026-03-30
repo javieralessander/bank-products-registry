@@ -1,20 +1,30 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Transactions;
+using BankProductsRegistry.Api.Dtos.AccountProducts;
 using BankProductsRegistry.Api.Models;
 using BankProductsRegistry.Api.Models.Enums;
+using BankProductsRegistry.Api.Security;
+using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
-[ApiController]
 [Route("api/transactions")]
-public sealed class TransactionsController(BankProductsDbContext dbContext) : ControllerBase
+[Authorize]
+public sealed class TransactionsController(
+    BankProductsDbContext dbContext,
+    IAccountProductBlockService blockService,
+    IAccountProductLimitService limitService,
+    IAccountProductTravelNoticeService travelNoticeService) : ApiControllerBase
 {
     private const string GetTransactionByIdRoute = "GetTransactionById";
+    private const string LocalCountryCode = "DO";
 
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<TransactionResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var transactions = await dbContext.Transactions
@@ -27,6 +37,8 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
     }
 
     [HttpGet("{id:int}", Name = GetTransactionByIdRoute)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TransactionResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var transaction = await dbContext.Transactions
@@ -40,6 +52,9 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<TransactionResponse>> CreateAsync(
         [FromBody] TransactionCreateRequest request,
         CancellationToken cancellationToken)
@@ -56,6 +71,23 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
                 $"El producto contratado {request.AccountProductId} no existe."));
         }
 
+        var normalizedCountryCode = NormalizeCountryCode(request.CountryCode);
+
+        var transactionProblem = await ValidateAccountProductTransactionAsync(
+            accountProduct,
+            request.TransactionType,
+            request.TransactionChannel,
+            request.Amount,
+            request.TransactionDate,
+            normalizedCountryCode,
+            null,
+            cancellationToken);
+
+        if (transactionProblem is not null)
+        {
+            return Conflict(transactionProblem);
+        }
+
         if (!CanApplyTransaction(accountProduct.Amount, request.TransactionType, request.Amount))
         {
             return BadRequest(BuildProblem(
@@ -70,10 +102,12 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
         {
             AccountProductId = request.AccountProductId,
             TransactionType = request.TransactionType,
+            TransactionChannel = request.TransactionChannel,
             Amount = request.Amount,
             TransactionDate = request.TransactionDate,
             Description = NormalizationHelper.NormalizeOptionalText(request.Description),
-            ReferenceNumber = NormalizationHelper.NormalizeOptionalText(request.ReferenceNumber)
+            ReferenceNumber = NormalizationHelper.NormalizeOptionalText(request.ReferenceNumber),
+            CountryCode = normalizedCountryCode
         };
 
         dbContext.Transactions.Add(transaction);
@@ -84,6 +118,10 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<TransactionResponse>> UpdateAsync(
         int id,
         [FromBody] TransactionUpdateRequest request,
@@ -112,7 +150,39 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
                 $"El producto contratado {request.AccountProductId} no existe."));
         }
 
+        var normalizedCountryCode = NormalizeCountryCode(request.CountryCode);
+        var sourceBlockedProblem = await ValidateAccountProductNotBlockedAsync(transaction.AccountProduct, cancellationToken);
+        if (sourceBlockedProblem is not null)
+        {
+            return Conflict(sourceBlockedProblem);
+        }
+
+        if (targetAccountProduct.Id != transaction.AccountProduct.Id)
+        {
+            var targetBlockedProblem = await ValidateAccountProductNotBlockedAsync(targetAccountProduct, cancellationToken);
+            if (targetBlockedProblem is not null)
+            {
+                return Conflict(targetBlockedProblem);
+            }
+        }
+
         ApplyTransaction(transaction.AccountProduct, transaction.TransactionType, transaction.Amount, reverse: true);
+
+        var limitProblem = await ValidateTransactionLimitsAsync(
+            targetAccountProduct,
+            request.TransactionType,
+            request.TransactionChannel,
+            request.Amount,
+            request.TransactionDate,
+            normalizedCountryCode,
+            transaction.Id,
+            cancellationToken);
+
+        if (limitProblem is not null)
+        {
+            ApplyTransaction(transaction.AccountProduct, transaction.TransactionType, transaction.Amount, reverse: false);
+            return Conflict(limitProblem);
+        }
 
         if (!CanApplyTransaction(targetAccountProduct.Amount, request.TransactionType, request.Amount))
         {
@@ -128,10 +198,12 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
 
         transaction.AccountProductId = request.AccountProductId;
         transaction.TransactionType = request.TransactionType;
+        transaction.TransactionChannel = request.TransactionChannel;
         transaction.Amount = request.Amount;
         transaction.TransactionDate = request.TransactionDate;
         transaction.Description = NormalizationHelper.NormalizeOptionalText(request.Description);
         transaction.ReferenceNumber = NormalizationHelper.NormalizeOptionalText(request.ReferenceNumber);
+        transaction.CountryCode = normalizedCountryCode;
         transaction.AccountProduct = targetAccountProduct;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -139,6 +211,10 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
     }
 
     [HttpPatch("{id:int}")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<TransactionResponse>> PatchAsync(
         int id,
         [FromBody] TransactionPatchRequest request,
@@ -146,10 +222,12 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
     {
         if (request.AccountProductId is null &&
             request.TransactionType is null &&
+            request.TransactionChannel is null &&
             request.Amount is null &&
             request.TransactionDate is null &&
             request.Description is null &&
-            request.ReferenceNumber is null)
+            request.ReferenceNumber is null &&
+            request.CountryCode is null)
         {
             return BadRequest(BuildProblem(
                 StatusCodes.Status400BadRequest,
@@ -176,7 +254,10 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
 
         var targetAccountProductId = request.AccountProductId ?? transaction.AccountProductId;
         var targetTransactionType = request.TransactionType ?? transaction.TransactionType;
+        var targetTransactionChannel = request.TransactionChannel ?? transaction.TransactionChannel;
         var targetAmount = request.Amount ?? transaction.Amount;
+        var targetTransactionDate = request.TransactionDate ?? transaction.TransactionDate;
+        var targetCountryCode = NormalizeCountryCode(request.CountryCode ?? transaction.CountryCode);
 
         var targetAccountProduct = targetAccountProductId == transaction.AccountProductId
             ? transaction.AccountProduct
@@ -192,7 +273,38 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
                 $"El producto contratado {targetAccountProductId} no existe."));
         }
 
+        var currentBlockedProblem = await ValidateAccountProductNotBlockedAsync(transaction.AccountProduct, cancellationToken);
+        if (currentBlockedProblem is not null)
+        {
+            return Conflict(currentBlockedProblem);
+        }
+
+        if (targetAccountProduct.Id != transaction.AccountProduct.Id)
+        {
+            var targetBlockedProblem = await ValidateAccountProductNotBlockedAsync(targetAccountProduct, cancellationToken);
+            if (targetBlockedProblem is not null)
+            {
+                return Conflict(targetBlockedProblem);
+            }
+        }
+
         ApplyTransaction(transaction.AccountProduct, transaction.TransactionType, transaction.Amount, reverse: true);
+
+        var limitProblem = await ValidateTransactionLimitsAsync(
+            targetAccountProduct,
+            targetTransactionType,
+            targetTransactionChannel,
+            targetAmount,
+            targetTransactionDate,
+            targetCountryCode,
+            transaction.Id,
+            cancellationToken);
+
+        if (limitProblem is not null)
+        {
+            ApplyTransaction(transaction.AccountProduct, transaction.TransactionType, transaction.Amount, reverse: false);
+            return Conflict(limitProblem);
+        }
 
         if (!CanApplyTransaction(targetAccountProduct.Amount, targetTransactionType, targetAmount))
         {
@@ -209,12 +321,9 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
         transaction.AccountProductId = targetAccountProductId;
         transaction.AccountProduct = targetAccountProduct;
         transaction.TransactionType = targetTransactionType;
+        transaction.TransactionChannel = targetTransactionChannel;
         transaction.Amount = targetAmount;
-
-        if (request.TransactionDate.HasValue)
-        {
-            transaction.TransactionDate = request.TransactionDate.Value;
-        }
+        transaction.TransactionDate = targetTransactionDate;
 
         if (request.Description is not null)
         {
@@ -226,11 +335,17 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
             transaction.ReferenceNumber = NormalizationHelper.NormalizeOptionalText(request.ReferenceNumber);
         }
 
+        transaction.CountryCode = targetCountryCode;
+
         await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(Map(transaction));
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         var transaction = await dbContext.Transactions
@@ -248,6 +363,12 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
                 StatusCodes.Status400BadRequest,
                 "Estado no valido",
                 "La transaccion no tiene un producto contratado valido."));
+        }
+
+        var blockedProblem = await ValidateAccountProductNotBlockedAsync(transaction.AccountProduct, cancellationToken);
+        if (blockedProblem is not null)
+        {
+            return Conflict(blockedProblem);
         }
 
         ApplyTransaction(transaction.AccountProduct, transaction.TransactionType, transaction.Amount, reverse: true);
@@ -290,18 +411,128 @@ public sealed class TransactionsController(BankProductsDbContext dbContext) : Co
             transaction.AccountProductId,
             transaction.AccountProduct?.AccountNumber ?? string.Empty,
             transaction.TransactionType,
+            transaction.TransactionChannel,
             transaction.Amount,
             transaction.TransactionDate,
             transaction.Description,
             transaction.ReferenceNumber,
+            transaction.CountryCode ?? LocalCountryCode,
+            !string.Equals(transaction.CountryCode ?? LocalCountryCode, LocalCountryCode, StringComparison.OrdinalIgnoreCase),
             transaction.CreatedAt,
             transaction.UpdatedAt);
 
-    private static ProblemDetails BuildProblem(int statusCode, string title, string detail) =>
-        new()
+    private async Task<ProblemDetails?> ValidateAccountProductNotBlockedAsync(
+        AccountProduct accountProduct,
+        CancellationToken cancellationToken)
+    {
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        if (activeBlock is null)
         {
-            Status = statusCode,
-            Title = title,
-            Detail = detail
+            return null;
+        }
+
+        var detail = activeBlock.BlockType switch
+        {
+            AccountProductBlockType.Temporary =>
+                $"El producto contratado esta bloqueado temporalmente hasta {activeBlock.EndsAt:O}. Motivo: {activeBlock.Reason}.",
+            AccountProductBlockType.Permanent =>
+                $"El producto contratado tiene un bloqueo permanente. Motivo: {activeBlock.Reason}.",
+            _ =>
+                $"El producto contratado esta bloqueado por fraude. Motivo: {activeBlock.Reason}."
         };
+
+        return BuildProblem(
+            StatusCodes.Status409Conflict,
+            "Producto contratado bloqueado",
+            detail);
+    }
+
+    private async Task<ProblemDetails?> ValidateAccountProductTransactionAsync(
+        AccountProduct accountProduct,
+        TransactionType transactionType,
+        TransactionChannel transactionChannel,
+        decimal amount,
+        DateTimeOffset transactionDate,
+        string countryCode,
+        int? excludedTransactionId,
+        CancellationToken cancellationToken)
+    {
+        var blockedProblem = await ValidateAccountProductNotBlockedAsync(accountProduct, cancellationToken);
+        if (blockedProblem is not null)
+        {
+            return blockedProblem;
+        }
+
+        var travelNoticeProblem = await ValidateTravelNoticeAsync(
+            accountProduct,
+            transactionType,
+            countryCode,
+            transactionDate,
+            cancellationToken);
+
+        if (travelNoticeProblem is not null)
+        {
+            return travelNoticeProblem;
+        }
+
+        return await ValidateTransactionLimitsAsync(
+            accountProduct,
+            transactionType,
+            transactionChannel,
+            amount,
+            transactionDate,
+            countryCode,
+            excludedTransactionId,
+            cancellationToken);
+    }
+
+    private async Task<ProblemDetails?> ValidateTransactionLimitsAsync(
+        AccountProduct accountProduct,
+        TransactionType transactionType,
+        TransactionChannel transactionChannel,
+        decimal amount,
+        DateTimeOffset transactionDate,
+        string countryCode,
+        int? excludedTransactionId,
+        CancellationToken cancellationToken)
+    {
+        var limitValidation = await limitService.ValidateTransactionAsync(
+            accountProduct.Id,
+            accountProduct.Amount,
+            transactionType,
+            transactionChannel,
+            amount,
+            transactionDate,
+            countryCode,
+            excludedTransactionId,
+            cancellationToken);
+
+        return limitValidation is null
+            ? null
+            : BuildProblem(StatusCodes.Status409Conflict, limitValidation.Title, limitValidation.Detail);
+    }
+
+    private async Task<ProblemDetails?> ValidateTravelNoticeAsync(
+        AccountProduct accountProduct,
+        TransactionType transactionType,
+        string countryCode,
+        DateTimeOffset transactionDate,
+        CancellationToken cancellationToken)
+    {
+        var validationResult = await travelNoticeService.ValidateInternationalTransactionAsync(
+            accountProduct.Id,
+            transactionType,
+            countryCode,
+            transactionDate,
+            cancellationToken);
+
+        return validationResult is null
+            ? null
+            : BuildProblem(StatusCodes.Status409Conflict, validationResult.Title, validationResult.Detail);
+    }
+
+    private static string NormalizeCountryCode(string? countryCode) =>
+        string.IsNullOrWhiteSpace(countryCode)
+            ? LocalCountryCode
+            : NormalizationHelper.NormalizeCode(countryCode);
 }

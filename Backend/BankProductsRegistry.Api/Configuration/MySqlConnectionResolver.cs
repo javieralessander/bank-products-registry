@@ -12,7 +12,9 @@ public static class MySqlConnectionResolver
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            return NormalizeConnectionString(connectionString);
+            return LooksLikeConnectionUrl(connectionString)
+                ? BuildFromConnectionUrl(connectionString)
+                : NormalizeConnectionString(connectionString);
         }
 
         var mysqlUrl = configuration["MYSQL_URL"] ?? configuration["MYSQL_PUBLIC_URL"] ?? configuration["DATABASE_URL"];
@@ -88,6 +90,10 @@ public static class MySqlConnectionResolver
 
         return builder.ConnectionString;
     }
+
+    private static bool LooksLikeConnectionUrl(string value) =>
+        value.StartsWith("mysql://", StringComparison.OrdinalIgnoreCase) ||
+        value.StartsWith("mysqls://", StringComparison.OrdinalIgnoreCase);
 
     private static MySqlSslMode ResolveSslMode(string host, string? configuredSslMode)
     {
