@@ -9,6 +9,46 @@ public static class MySqlConnectionResolver
 
     public static string ResolveConnectionString(IConfiguration configuration)
     {
+        // Prioriza variables de entorno explicitas para no quedar atado al localhost de appsettings.
+        var environmentConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+        if (!string.IsNullOrWhiteSpace(environmentConnectionString))
+        {
+            return LooksLikeConnectionUrl(environmentConnectionString)
+                ? BuildFromConnectionUrl(environmentConnectionString)
+                : NormalizeConnectionString(environmentConnectionString);
+        }
+
+        var isRailwayRuntime = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RAILWAY_PROJECT_ID")) ||
+                               !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RAILWAY_SERVICE_ID")) ||
+                               !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT"));
+        var mysqlUrl = ResolveEnvironmentMySqlUrl(isRailwayRuntime);
+        if (!string.IsNullOrWhiteSpace(mysqlUrl))
+        {
+            return BuildFromConnectionUrl(mysqlUrl);
+        }
+
+        var host = ResolveEnvironmentValue("MYSQLHOST", "MYSQL_HOST", "DB_HOST");
+        var port = ResolveEnvironmentValue("MYSQLPORT", "MYSQL_PORT", "DB_PORT") ?? "3306";
+        var database = ResolveEnvironmentValue("MYSQLDATABASE", "MYSQL_DATABASE", "DB_NAME") ?? "bank_products_registry_db";
+        var username = ResolveEnvironmentValue("MYSQLUSER", "MYSQL_USER", "DB_USER") ?? "bank_user";
+        var password = ResolveEnvironmentValue("MYSQLPASSWORD", "MYSQL_PASSWORD", "DB_PASSWORD");
+        var sslMode = ResolveEnvironmentValue("MYSQL_SSL_MODE");
+
+        if (!string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(password))
+        {
+            var environmentBuilder = new MySqlConnectionStringBuilder
+            {
+                Server = host,
+                Port = uint.Parse(port),
+                Database = database,
+                UserID = username,
+                Password = password,
+                SslMode = ResolveSslMode(host, sslMode)
+            };
+
+            return NormalizeConnectionString(environmentBuilder.ConnectionString);
+        }
+
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
@@ -17,18 +57,18 @@ public static class MySqlConnectionResolver
                 : NormalizeConnectionString(connectionString);
         }
 
-        var mysqlUrl = configuration["MYSQL_URL"] ?? configuration["MYSQL_PUBLIC_URL"] ?? configuration["DATABASE_URL"];
+        mysqlUrl = configuration["MYSQL_URL"] ?? configuration["MYSQL_PUBLIC_URL"] ?? configuration["DATABASE_URL"];
         if (!string.IsNullOrWhiteSpace(mysqlUrl))
         {
             return BuildFromConnectionUrl(mysqlUrl);
         }
 
-        var host = configuration["MYSQLHOST"] ?? configuration["MYSQL_HOST"] ?? configuration["DB_HOST"];
-        var port = configuration["MYSQLPORT"] ?? configuration["MYSQL_PORT"] ?? configuration["DB_PORT"] ?? "3306";
-        var database = configuration["MYSQLDATABASE"] ?? configuration["MYSQL_DATABASE"] ?? configuration["DB_NAME"] ?? "bank_products_registry_db";
-        var username = configuration["MYSQLUSER"] ?? configuration["MYSQL_USER"] ?? configuration["DB_USER"] ?? "bank_user";
-        var password = configuration["MYSQLPASSWORD"] ?? configuration["MYSQL_PASSWORD"] ?? configuration["DB_PASSWORD"];
-        var sslMode = configuration["MYSQL_SSL_MODE"];
+        host = configuration["MYSQLHOST"] ?? configuration["MYSQL_HOST"] ?? configuration["DB_HOST"];
+        port = configuration["MYSQLPORT"] ?? configuration["MYSQL_PORT"] ?? configuration["DB_PORT"] ?? "3306";
+        database = configuration["MYSQLDATABASE"] ?? configuration["MYSQL_DATABASE"] ?? configuration["DB_NAME"] ?? "bank_products_registry_db";
+        username = configuration["MYSQLUSER"] ?? configuration["MYSQL_USER"] ?? configuration["DB_USER"] ?? "bank_user";
+        password = configuration["MYSQLPASSWORD"] ?? configuration["MYSQL_PASSWORD"] ?? configuration["DB_PASSWORD"];
+        sslMode = configuration["MYSQL_SSL_MODE"];
 
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(password))
         {
@@ -47,6 +87,34 @@ public static class MySqlConnectionResolver
         };
 
         return NormalizeConnectionString(builder.ConnectionString);
+    }
+
+    private static string? ResolveEnvironmentMySqlUrl(bool isRailwayRuntime)
+    {
+        var mysqlUrl = Environment.GetEnvironmentVariable("MYSQL_URL");
+        var mysqlPublicUrl = Environment.GetEnvironmentVariable("MYSQL_PUBLIC_URL");
+        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+        if (!isRailwayRuntime && !string.IsNullOrWhiteSpace(mysqlPublicUrl))
+        {
+            return mysqlPublicUrl;
+        }
+
+        return mysqlUrl ?? mysqlPublicUrl ?? databaseUrl;
+    }
+
+    private static string? ResolveEnvironmentValue(params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            var value = Environment.GetEnvironmentVariable(key);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 
     private static string BuildFromConnectionUrl(string connectionUrl)

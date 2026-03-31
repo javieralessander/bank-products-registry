@@ -3,14 +3,28 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddHttpClient(); // Habilita el cliente HTTP
+var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5039/";
+if (!apiBaseUrl.EndsWith('/'))
+{
+    apiBaseUrl += "/";
+}
 
-// Configura la autenticaciÛn por Cookies para el Frontend
+builder.Services.AddHttpClient("Api", httpClient =>
+{
+    httpClient.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddScoped(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    return factory.CreateClient("Api");
+});
+
+// Configura la autenticaciùn por Cookies para el Frontend
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Auth/Login"; // Si no est· logueado, lo manda aquÌ
-        options.ExpireTimeSpan = TimeSpan.FromHours(1); // DuraciÛn de la sesiÛn
+        options.LoginPath = "/Auth/Login"; // Si no estù logueado, lo manda aquù
+        options.ExpireTimeSpan = TimeSpan.FromHours(1); // Duraciùn de la sesiùn
     });
 
 var app = builder.Build();
