@@ -1,0 +1,271 @@
+﻿@model IEnumerable<BankProductsRegistry.Frontend.Models.ClientViewModel>
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<style>
+    /* Estilos del Header */
+    .page-header {
+        margin-bottom: 24px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: white;
+    }
+
+    .page-subtitle {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    /* Barra de búsqueda y botón */
+    .toolbar {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .search-input {
+        background-color: #1a1d2d;
+        border: 1px solid var(--border-color);
+        color: white;
+        border-radius: 8px;
+        padding: 10px 16px;
+        flex-grow: 1;
+        font-size: 0.9rem;
+        transition: 0.3s;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+
+        .search-input::placeholder {
+            color: #6b7280;
+        }
+
+    .btn-primary-custom {
+        background-color: #3b82f6;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-primary-custom:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+    /* Tabla */
+    .table-container {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .custom-table {
+        width: 100%;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 0;
+        border-collapse: collapse;
+    }
+
+        .custom-table th {
+            padding: 16px 20px;
+            font-weight: 500;
+            color: #8b94a5;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .custom-table td {
+            padding: 16px 20px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-color);
+            color: #d1d5db;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #1f2335;
+        }
+
+        .custom-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+    /* Celda del nombre y avatar */
+    .client-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: white;
+        font-weight: 500;
+    }
+
+    .client-avatar {
+        width: 32px;
+        height: 32px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    /* Badges de Estado */
+    .badge-active {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-inactive {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    /* Iconos de Acción */
+    .action-icon {
+        color: #6b7280;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-right: 12px;
+    }
+
+        .action-icon:hover {
+            color: white;
+        }
+
+        .action-icon:last-child {
+            margin-right: 0;
+        }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Clientes</h1>
+    <div class="page-subtitle">Gestión de clientes registrados en el sistema</div>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre, cédula o correo..." />
+
+    <a href="@Url.Action("Create", "Clients")" class="btn-primary-custom text-decoration-none">+ Nuevo Cliente</a>
+</div>
+
+<div class="table-container">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Cédula</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="clientsTableBody">
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-danger" style="padding: 20px;">@ViewBag.ErrorMessage</td>
+                </tr>
+            }
+            else if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center" style="padding: 30px; color: #8b94a5;">No hay clientes registrados en la base de datos.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var client in Model)
+                {
+                    // Unimos el nombre y apellido para mostrarlo bonito
+                    var fullName = $"{client.FirstName} {client.LastName}";
+                    var initial = string.IsNullOrEmpty(client.FirstName) ? "U" : client.FirstName.Substring(0, 1).ToUpper();
+
+                    <tr>
+                        <td>@client.Id</td>
+                        <td>
+                            <div class="client-name-cell">
+                                <div class="client-avatar">
+                                    @initial
+                                </div>
+                                @fullName
+                            </div>
+                        </td>
+                        <td>@client.NationalId</td>
+                        <td>@client.Email</td>
+                        <td>@client.Phone</td>
+                        <td>
+                            @if (client.IsActive)
+                            {
+                                <span class="badge-active">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge-inactive">Inactivo</span>
+                            }
+                        </td>
+                        <td>
+                            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                            </svg>
+                            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                            </svg>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <script>
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            // Obtenemos el texto que escribió el usuario y lo pasamos a minúsculas
+            var searchValue = this.value.toLowerCase();
+            // Obtenemos todas las filas de la tabla
+            var tableRows = document.querySelectorAll('#clientsTableBody tr');
+
+            tableRows.forEach(function (row) {
+                // Verificamos que sea una fila de datos reales (que tenga más de 1 celda)
+                if (row.cells.length > 1) {
+                    // Obtenemos todo el texto de la fila (Nombre, cédula, email, etc.)
+                    var rowText = row.textContent.toLowerCase();
+
+                    // Si el texto de la fila incluye lo que buscamos, la mostramos. Si no, la ocultamos.
+                    if (rowText.includes(searchValue)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+</div>
