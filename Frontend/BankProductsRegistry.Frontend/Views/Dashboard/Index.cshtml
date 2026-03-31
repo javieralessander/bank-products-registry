@@ -128,6 +128,16 @@
         border-radius: 10px;
         margin-top: 8px;
     }
+
+    .text-green {
+        color: #10b981 !important;
+        font-weight: 500;
+    }
+
+    .text-red {
+        color: #ef4444 !important;
+        font-weight: 500;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -201,18 +211,21 @@
                     {
                         foreach (var tx in Model.RecentTransactions)
                         {
-                            // Validamos si la transacción es un depósito basado en el texto de la API
-                            var esDeposito = tx.TransactionType.ToUpper().Contains("DEPOSIT");
+                            // Como la API del Dashboard nos manda el Enum convertido a texto ("Deposit", "Withdrawal")
+                            var rawType = tx.TransactionType.ToLower();
+                            var esDeposito = rawType.Contains("deposit") || rawType.Contains("depósito");
+
+                            string typeDisplay = esDeposito ? "Depósito" : "Retiro";
 
                             <tr>
                                 <td>
                                     <div style="color: white; font-weight: 500;">@tx.ClientName</div>
                                     <div style="font-size: 0.8rem; color: #8b94a5;">@tx.ProductName</div>
                                 </td>
-                                <td class="@(esDeposito ? "text-deposit" : "text-withdrawal")">
-                                    @(esDeposito ? "Depósito" : "Retiro")
+                                <td class="@(esDeposito ? "text-green" : "text-red")">
+                                    @typeDisplay
                                 </td>
-                                <td>DOP @tx.Amount.ToString("N2")</td>
+                                <td style="color: white;">DOP @tx.Amount.ToString("N2")</td>
                                 <td style="color: #8b94a5;">@tx.Date.ToString("dd/MM/yy HH:mm")</td>
                                 <td>
                                     <span class="badge rounded-pill badge-success">Completada</span>
