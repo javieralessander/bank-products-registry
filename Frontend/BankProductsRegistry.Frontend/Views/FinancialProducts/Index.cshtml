@@ -1,0 +1,396 @@
+﻿@model IEnumerable<BankProductsRegistry.Frontend.Models.FinancialProductViewModel>
+@{
+    ViewData["Title"] = "Productos Financieros";
+}
+
+<style>
+    /* Estilos del Header y Buscador */
+    .page-header {
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: white;
+    }
+
+    .page-subtitle {
+        color: #8b94a5;
+        font-size: 0.9rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .search-input {
+        background-color: #1a1d2d;
+        border: 1px solid #2d3348;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 16px;
+        width: 250px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+
+    .btn-primary-custom {
+        background-color: #3b82f6;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+        color: white;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+        .btn-primary-custom:hover {
+            background-color: #2563eb;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+    /* Pestañas de Filtro (Tabs) */
+    .tabs-container {
+        border-bottom: 1px solid #2d3348;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 10px;
+        padding-bottom: 10px;
+    }
+
+    .filter-tab {
+        color: #8b94a5;
+        font-weight: 500;
+        font-size: 0.9rem;
+        padding: 8px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.2s;
+        user-select: none;
+    }
+
+        .filter-tab:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .filter-tab.active-tab {
+            background-color: #1e3a8a;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+    /* Tarjetas de Producto - AQUÍ ESTÁ LA MAGIA DE LA GRILLA */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .product-card {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        padding: 24px;
+        position: relative;
+        transition: 0.3s;
+    }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+    /* Colores superiores dinámicos */
+    .border-blue {
+        border-top: 4px solid #3b82f6;
+    }
+
+    .border-red {
+        border-top: 4px solid #ef4444;
+    }
+
+    .border-green {
+        border-top: 4px solid #10b981;
+    }
+
+    .border-yellow {
+        border-top: 4px solid #f59e0b;
+    }
+
+    .border-purple {
+        border-top: 4px solid #8b5cf6;
+    }
+
+    .product-title {
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .product-category {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin-bottom: 20px;
+    }
+
+    .product-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 25px;
+    }
+
+    .stat-label {
+        color: #8b94a5;
+        font-size: 0.75rem;
+        margin-bottom: 4px;
+    }
+
+    .stat-value-large {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-value-normal {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        line-height: 1.2;
+    }
+
+    /* Colores para las tasas */
+    .text-blue {
+        color: #3b82f6;
+    }
+
+    .text-red {
+        color: #ef4444;
+    }
+
+    .text-green {
+        color: #10b981;
+    }
+
+    .text-yellow {
+        color: #f59e0b;
+    }
+
+    .text-purple {
+        color: #8b5cf6;
+    }
+
+    .card-footer-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #2d3348;
+        padding-top: 15px;
+        margin-top: 10px;
+    }
+
+    .badge-active {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-inactive {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .action-icon {
+        color: #6b7280;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-left: 12px;
+    }
+
+        .action-icon:hover {
+            color: white;
+        }
+
+    .alert-custom {
+        background-color: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.15);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Productos Financieros</h1>
+        <div class="page-subtitle">Catálogo de productos ofrecidos por el banco</div>
+    </div>
+    <div class="header-actions">
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar producto..." />
+        <a href="@Url.Action("Create", "FinancialProducts")" class="btn-primary-custom text-decoration-none">+ Nuevo Producto</a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-custom">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-octagon-fill" viewBox="0 0 16 16">
+            <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zM8 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </svg>
+        <strong>Aviso:</strong> @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="tabs-container">
+    <div class="filter-tab active-tab" data-filter="Todos">Todos</div>
+    <div class="filter-tab" data-filter="Tarjeta Crédito">Tarjeta Crédito</div>
+    <div class="filter-tab" data-filter="Préstamo">Préstamo</div>
+    <div class="filter-tab" data-filter="Inversión">Inversión</div>
+    <div class="filter-tab" data-filter="Certificado">Certificado</div>
+    <div class="filter-tab" data-filter="Cta. Ahorro">Cta. Ahorro</div>
+</div>
+
+<div class="products-grid" id="productsContainer">
+    @if (!Model.Any())
+    {
+        <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: #8b94a5;">
+            No hay productos financieros configurados en el sistema.
+        </div>
+    }
+    else
+    {
+        foreach (var prod in Model)
+        {
+            // SOLUCIÓN: Mapeo perfecto sin importar mayúsculas o minúsculas de la API
+            string categoryName = "Otros";
+            string colorClass = "border-blue";
+            string textClass = "text-blue";
+
+            var rawType = prod.ProductType?.ToLower() ?? "";
+
+            if (rawType.Contains("tarjeta") || rawType.Contains("crédito") || rawType.Contains("credito"))
+            { categoryName = "Tarjeta Crédito"; colorClass = "border-blue"; textClass = "text-blue"; }
+            else if (rawType.Contains("prestamo") || rawType.Contains("préstamo") || rawType.Contains("loan"))
+            { categoryName = "Préstamo"; colorClass = "border-red"; textClass = "text-red"; }
+            else if (rawType.Contains("inversion") || rawType.Contains("inversión") || rawType.Contains("investment"))
+            { categoryName = "Inversión"; colorClass = "border-green"; textClass = "text-green"; }
+            else if (rawType.Contains("certificado") || rawType.Contains("certificate"))
+            { categoryName = "Certificado"; colorClass = "border-yellow"; textClass = "text-yellow"; }
+            else if (rawType.Contains("ahorro") || rawType.Contains("saving"))
+            { categoryName = "Cta. Ahorro"; colorClass = "border-purple"; textClass = "text-purple"; }
+
+            <div class="product-card @colorClass product-card-wrapper" data-type="@categoryName">
+                <div class="product-title">@prod.ProductName</div>
+                <div class="product-category">@categoryName</div>
+
+                <div class="product-stats">
+                    <div>
+                        <div class="stat-label">Tasa de Interés</div>
+                        <div class="stat-value-large @textClass">@prod.InterestRate.ToString("0.00")%</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">Apertura Mín.</div>
+                        <div class="stat-value-normal">@prod.Currency @prod.MinimumOpeningAmount.ToString("N0")</div>
+                    </div>
+                </div>
+
+                <div class="card-footer-custom">
+                    @if (!string.IsNullOrEmpty(prod.Status) && prod.Status.ToUpper().Contains("ACTIV"))
+                    {
+                        <span class="badge-active">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge-inactive">Inactivo</span>
+                    }
+
+                    <div>
+                        <a href="@Url.Action("Edit", "FinancialProducts", new { id = prod.Id })" class="action-icon text-decoration-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                            </svg>
+                        </a>
+
+                        <form asp-action="Delete" asp-route-id="@prod.Id" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente el producto \'@prod.ProductName\'?');">
+                            <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    // Lógica para filtrar por pestañas (Tabs)
+    const tabs = document.querySelectorAll('.filter-tab');
+    const cards = document.querySelectorAll('.product-card-wrapper');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active-tab'));
+            this.classList.add('active-tab');
+
+            const filterValue = this.getAttribute('data-filter');
+
+            cards.forEach(card => {
+                if (filterValue === 'Todos' || card.getAttribute('data-type') === filterValue) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Lógica para el buscador de texto
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+
+        cards.forEach(card => {
+            const cardText = card.textContent.toLowerCase();
+            const activeFilter = document.querySelector('.active-tab').getAttribute('data-filter');
+            const matchFilter = activeFilter === 'Todos' || card.getAttribute('data-type') === activeFilter;
+
+            if (cardText.includes(searchValue) && matchFilter) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>

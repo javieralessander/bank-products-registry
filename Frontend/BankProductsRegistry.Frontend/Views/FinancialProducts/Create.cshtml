@@ -1,0 +1,233 @@
+﻿@model BankProductsRegistry.Frontend.Models.FinancialProductViewModel
+@{
+    ViewData["Title"] = "Nuevo Producto Financiero";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    * {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .page-header {
+        margin-bottom: 28px;
+    }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: white;
+        letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+        color: #8b94a5;
+        font-size: 0.95rem;
+    }
+
+    .form-card-premium {
+        background-color: #151928;
+        border-radius: 16px;
+        border: 1px solid #2d3348;
+        padding: 40px;
+        max-width: 850px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .form-card-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%);
+        }
+
+    .form-label-custom {
+        color: #8b94a5;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .input-group-custom {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        color: #4b5563;
+        font-size: 1.1rem;
+        z-index: 10;
+    }
+
+    .form-control-custom {
+        background-color: #0f111a;
+        border: 1px solid #2d3348;
+        color: white;
+        padding: 12px 14px 12px 45px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        width: 100%;
+    }
+
+        .form-control-custom:focus {
+            background-color: #0f111a;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+            color: white;
+        }
+
+    .form-select-custom {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 16px 12px;
+    }
+
+    .btn-save-premium {
+        background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 10px;
+        color: white;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+        .btn-save-premium:hover {
+            background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+            color: white;
+        }
+
+    .btn-cancel-custom {
+        background-color: transparent;
+        border: 1px solid #2d3348;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 10px;
+        color: #8b94a5;
+        text-decoration: none;
+        font-size: 0.95rem;
+    }
+
+        .btn-cancel-custom:hover {
+            background-color: #2d3348;
+            color: white;
+        }
+
+    .alert-custom {
+        background-color: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.15);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Nuevo Producto Financiero</h1>
+    <div class="page-subtitle">Introduce los parámetros para la configuración del nuevo producto bancario.</div>
+</div>
+
+<div class="form-card-premium">
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-custom">
+            <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+            <div><strong>Error de Validación:</strong> @ViewBag.ErrorMessage</div>
+        </div>
+    }
+
+    <form asp-action="Create" method="post" autocomplete="off">
+
+        <input type="hidden" asp-for="Status" value="activo" />
+
+        <div class="row mb-4">
+            <div class="col-md-8 mb-3 mb-md-0">
+                <label class="form-label-custom">Nombre Comercial del Producto</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-tag input-icon"></i>
+                    <input asp-for="ProductName" class="form-control-custom" placeholder="Ej. Tarjeta Visa Gold" required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label-custom">Tipo de Producto (Define el color)</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-layers input-icon"></i>
+                    <select asp-for="ProductType" class="form-control-custom form-select-custom" required>
+                        <option value="" disabled selected>Selecciona...</option>
+                        <option value="tarjeta_credito">Tarjeta Crédito (Azul)</option>
+                        <option value="prestamo">Préstamo (Rojo)</option>
+                        <option value="inversion">Inversión (Verde)</option>
+                        <option value="certificado">Certificado (Amarillo)</option>
+                        <option value="cuenta_ahorro">Cta. Ahorro (Morado)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3 mb-md-0">
+                <label class="form-label-custom">Tasa de Interés Anual (%)</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-percent input-icon"></i>
+                    <input asp-for="InterestRate" type="number" step="0.01" class="form-control-custom" placeholder="Ej. 18.50" required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label-custom">Apertura Mínima</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-cash-stack input-icon"></i>
+                    <input asp-for="MinimumOpeningAmount" type="number" step="0" class="form-control-custom" placeholder="Ej. 5000" required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3 mb-md-0">
+                <label class="form-label-custom">Divisa</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-currency-exchange input-icon"></i>
+                    <select asp-for="Currency" class="form-control-custom form-select-custom" required>
+                        <option value="DOP">DOP (Pesos Dominicanos)</option>
+                        <option value="USD">USD (Dólares)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 pb-2">
+            <label class="form-label-custom">Descripción y Beneficios</label>
+            <div class="input-group-custom">
+                <i class="bi bi-journal-text input-icon" style="top: 15px;"></i>
+                <textarea asp-for="Description" class="form-control-custom" style="padding-top: 12px; height: 100px;" placeholder="Puntos principales, recompensas, etc..."></textarea>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 justify-content-end mt-5 pt-3 border-top" style="border-color: #2d3348 !important;">
+            <a asp-action="Index" class="btn-cancel-custom">
+                <i class="bi bi-arrow-left me-1"></i> Cancelar
+            </a>
+            <button type="submit" class="btn-save-premium">
+                <i class="bi bi-cloud-check-fill me-2"></i> Guardar Producto
+            </button>
+        </div>
+    </form>
+</div>
