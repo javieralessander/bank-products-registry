@@ -1,0 +1,182 @@
+﻿@model BankProductsRegistry.Frontend.Models.AccountProductDetailsViewModel
+@{
+    ViewData["Title"] = "Detalles del Contrato";
+}
+
+<style>
+    body {
+        background-color: #0b0f19 !important;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .detail-card {
+        background-color: #151928;
+        border-radius: 16px;
+        border: 1px solid #2d3348;
+        width: 100%;
+        max-width: 600px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .d-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #2d3348;
+        padding-bottom: 20px;
+    }
+
+    .d-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+    }
+
+    .d-badge {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .d-section {
+        margin-bottom: 25px;
+    }
+
+    .d-label {
+        color: #8b94a5;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .d-value {
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .d-value-large {
+        color: #3b82f6;
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .btn-close-modal {
+        background-color: transparent;
+        border: 1px solid #2d3348;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .btn-close-modal:hover {
+            background-color: #2d3348;
+            color: white;
+        }
+
+    .alert-block {
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+
+        .alert-block p {
+            color: #ef4444;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+</style>
+
+<div class="modal-overlay">
+    <div class="detail-card">
+
+        <div class="d-header">
+            <div>
+                <h2 class="d-title">Expediente AP-@Model.Id.ToString("D3")</h2>
+                <div style="color: #8b94a5; font-size: 0.9rem; margin-top: 5px;">Creado: @Model.CreatedAt.ToString("dd MMM yyyy")</div>
+            </div>
+            @{
+                var rawStat = Model.Status?.ToLower() ?? "";
+                var color = rawStat.Contains("activo") ? "#10b981" : rawStat.Contains("suspendido") ? "#f59e0b" : rawStat.Contains("mora") ? "#ef4444" : "#9ca3af";
+                var bg = rawStat.Contains("activo") ? "rgba(16,185,129,0.1)" : rawStat.Contains("suspendido") ? "rgba(245,158,11,0.1)" : rawStat.Contains("mora") ? "rgba(239,68,68,0.1)" : "rgba(107,114,128,0.1)";
+            }
+            <div class="d-badge" style="color: @color; background-color: @bg; border: 1px solid @color;">
+                @(Model.IsBlocked ? "BLOQUEADO" : Model.Status)
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 d-section">
+                <div class="d-label">Cliente Titular</div>
+                <div class="d-value">@Model.ClientName</div>
+            </div>
+            <div class="col-6 d-section">
+                <div class="d-label">Asesor Asignado</div>
+                <div class="d-value">@Model.EmployeeName</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 d-section">
+                <div class="d-label">Producto Financiero</div>
+                <div class="d-value">@Model.FinancialProductName</div>
+            </div>
+            <div class="col-6 d-section">
+                <div class="d-label">Número de Cuenta</div>
+                <div class="d-value" style="color: #3b82f6;">@Model.AccountNumber</div>
+            </div>
+        </div>
+
+        <div class="d-section mb-4 pb-3 border-bottom" style="border-color: #2d3348 !important;">
+            <div class="d-label">Balance / Monto Operativo</div>
+            <div class="d-value-large">DOP @Model.Amount.ToString("N2")</div>
+        </div>
+
+        <div class="row">
+            <div class="col-6 d-section mb-0">
+                <div class="d-label">Fecha de Apertura</div>
+                <div class="d-value">@Model.OpenDate.ToString("dd/MM/yyyy")</div>
+            </div>
+            <div class="col-6 d-section mb-0">
+                <div class="d-label">Fecha de Vencimiento</div>
+                <div class="d-value">@(Model.MaturityDate.HasValue ? Model.MaturityDate.Value.ToString("dd/MM/yyyy") : "No aplica")</div>
+            </div>
+        </div>
+
+        @if (Model.IsBlocked && Model.ActiveBlock != null)
+        {
+            <div class="alert-block">
+                <div style="font-weight: 700; color: #ef4444; margin-bottom: 5px;">⚠️ CUENTA CON RESTRICCIONES</div>
+                <p><strong>Motivo del Bloqueo:</strong> @Model.ActiveBlock.Reason</p>
+            </div>
+        }
+
+        <div class="mt-5 text-end">
+            <a asp-action="Index" class="btn-close-modal">Cerrar Expediente</a>
+        </div>
+    </div>
+</div>

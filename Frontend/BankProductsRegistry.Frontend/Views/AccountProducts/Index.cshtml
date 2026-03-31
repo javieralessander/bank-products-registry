@@ -1,0 +1,411 @@
+﻿@model BankProductsRegistry.Frontend.Models.AccountProductDashboardViewModel
+@{
+    ViewData["Title"] = "Productos Contratados";
+}
+
+<style>
+    /* Estilos Generales */
+    .page-header {
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: white;
+    }
+
+    .page-subtitle {
+        color: #8b94a5;
+        font-size: 0.9rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .search-input-top {
+        background-color: #1a1d2d;
+        border: 1px solid #2d3348;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 16px;
+        width: 250px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .search-input-top:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+
+    .btn-primary-custom {
+        background-color: #3b82f6;
+        border: none;
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+        color: white;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+        .btn-primary-custom:hover {
+            background-color: #2563eb;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+    /* Tarjetas de Resumen */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .summary-card {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        padding: 20px;
+    }
+
+    .card-border-green {
+        border-left: 4px solid #10b981;
+    }
+
+    .card-border-blue {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .card-border-yellow {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .summary-label {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        line-height: 1;
+    }
+
+    /* Barra de Herramientas y Filtros */
+    .toolbar {
+        background-color: #1a1d2d;
+        border: 1px solid #2d3348;
+        border-radius: 12px 12px 0 0;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        border-bottom: none;
+    }
+
+    .search-inline {
+        background-color: #0f111a;
+        border: 1px solid #2d3348;
+        color: white;
+        border-radius: 8px;
+        outline: none;
+        width: 100%;
+        padding: 10px 15px;
+        font-size: 0.95rem;
+    }
+
+        .search-inline::placeholder {
+            color: #6b7280;
+        }
+
+    .filter-tabs {
+        display: flex;
+        gap: 5px;
+    }
+
+    .f-tab {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        padding: 6px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+
+        .f-tab:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .f-tab.active {
+            background-color: #1e3a8a;
+            color: #60a5fa;
+        }
+
+    /* Tabla */
+    .table-container {
+        background-color: #1a1d2d;
+        border-radius: 0 0 12px 12px;
+        border: 1px solid #2d3348;
+        overflow-x: auto;
+    }
+
+    .custom-table {
+        width: 100%;
+        color: #d1d5db;
+        font-size: 0.85rem;
+        border-collapse: collapse;
+    }
+
+        .custom-table th {
+            padding: 16px 20px;
+            font-weight: 500;
+            color: #8b94a5;
+            border-bottom: 1px solid #2d3348;
+            text-align: left;
+        }
+
+        .custom-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2d3348;
+            vertical-align: middle;
+        }
+
+        .custom-table tr:hover {
+            background-color: #1f2335;
+        }
+
+        .custom-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    /* Estados Visuales */
+    .badge-status {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+
+    .status-activo {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .status-suspendido {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    .status-cerrado {
+        background-color: rgba(107, 114, 128, 0.1);
+        color: #9ca3af;
+        border-color: rgba(107, 114, 128, 0.2);
+    }
+
+    .status-mora {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .action-icon {
+        color: #6b7280;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-left: 8px;
+        text-decoration: none;
+    }
+
+        .action-icon:hover {
+            color: white;
+        }
+</style>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Productos Contratados</h1>
+        <div class="page-subtitle">Cuentas bancarias y servicios vinculados a clientes</div>
+    </div>
+    <div class="header-actions">
+        <a href="@Url.Action("Create", "AccountProducts")" class="btn-primary-custom text-decoration-none">+ Nuevo Contrato</a>
+    </div>
+</div>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px;">
+        @ViewBag.ErrorMessage
+    </div>
+}
+
+<div class="summary-grid">
+    <div class="summary-card card-border-green">
+        <div class="summary-label">Contratos Activos</div>
+        <div class="summary-value">@Model.TotalActive.ToString("N0")</div>
+    </div>
+    <div class="summary-card card-border-blue">
+        <div class="summary-label">Monto Total Gestionado</div>
+        <div class="summary-value">DOP @(Model.TotalVolume >= 1000000 ? (Model.TotalVolume / 1000000).ToString("0.##") + "M" : Model.TotalVolume >= 1000 ? (Model.TotalVolume / 1000).ToString("0.##") + "K" : Model.TotalVolume.ToString("N0"))</div>
+    </div>
+    <div class="summary-card card-border-yellow">
+        <div class="summary-label">Vencen Esta Semana</div>
+        <div class="summary-value">@Model.TotalExpiringSoon</div>
+    </div>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="tableSearch" class="search-inline" placeholder="Buscar por N° cuenta, cliente o producto..." />
+    <div class="filter-tabs">
+        <div class="f-tab active" data-filter="Todos">Todos</div>
+        <div class="f-tab" data-filter="activo">Activo</div>
+        <div class="f-tab" data-filter="cerrado">Cerrado</div>
+        <div class="f-tab" data-filter="suspendido">Suspendido</div>
+        <div class="f-tab" data-filter="en_mora">En Mora</div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>N° Cuenta</th>
+                <th>Cliente</th>
+                <th>Producto</th>
+                <th>Asesor</th>
+                <th>Monto</th>
+                <th>F. Apertura</th>
+                <th>Estado</th>
+                <th>Acc.</th>
+            </tr>
+        </thead>
+        <tbody id="contractsBody">
+            @if (!Model.Products.Any())
+            {
+                <tr>
+                    <td colspan="9" class="text-center" style="padding: 40px; color: #8b94a5;">
+                        No hay productos contratados registrados en el sistema.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                foreach (var contract in Model.Products)
+                {
+                    // Lógica para color de estado basada en los Enums de la API
+                    var rawStatus = contract.Status?.ToLower() ?? "";
+                    string badgeClass = "status-cerrado";
+                    string displayStatus = "Desconocido";
+
+                    if (contract.IsBlocked) { badgeClass = "status-suspendido"; displayStatus = "Bloqueado"; rawStatus = "suspendido"; }
+                    else if (rawStatus.Contains("activo")) { badgeClass = "status-activo"; displayStatus = "Activo"; }
+                    else if (rawStatus.Contains("suspendido")) { badgeClass = "status-suspendido"; displayStatus = "Suspendido"; }
+                    else if (rawStatus.Contains("mora")) { badgeClass = "status-mora"; displayStatus = "En Mora"; }
+                    else if (rawStatus.Contains("cerrado") || rawStatus.Contains("cancelado")) { badgeClass = "status-cerrado"; displayStatus = "Cerrado"; }
+
+                    <tr class="contract-row" data-status="@rawStatus">
+                        <td style="color: #6b7280;">AP-@contract.Id.ToString("D3")</td>
+                        <td style="color: #3b82f6; font-weight: 500;">@contract.AccountNumber</td>
+                        <td style="color: white; font-weight: 500;">@contract.ClientName</td>
+                        <td style="color: #d1d5db;">@contract.FinancialProductName</td>
+                        <td style="color: #8b94a5;">-</td>
+                        <td style="color: white; font-weight: 500;">DOP @contract.Amount.ToString("N0")</td>
+                        <td style="color: #8b94a5;">@contract.OpenDate.ToString("dd/MM/yy")</td>
+                        <td>
+                            <span class="badge-status @badgeClass" title="@(contract.IsBlocked ? contract.ActiveBlock?.Reason : "")">
+                                @displayStatus
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <a href="@Url.Action("Details", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Ver Detalles">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                                    </svg>
+                                </a>
+
+                                <a href="@Url.Action("Edit", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Editar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                                    </svg>
+                                </a>
+
+                                <form asp-action="Delete" asp-route-id="@contract.Id" method="post" class="m-0 p-0" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este contrato? Esta acción no se puede deshacer.');">
+                                    <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;" title="Eliminar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Filtro por pestañas de Estado
+    const tabs = document.querySelectorAll('.f-tab');
+    const rows = document.querySelectorAll('.contract-row');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.getAttribute('data-filter');
+
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+
+                if (filter === 'Todos' || rowStatus.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Buscador en tiempo real por N° Cuenta, Cliente o Producto
+    document.getElementById('tableSearch').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+
+        rows.forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            const activeFilter = document.querySelector('.f-tab.active').getAttribute('data-filter');
+            const rowStatus = row.getAttribute('data-status');
+
+            const matchFilter = activeFilter === 'Todos' || rowStatus.includes(activeFilter);
+
+            if (textContent.includes(searchValue) && matchFilter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
