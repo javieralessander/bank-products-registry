@@ -1,4 +1,7 @@
 ﻿@model BankProductsRegistry.Frontend.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
 
 <style>
     /* El truco principal: forzar el color oscuro en las tarjetas */
@@ -141,29 +144,29 @@
     <div class="col-md-3">
         <div class="custom-card card-top-clientes">
             <div class="stat-title">Total Clientes</div>
-            <div class="stat-value">@Model.TotalClientes.ToString("N0")</div>
-            <div class="stat-desc">12 nuevos este mes</div>
+            <div class="stat-value">@Model.TotalClients.ToString("N0")</div>
+            <div class="stat-desc">Usuarios en el sistema</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="custom-card card-top-productos">
             <div class="stat-title">Productos Activos</div>
-            <div class="stat-value">@Model.ProductosActivos.ToString("N0")</div>
-            <div class="stat-desc">78 nuevos esta semana</div>
+            <div class="stat-value">@Model.ActiveProducts.ToString("N0")</div>
+            <div class="stat-desc">Cuentas y servicios operativos</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="custom-card card-top-transacciones">
             <div class="stat-title">Transacciones</div>
-            <div class="stat-value">@Model.TotalTransacciones.ToString("N0")</div>
-            <div class="stat-desc">340 registradas hoy</div>
+            <div class="stat-value">@Model.TotalTransactions.ToString("N0")</div>
+            <div class="stat-desc">Registradas históricamente</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="custom-card card-top-volumen">
             <div class="stat-title">Vol. Colocado</div>
-            <div class="stat-value">DOP @(Model.VolumenColocado / 1000000)M</div>
-            <div class="stat-desc">5.3% vs mes anterior</div>
+            <div class="stat-value">DOP @((Model.TotalVolume / 1000000).ToString("0.0"))M</div>
+            <div class="stat-desc">Capital total manejado</div>
         </div>
     </div>
 </div>
@@ -178,7 +181,7 @@
             <table class="table table-borderless table-dark-custom w-100 m-0">
                 <thead>
                     <tr>
-                        <th>Cuenta</th>
+                        <th>Cliente / Producto</th>
                         <th>Tipo</th>
                         <th>Monto</th>
                         <th>Fecha</th>
@@ -186,27 +189,36 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var tx in Model.TransaccionesRecientes)
+                    @if (Model.RecentTransactions == null || !Model.RecentTransactions.Any())
                     {
-                        var esDeposito = tx.TransactionType == 0;
                         <tr>
-                            <td>@tx.AccountNumber</td>
-                            <td class="@(esDeposito ? "text-deposit" : "text-withdrawal")">
-                                @(esDeposito ? "Depósito" : "Retiro")
-                            </td>
-                            <td>DOP @tx.Amount.ToString("N0")</td>
-                            <td style="color: #8b94a5;">@tx.TransactionDate.ToString("dd/MM/yy")</td>
-                            <td>
-                                @if (tx.Status == "Completada")
-                                {
-                                    <span class="badge rounded-pill badge-success">@tx.Status</span>
-                                }
-                                else
-                                {
-                                    <span class="badge rounded-pill badge-warning">@tx.Status</span>
-                                }
+                            <td colspan="5" class="text-center" style="padding: 30px; color: #8b94a5;">
+                                Aún no hay transacciones registradas.
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        foreach (var tx in Model.RecentTransactions)
+                        {
+                            // Validamos si la transacción es un depósito basado en el texto de la API
+                            var esDeposito = tx.TransactionType.ToUpper().Contains("DEPOSIT");
+
+                            <tr>
+                                <td>
+                                    <div style="color: white; font-weight: 500;">@tx.ClientName</div>
+                                    <div style="font-size: 0.8rem; color: #8b94a5;">@tx.ProductName</div>
+                                </td>
+                                <td class="@(esDeposito ? "text-deposit" : "text-withdrawal")">
+                                    @(esDeposito ? "Depósito" : "Retiro")
+                                </td>
+                                <td>DOP @tx.Amount.ToString("N2")</td>
+                                <td style="color: #8b94a5;">@tx.Date.ToString("dd/MM/yy HH:mm")</td>
+                                <td>
+                                    <span class="badge rounded-pill badge-success">Completada</span>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>

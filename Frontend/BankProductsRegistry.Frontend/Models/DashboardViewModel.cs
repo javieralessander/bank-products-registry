@@ -1,20 +1,21 @@
 ﻿namespace BankProductsRegistry.Frontend.Models
 {
-    public class TransactionResponse
-    {
-        public string AccountNumber { get; set; } = string.Empty;
-        public int TransactionType { get; set; } // 0 = Deposito, 1 = Retiro
-        public decimal Amount { get; set; }
-        public DateTime TransactionDate { get; set; }
-        public string Status { get; set; } = "Completada";
-    }
-
     public class DashboardViewModel
     {
-        public int TotalClientes { get; set; }
-        public int ProductosActivos { get; set; }
-        public int TotalTransacciones { get; set; }
-        public decimal VolumenColocado { get; set; }
-        public List<TransactionResponse> TransaccionesRecientes { get; set; } = new();
+        public int TotalClients { get; set; }
+        public int ActiveProducts { get; set; }
+        public int TotalTransactions { get; set; }
+        public decimal TotalVolume { get; set; }
+        public List<RecentTransactionViewModel> RecentTransactions { get; set; } = new();
+    }
+
+    public class RecentTransactionViewModel
+    {
+        public int TransactionId { get; set; }
+        public string ClientName { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public string TransactionType { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public DateTimeOffset Date { get; set; }
     }
 }

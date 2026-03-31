@@ -1,28 +1,57 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
+    [Authorize]
     public class DashboardController : Controller
     {
-        public IActionResult Index()
+        private readonly HttpClient _httpClient;
+
+        public DashboardController(HttpClient httpClient)
         {
-            var viewModel = new DashboardViewModel
+            _httpClient = httpClient;
+            // Asegúrate de que el puerto sea el de tu API
+            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            // 1. Obtener el token de la sesión actual
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+
+            // 2. Adjuntar el token a la petición
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            DashboardViewModel dashboardData = new();
+
+            try
             {
-                TotalClientes = 1248,
-                ProductosActivos = 3891,
-                TotalTransacciones = 24670,
-                VolumenColocado = 4200000m,
-                TransaccionesRecientes = new List<TransactionResponse>
+                // 3. Llamar al endpoint que acabamos de crear en la API
+                var response = await _httpClient.GetAsync("api/reports/dashboard");
+
+                if (response.IsSuccessStatusCode)
                 {
-                    new TransactionResponse { AccountNumber = "CC-0042341", TransactionType = 0, Amount = 12500m, TransactionDate = new DateTime(2026, 3, 24), Status = "Completada" },
-                    new TransactionResponse { AccountNumber = "PR-0078912", TransactionType = 1, Amount = 5000m, TransactionDate = new DateTime(2026, 3, 24), Status = "Completada" },
-                    new TransactionResponse { AccountNumber = "IN-0012378", TransactionType = 0, Amount = 80000m, TransactionDate = new DateTime(2026, 3, 23), Status = "Completada" },
-                    new TransactionResponse { AccountNumber = "CC-0042888", TransactionType = 0, Amount = 3200m, TransactionDate = new DateTime(2026, 3, 23), Status = "Pendiente" },
-                    new TransactionResponse { AccountNumber = "PR-0099001", TransactionType = 1, Amount = 15000m, TransactionDate = new DateTime(2026, 3, 22), Status = "Completada" }
+                    var jsonString = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    dashboardData = JsonSerializer.Deserialize<DashboardViewModel>(jsonString, options) ?? new();
                 }
-            };
-            return View(viewModel);
+                else
+                {
+                    ViewBag.ErrorMessage = "No se pudieron cargar las métricas. El servidor devolvió un error.";
+                }
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
+            }
+
+            // 4. Mandar los datos reales a la vista
+            return View(dashboardData);
         }
     }
 }
