@@ -88,37 +88,15 @@ namespace BankProductsRegistry.Frontend.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            if (User.Identity is not null && User.Identity.IsAuthenticated)
-                return RedirectToAction("Index", "Dashboard");
-
-            return View();
+            TempData["ErrorMessage"] = "El registro público está deshabilitado. Solicita la creación de tu usuario a un administrador.";
+            return RedirectToAction("Login");
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public IActionResult Register(RegisterViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
-
-            try
-            {
-                var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
-                // Asegúrate de que esta ruta sea la correcta en tu API
-                var response = await _httpClient.PostAsync("api/users/register", jsonContent);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Cuenta creada exitosamente. Por favor, inicia sesión.";
-                    return RedirectToAction("Login");
-                }
-
-                ViewBag.ErrorMessage = "Hubo un problema al crear la cuenta. Verifica los datos ingresados.";
-            }
-            catch (HttpRequestException)
-            {
-                ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
-            }
-
-            return View(model);
+            TempData["ErrorMessage"] = "El registro público está deshabilitado. Solicita la creación de tu usuario a un administrador.";
+            return RedirectToAction("Login");
         }
 
         /* ========================
