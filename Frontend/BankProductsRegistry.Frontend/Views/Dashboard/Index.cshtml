@@ -1,0 +1,271 @@
+﻿@model BankProductsRegistry.Frontend.Models.DashboardViewModel
+
+<style>
+    /* El truco principal: forzar el color oscuro en las tarjetas */
+    .custom-card {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 20px;
+        border: 1px solid #2d3348;
+    }
+
+    /* Bordes superiores de colores */
+    .card-top-clientes {
+        border-top: 4px solid #3b82f6;
+    }
+
+    .card-top-productos {
+        border-top: 4px solid #10b981;
+    }
+
+    .card-top-transacciones {
+        border-top: 4px solid #f59e0b;
+    }
+
+    .card-top-volumen {
+        border-top: 4px solid #ef4444;
+    }
+
+    /* Textos de las tarjetas */
+    .stat-title {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #ffffff;
+        line-height: 1.2;
+        margin-bottom: 5px;
+    }
+
+    .stat-desc {
+        color: #8b94a5;
+        font-size: 0.75rem;
+    }
+
+    /* Buscador superior */
+    .search-input {
+        background-color: #1a1d2d;
+        border: 1px solid #2d3348;
+        color: white;
+        border-radius: 8px;
+        padding: 8px 16px;
+        width: 250px;
+        outline: none;
+    }
+
+        .search-input::placeholder {
+            color: #8b94a5;
+        }
+
+    /* Tabla transparente para que tome el color oscuro de la tarjeta */
+    .table-dark-custom {
+        --bs-table-bg: transparent; /* Anula el fondo blanco por defecto de Bootstrap */
+        color: #a0aabf;
+        margin-bottom: 0;
+    }
+
+        /* Forzamos a que las filas y celdas sean transparentes */
+        .table-dark-custom tr, .table-dark-custom th, .table-dark-custom td {
+            background-color: transparent !important;
+        }
+
+        .table-dark-custom th {
+            border-bottom: 1px solid #2d3348;
+            color: #8b94a5;
+            font-weight: normal;
+            padding: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .table-dark-custom td {
+            border-bottom: 1px solid #2d3348;
+            padding: 15px 0;
+            vertical-align: middle;
+            color: #ffffff;
+        }
+
+        .table-dark-custom tr:last-child td {
+            border-bottom: none;
+        }
+
+    /* Etiquetas de Estado */
+    .badge-success {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        font-weight: normal;
+        padding: 5px 10px;
+    }
+
+    .badge-warning {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        font-weight: normal;
+        padding: 5px 10px;
+    }
+
+    .text-deposit {
+        color: #10b981;
+    }
+
+    .text-withdrawal {
+        color: #ef4444;
+    }
+
+    /* Barras de progreso de la derecha */
+    .progress-custom {
+        height: 6px;
+        background-color: #2d3348;
+        border-radius: 10px;
+        margin-top: 8px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="text-white fw-bold mb-1">Dashboard</h3>
+        <div style="color: #8b94a5; font-size: 0.9rem;">Bienvenido, aquí está el resumen del sistema</div>
+    </div>
+    <div>
+        <input type="text" class="search-input" placeholder="Buscar...">
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="custom-card card-top-clientes">
+            <div class="stat-title">Total Clientes</div>
+            <div class="stat-value">@Model.TotalClientes.ToString("N0")</div>
+            <div class="stat-desc">12 nuevos este mes</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="custom-card card-top-productos">
+            <div class="stat-title">Productos Activos</div>
+            <div class="stat-value">@Model.ProductosActivos.ToString("N0")</div>
+            <div class="stat-desc">78 nuevos esta semana</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="custom-card card-top-transacciones">
+            <div class="stat-title">Transacciones</div>
+            <div class="stat-value">@Model.TotalTransacciones.ToString("N0")</div>
+            <div class="stat-desc">340 registradas hoy</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="custom-card card-top-volumen">
+            <div class="stat-title">Vol. Colocado</div>
+            <div class="stat-value">DOP @(Model.VolumenColocado / 1000000)M</div>
+            <div class="stat-desc">5.3% vs mes anterior</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="custom-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-white fw-bold m-0">Transacciones Recientes</h6>
+                <a href="#" class="text-decoration-none" style="color: #3b82f6; font-size: 0.85rem;">Ver todas &rarr;</a>
+            </div>
+            <table class="table table-borderless table-dark-custom w-100 m-0">
+                <thead>
+                    <tr>
+                        <th>Cuenta</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tx in Model.TransaccionesRecientes)
+                    {
+                        var esDeposito = tx.TransactionType == 0;
+                        <tr>
+                            <td>@tx.AccountNumber</td>
+                            <td class="@(esDeposito ? "text-deposit" : "text-withdrawal")">
+                                @(esDeposito ? "Depósito" : "Retiro")
+                            </td>
+                            <td>DOP @tx.Amount.ToString("N0")</td>
+                            <td style="color: #8b94a5;">@tx.TransactionDate.ToString("dd/MM/yy")</td>
+                            <td>
+                                @if (tx.Status == "Completada")
+                                {
+                                    <span class="badge rounded-pill badge-success">@tx.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill badge-warning">@tx.Status</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="custom-card h-100">
+            <h6 class="text-white fw-bold mb-4">Tipos de Producto</h6>
+
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.85rem; color: #8b94a5;">
+                    <span>Tarjeta Crédito</span>
+                    <span class="text-white">32%</span>
+                </div>
+                <div class="progress progress-custom">
+                    <div class="progress-bar" style="width: 32%; background-color: #3b82f6;"></div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.85rem; color: #8b94a5;">
+                    <span>Préstamo</span>
+                    <span class="text-white">28%</span>
+                </div>
+                <div class="progress progress-custom">
+                    <div class="progress-bar" style="width: 28%; background-color: #ef4444;"></div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.85rem; color: #8b94a5;">
+                    <span>Inversión</span>
+                    <span class="text-white">20%</span>
+                </div>
+                <div class="progress progress-custom">
+                    <div class="progress-bar" style="width: 20%; background-color: #10b981;"></div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.85rem; color: #8b94a5;">
+                    <span>Certificado</span>
+                    <span class="text-white">12%</span>
+                </div>
+                <div class="progress progress-custom">
+                    <div class="progress-bar" style="width: 12%; background-color: #f59e0b;"></div>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.85rem; color: #8b94a5;">
+                    <span>Cta. Ahorro</span>
+                    <span class="text-white">8%</span>
+                </div>
+                <div class="progress progress-custom">
+                    <div class="progress-bar" style="width: 8%; background-color: #8b5cf6;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "Backend\\BankProductsRegistry.Api\\BankProductsRegistry.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Frontend\\BankProductsRegistry.Frontend\\BankProductsRegistry.Frontend.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
