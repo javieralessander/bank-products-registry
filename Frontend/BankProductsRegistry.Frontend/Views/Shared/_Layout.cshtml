@@ -1,4 +1,24 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+
+@{
+    // 1. Extraemos el Nombre y el Rol del usuario logueado
+    var userName = User.Identity?.Name ?? "Usuario";
+    var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Sin Rol";
+
+    // 2. Calculamos las iniciales
+    var initials = "";
+    var nameParts = userName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    if (nameParts.Length > 1)
+    {
+        initials = $"{nameParts[0][0]}{nameParts[1][0]}".ToUpper();
+    }
+    else if (nameParts.Length == 1)
+    {
+        initials = nameParts[0].Substring(0, Math.Min(2, nameParts[0].Length)).ToUpper();
+    }
+}
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -7,9 +27,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #0f111a; /* Fondo principal muy oscuro */
-            --bg-sidebar: #151928; /* Fondo de la barra lateral */
-            --border-color: #2d3348; /* Color de las líneas divisorias */
+            --bg-main: #0f111a;
+            --bg-sidebar: #151928;
+            --border-color: #2d3348;
             --text-main: #ffffff;
             --text-muted: #8b94a5;
         }
@@ -72,19 +92,35 @@
             display: inline-block;
         }
 
-        .user-profile {
+        /* NUEVO: Tarjeta de Perfil de Usuario */
+        .user-profile-wrapper {
             position: absolute;
             bottom: 20px;
-            padding: 0 24px;
+            left: 0;
+            width: 100%;
+            padding: 0 15px; /* Margen a los lados */
+        }
+
+        .user-profile-card {
+            background-color: #1a1d2d;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Separación entre la info y el botón */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .user-info-container {
             display: flex;
             align-items: center;
-            gap: 15px;
-            width: 100%;
+            gap: 12px;
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             background-color: #3b82f6;
             border-radius: 50%;
             display: flex;
@@ -92,7 +128,38 @@
             justify-content: center;
             color: white;
             flex-shrink: 0;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
+
+        .user-details {
+            flex-grow: 1;
+            min-width: 0; /* Necesario para que el truncate funcione */
+        }
+
+        /* NUEVO: Botón de Logout Ancho Completo */
+        .logout-btn-full {
+            background-color: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+            .logout-btn-full:hover {
+                background-color: #ef4444;
+                color: white;
+                border-color: #ef4444;
+            }
     </style>
 </head>
 <body>
@@ -101,20 +168,36 @@
             <div class="col-2 sidebar">
                 <a href="#" class="brand-logo"><span class="brand-dot"></span> BankRED</a>
                 <ul class="nav flex-column mb-auto">
-                    <li class="nav-item w-100"><a href="#" class="nav-link active">Dashboard</a></li>
+                    <li class="nav-item w-100"><a href="@Url.Action("Index", "Dashboard")" class="nav-link active">Dashboard</a></li>
                     <li class="nav-item w-100"><a href="#" class="nav-link">Clientes</a></li>
                     <li class="nav-item w-100"><a href="#" class="nav-link">Prod. Financieros</a></li>
                     <li class="nav-item w-100"><a href="#" class="nav-link">Prod. Contratados</a></li>
                     <li class="nav-item w-100"><a href="#" class="nav-link">Transacciones</a></li>
                     <li class="nav-item w-100"><a href="#" class="nav-link">Empleados</a></li>
                 </ul>
-                <div class="user-profile">
-                    <div class="user-avatar">JM</div>
-                    <div>
-                        <div class="text-white" style="font-size: 0.9rem; line-height: 1;">Javier Montero</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Admin</div>
+
+                <div class="user-profile-wrapper">
+                    <div class="user-profile-card">
+                        <div class="user-info-container">
+                            <div class="user-avatar">@initials</div>
+                            <div class="user-details">
+                                <div class="text-white text-truncate" style="font-size: 0.9rem; font-weight: 500;" title="@userName">@userName</div>
+                                <div class="text-truncate" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" title="@userRole">@userRole</div>
+                            </div>
+                        </div>
+
+                        <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0 p-0 w-100">
+                            <button type="submit" class="logout-btn-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z" />
+                                    <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z" />
+                                </svg>
+                                Cerrar sesión
+                            </button>
+                        </form>
                     </div>
                 </div>
+
             </div>
             <div class="col-10 main-content">
                 @RenderBody()

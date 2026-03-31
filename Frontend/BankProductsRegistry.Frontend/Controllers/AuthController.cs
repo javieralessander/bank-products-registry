@@ -46,13 +46,25 @@ namespace BankProductsRegistry.Frontend.Controllers
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                     var authResult = JsonSerializer.Deserialize<AuthResponse>(jsonString, options);
 
-                    if (authResult != null && !string.IsNullOrEmpty(authResult.Token))
+                    // AHORA BUSCAMOS EL "AccessToken"
+                    if (authResult != null && !string.IsNullOrEmpty(authResult.AccessToken))
                     {
                         var claims = new List<Claim>
                         {
-                            new Claim(ClaimTypes.Name, model.Email),
-                            new Claim("jwt_token", authResult.Token)
+                            // Guardamos el nombre real (ej: "Administrador General")
+                            new Claim(ClaimTypes.Name, authResult.User?.FullName ?? model.UserNameOrEmail),
+                            new Claim(ClaimTypes.Email, authResult.User?.Email ?? string.Empty),
+                            new Claim("jwt_token", authResult.AccessToken) // Guardamos el JWT
                         };
+
+                        // AQUI AGREGAMOS LOS ROLES MAGICAMENTE
+                        if (authResult.User?.Roles != null)
+                        {
+                            foreach (var role in authResult.User.Roles)
+                            {
+                                claims.Add(new Claim(ClaimTypes.Role, role));
+                            }
+                        }
 
                         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
@@ -61,12 +73,10 @@ namespace BankProductsRegistry.Frontend.Controllers
                     }
                 }
 
-                // Si la API responde con error 401 (No autorizado)
-                ViewBag.ErrorMessage = "Credenciales inválidas. Verifica tu correo y contraseña.";
+                ViewBag.ErrorMessage = "Credenciales inválidas. Verifica tu usuario y contraseña.";
             }
             catch (HttpRequestException)
             {
-                // Si la API está apagada, entra aquí y NO crashea la app
                 ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
             }
 

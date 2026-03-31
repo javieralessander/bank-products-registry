@@ -151,9 +151,9 @@
 
         <form asp-action="Login" method="post">
             <div class="mb-3">
-                <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Correo Electrónico</label>
-                <input asp-for="Email" class="form-control" placeholder="ejemplo@banco.com" />
-                <span asp-validation-for="Email" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Usuario o Correo</label>
+                <input asp-for="UserNameOrEmail" class="form-control" placeholder="admin o admin@bank.local" />
+                <span asp-validation-for="UserNameOrEmail" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
             </div>
 
             <div class="mb-4">

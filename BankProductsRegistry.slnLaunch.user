@@ -4,11 +4,13 @@
     "Projects": [
       {
         "Path": "Backend\\BankProductsRegistry.Api\\BankProductsRegistry.Api.csproj",
-        "Action": "Start"
+        "Action": "Start",
+        "DebugTarget": "https"
       },
       {
         "Path": "Frontend\\BankProductsRegistry.Frontend\\BankProductsRegistry.Frontend.csproj",
-        "Action": "Start"
+        "Action": "Start",
+        "DebugTarget": "https"
       }
     ]
   }
