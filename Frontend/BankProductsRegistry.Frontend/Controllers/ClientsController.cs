@@ -95,5 +95,109 @@ namespace BankProductsRegistry.Frontend.Controllers
             // Si falló, regresamos la vista con los datos que el usuario ya había escrito para que no empiece de cero
             return View(model);
         }
+        // --- 4. VER PORTFOLIO (DETALLES) ---
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // 1. Buscamos los datos básicos del cliente
+            var clientResponse = await _httpClient.GetAsync($"api/clients/{id}");
+            if (!clientResponse.IsSuccessStatusCode) return RedirectToAction("Index");
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var clientJson = await clientResponse.Content.ReadAsStringAsync();
+            var clientData = JsonSerializer.Deserialize<ClientViewModel>(clientJson, options);
+
+            // 2. Buscamos el reporte financiero (Portfolio)
+            var portfolioResponse = await _httpClient.GetAsync($"api/reports/clients/{id}/portfolio");
+            ClientPortfolioViewModel portfolioData = new();
+
+            if (portfolioResponse.IsSuccessStatusCode)
+            {
+                var portfolioJson = await portfolioResponse.Content.ReadAsStringAsync();
+                portfolioData = JsonSerializer.Deserialize<ClientPortfolioViewModel>(portfolioJson, options) ?? new();
+            }
+
+            // 3. Empaquetamos todo en la bandeja combinada
+            var model = new ClientDetailsViewModel
+            {
+                Client = clientData ?? new(),
+                Portfolio = portfolioData
+            };
+
+            return View(model);
+        }
+
+        // --- 5. ELIMINAR CLIENTE ---
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.DeleteAsync($"api/clients/{id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // Si la API devuelve 409 (Conflicto), es porque tiene productos registrados
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    TempData["ErrorMessage"] = "No se puede eliminar el cliente porque tiene productos bancarios registrados.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Hubo un error al intentar eliminar el cliente.";
+                }
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // --- 6. CARGAR VISTA DE EDITAR ---
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.GetAsync($"api/clients/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var client = JsonSerializer.Deserialize<ClientViewModel>(jsonString, options);
+                return View(client);
+            }
+            return RedirectToAction("Index");
+        }
+
+        // --- 7. GUARDAR EDICIÓN ---
+        [HttpPost]
+        public async Task<IActionResult> Edit(int id, ClientViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model), System.Text.Encoding.UTF8, "application/json");
+            // Nota: Tu API usa PUT para actualizar clientes
+            var response = await _httpClient.PutAsync($"api/clients/{id}", jsonContent);
+
+            if (response.IsSuccessStatusCode) return RedirectToAction("Index");
+
+            ViewBag.ErrorMessage = "Error al actualizar. Verifica que la cédula/correo no pertenezcan a otro cliente.";
+            return View(model);
+        }
+
+
+
+
     }
 }

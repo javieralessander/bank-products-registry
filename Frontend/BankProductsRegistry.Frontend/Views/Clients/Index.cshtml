@@ -62,6 +62,7 @@
         .btn-primary-custom:hover {
             background-color: #2563eb;
             transform: translateY(-1px);
+            color: white;
         }
 
     /* Tabla */
@@ -110,7 +111,12 @@
         gap: 12px;
         color: white;
         font-weight: 500;
+        transition: 0.2s;
     }
+
+        .client-name-cell:hover {
+            color: #3b82f6;
+        }
 
     .client-avatar {
         width: 32px;
@@ -168,6 +174,13 @@
     <div class="page-subtitle">Gestión de clientes registrados en el sistema</div>
 </div>
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.9rem; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <div class="toolbar">
     <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre, cédula o correo..." />
 
@@ -210,14 +223,18 @@
 
                     <tr>
                         <td>@client.Id</td>
+
                         <td>
-                            <div class="client-name-cell">
-                                <div class="client-avatar">
-                                    @initial
+                            <a href="@Url.Action("Details", "Clients", new { id = client.Id })" style="text-decoration: none;">
+                                <div class="client-name-cell">
+                                    <div class="client-avatar">
+                                        @initial
+                                    </div>
+                                    @fullName
                                 </div>
-                                @fullName
-                            </div>
+                            </a>
                         </td>
+
                         <td>@client.NationalId</td>
                         <td>@client.Email</td>
                         <td>@client.Phone</td>
@@ -231,41 +248,57 @@
                                 <span class="badge-inactive">Inactivo</span>
                             }
                         </td>
+
                         <td>
-                            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
-                            </svg>
-                            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-                            </svg>
+                            <a href="@Url.Action("Details", "Clients", new { id = client.Id })" class="action-icon text-decoration-none" title="Ver Portfolio">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                                    <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                                </svg>
+                            </a>
+
+                            <a href="@Url.Action("Edit", "Clients", new { id = client.Id })" class="action-icon text-decoration-none" title="Editar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                                </svg>
+                            </a>
+
+                            <form asp-action="Delete" asp-route-id="@client.Id" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente a @fullName?');">
+                                <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;" title="Eliminar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 }
             }
         </tbody>
     </table>
-    <script>
-        document.getElementById('searchInput').addEventListener('keyup', function () {
-            // Obtenemos el texto que escribió el usuario y lo pasamos a minúsculas
-            var searchValue = this.value.toLowerCase();
-            // Obtenemos todas las filas de la tabla
-            var tableRows = document.querySelectorAll('#clientsTableBody tr');
-
-            tableRows.forEach(function (row) {
-                // Verificamos que sea una fila de datos reales (que tenga más de 1 celda)
-                if (row.cells.length > 1) {
-                    // Obtenemos todo el texto de la fila (Nombre, cédula, email, etc.)
-                    var rowText = row.textContent.toLowerCase();
-
-                    // Si el texto de la fila incluye lo que buscamos, la mostramos. Si no, la ocultamos.
-                    if (rowText.includes(searchValue)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                }
-            });
-        });
-    </script>
 </div>
+
+<script>
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        // Obtenemos el texto que escribió el usuario y lo pasamos a minúsculas
+        var searchValue = this.value.toLowerCase();
+        // Obtenemos todas las filas de la tabla
+        var tableRows = document.querySelectorAll('#clientsTableBody tr');
+
+        tableRows.forEach(function (row) {
+            // Verificamos que sea una fila de datos reales (que tenga más de 1 celda)
+            if (row.cells.length > 1) {
+                // Obtenemos todo el texto de la fila (Nombre, cédula, email, etc.)
+                var rowText = row.textContent.toLowerCase();
+
+                // Si el texto de la fila incluye lo que buscamos, la mostramos. Si no, la ocultamos.
+                if (rowText.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    });
+</script>

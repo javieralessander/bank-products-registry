@@ -1,0 +1,327 @@
+﻿@model BankProductsRegistry.Frontend.Models.ClientDetailsViewModel
+@{
+    ViewData["Title"] = "Portfolio del Cliente";
+    var initial = string.IsNullOrEmpty(Model.Client.FirstName) ? "U" : Model.Client.FirstName.Substring(0, 1).ToUpper();
+}
+
+<style>
+    .page-header {
+        margin-bottom: 20px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+        color: #8b94a5;
+        font-size: 0.85rem;
+    }
+
+    .back-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 15px;
+        transition: 0.3s;
+    }
+
+        .back-link:hover {
+            color: #60a5fa;
+        }
+
+    /* Tarjeta Principal del Cliente */
+    .client-header-card {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .client-info-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .client-avatar-large {
+        width: 56px;
+        height: 56px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .client-name-large {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 2px;
+    }
+
+    .client-meta {
+        font-size: 0.85rem;
+        color: #8b94a5;
+    }
+
+    .api-badge {
+        background-color: #151928;
+        border: 1px solid #2d3348;
+        color: #3b82f6;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-family: monospace;
+    }
+
+    /* Tarjetas de Estadísticas */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background-color: #1a1d2d;
+        border-radius: 8px;
+        border: 1px solid #2d3348;
+        padding: 16px;
+        border-left: 4px solid #3b82f6;
+    }
+
+        .stat-card.green {
+            border-left-color: #10b981;
+        }
+
+        .stat-card.yellow {
+            border-left-color: #eab308;
+        }
+
+        .stat-card.red {
+            border-left-color: #ef4444;
+        }
+
+    .stat-title {
+        color: #8b94a5;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        color: white;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    /* Tabla de Cuentas */
+    .section-title-sm {
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .export-link {
+        color: #3b82f6;
+        font-size: 0.85rem;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .table-container {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        overflow: hidden;
+    }
+
+    .custom-table {
+        width: 100%;
+        color: #d1d5db;
+        font-size: 0.85rem;
+        border-collapse: collapse;
+    }
+
+        .custom-table th {
+            padding: 12px 20px;
+            font-weight: 500;
+            color: #8b94a5;
+            border-bottom: 1px solid #2d3348;
+            text-align: left;
+        }
+
+        .custom-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2d3348;
+            vertical-align: middle;
+        }
+
+        .custom-table tr:hover {
+            background-color: #1f2335;
+        }
+
+        .custom-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .text-green {
+        color: #10b981;
+        font-weight: 500;
+    }
+
+    .text-red {
+        color: #ef4444;
+        font-weight: 500;
+    }
+
+    .text-blue {
+        color: #3b82f6;
+        font-weight: 500;
+    }
+
+    .badge-movements {
+        background-color: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .badge-active {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-inactive {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Portfolio del Cliente</h1>
+    <div class="page-subtitle">GET /api/reports/clients/@Model.Client.Id/portfolio</div>
+</div>
+
+<a asp-action="Index" class="back-link">&larr; Volver a Clientes</a>
+
+<div class="client-header-card">
+    <div class="client-info-wrapper">
+        <div class="client-avatar-large">@initial</div>
+        <div>
+            <div class="client-name-large">@Model.Client.FirstName @Model.Client.LastName</div>
+            <div class="client-meta">
+                @Model.Client.Email &nbsp;&bull;&nbsp; Cédula: @Model.Client.NationalId &nbsp;&bull;&nbsp; Cliente ID: #@Model.Client.Id.ToString("D3")
+            </div>
+        </div>
+    </div>
+    <div class="api-badge">GET /reports/clients/@Model.Client.Id/portfolio</div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-title">Total Cuentas</div>
+        <div class="stat-value">@Model.Portfolio.TotalProducts</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-title">Balance Actual</div>
+        <div class="stat-value">DOP @Model.Portfolio.CurrentBalance.ToString("N2")</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-title">Total Depósitos</div>
+        <div class="stat-value">DOP @Model.Portfolio.TotalDeposits.ToString("N2")</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-title">Total Retiros</div>
+        <div class="stat-value">DOP @Model.Portfolio.TotalWithdrawals.ToString("N2")</div>
+    </div>
+</div>
+
+<div class="section-title-sm">
+    <span>Detalle de Cuentas y Movimientos</span>
+    <a href="#" class="export-link">Exportar reporte &nearr;</a>
+</div>
+
+<div class="table-container">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>N° Cuenta</th>
+                <th>Producto</th>
+                <th>Balance</th>
+                <th>F. Apertura</th>
+                <th>Transacciones</th>
+                <th>Depósitos</th>
+                <th>Retiros</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Portfolio.Accounts == null || !Model.Portfolio.Accounts.Any())
+            {
+                <tr>
+                    <td colspan="9" class="text-center" style="padding: 40px; color: #8b94a5;">
+                        <i class="bi bi-wallet2 fs-2 d-block mb-2"></i>
+                        El cliente no tiene productos financieros registrados.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                int i = 1;
+                foreach (var account in Model.Portfolio.Accounts)
+                {
+                    <tr>
+                        <td>@(i++)</td>
+                        <td class="text-blue">@account.AccountNumber</td>
+                        <td>@account.ProductName</td>
+                        <td class="text-green">DOP @account.Amount.ToString("N2")</td>
+                        <td>@account.OpenDate.ToString("dd/MM/yy")</td>
+                        <td><span class="badge-movements">@account.TotalTransactions movs</span></td>
+                        <td class="text-green">DOP @account.Deposits.ToString("N2")</td>
+                        <td class="text-red">DOP @account.Withdrawals.ToString("N2")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(account.Status) && account.Status.ToUpper().Contains("ACTIV"))
+                            {
+                                <span class="badge-active">@account.Status</span>
+                            }
+                            else
+                            {
+                                <span class="badge-inactive">@account.Status</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
