@@ -1,4 +1,5 @@
 var builder = WebApplication.CreateBuilder(args);
+var isRailway = !string.IsNullOrWhiteSpace(builder.Configuration["PORT"]);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -37,7 +38,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!isRailway)
+{
+    app.UseHttpsRedirection();
+}
 app.UseRouting();
 app.UseAuthentication();
 
