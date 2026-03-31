@@ -43,6 +43,7 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" })).AllowAnonymous();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
