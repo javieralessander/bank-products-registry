@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
@@ -15,8 +15,6 @@ namespace BankProductsRegistry.Frontend.Controllers
         public ClientsController(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            // Asegúrate de que este puerto sea el mismo de tu API
-            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
         }
 
         // 1. Mostrar la tabla con todos los clientes

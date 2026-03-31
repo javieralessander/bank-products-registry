@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 
 @{
     // 1. Extraemos el Nombre y el Rol del usuario logueado
@@ -173,7 +173,7 @@
                     <li class="nav-item w-100"><a href="@Url.Action("Index", "FinancialProducts")" class="nav-link">Prod. Financieros</a></li>
                     <li class="nav-item w-100"><a href="#" class="nav-link">Prod. Contratados</a></li>
                     <li class="nav-item w-100"><a href="@Url.Action("Index", "Transactions")" class="nav-link">Transacciones</a>
-                    <li class="nav-item w-100"><a href="#" class="nav-link">Empleados</a></li>
+                    <li class="nav-item w-100"><a href="@Url.Action("Index", "Employees")" class="nav-link">Empleados</a></li>
                 </ul>
 
                 <div class="user-profile-wrapper">

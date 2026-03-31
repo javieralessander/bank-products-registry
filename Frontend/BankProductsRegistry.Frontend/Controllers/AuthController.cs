@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Text;
 using BankProductsRegistry.Frontend.Models;
@@ -15,7 +15,6 @@ namespace BankProductsRegistry.Frontend.Controllers
         public AuthController(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
         }
 
         /* ========================

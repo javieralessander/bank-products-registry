@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
@@ -14,8 +14,6 @@ namespace BankProductsRegistry.Frontend.Controllers
         public DashboardController(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            // Asegúrate de que el puerto sea el de tu API
-            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
         }
 
         public async Task<IActionResult> Index()

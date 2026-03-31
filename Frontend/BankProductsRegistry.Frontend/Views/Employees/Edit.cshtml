@@ -1,0 +1,163 @@
+@model BankProductsRegistry.Frontend.Models.EmployeeViewModel
+@{
+    ViewData["Title"] = "Editar Empleado";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    * { transition: all 0.2s ease-in-out; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; color: white; letter-spacing: -0.5px; }
+    .page-subtitle { color: var(--text-muted); font-size: 0.95rem; }
+    .form-card-premium {
+        background-color: #151928; border-radius: 16px; border: 1px solid #2d3348;
+        padding: 40px; max-width: 850px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        position: relative; overflow: hidden;
+    }
+    .form-card-premium::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+        background: linear-gradient(90deg, #eab308 0%, #ca8a04 100%);
+    }
+    .section-title {
+        font-size: 1rem; font-weight: 600; color: white; margin-bottom: 20px;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .section-divider { border-top: 1px solid #2d3348; margin: 30px 0; }
+    .form-label-custom {
+        color: #8b94a5; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px;
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    .input-group-custom { position: relative; display: flex; align-items: center; }
+    .input-icon { position: absolute; left: 15px; color: #4b5563; font-size: 1.1rem; z-index: 10; }
+    .form-control-custom {
+        background-color: #0f111a; border: 1px solid #2d3348; color: white;
+        padding: 12px 14px 12px 45px; border-radius: 10px; font-size: 0.95rem;
+    }
+    .form-control-custom:focus {
+        background-color: #0f111a; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.15); color: white;
+    }
+    .form-control-custom::placeholder { color: #4b5563; font-size: 0.9rem; }
+    .form-switch .form-check-input {
+        background-color: #2d3348; border-color: #2d3348; cursor: pointer;
+        width: 2.5em; height: 1.25em; margin-top: 0.15rem;
+    }
+    .form-switch .form-check-input:checked {
+        background-color: #10b981; border-color: #10b981;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    }
+    .form-check-label-custom { color: white; cursor: pointer; user-select: none; font-size: 0.95rem; padding-left: 10px; }
+    .btn-save-premium {
+        background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%); border: none; padding: 12px 30px;
+        font-weight: 600; border-radius: 10px; color: white; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(37,99,235,0.2);
+    }
+    .btn-save-premium:hover {
+        background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+        transform: translateY(-2px); box-shadow: 0 6px 18px rgba(37,99,235,0.35); color: white;
+    }
+    .btn-cancel-custom {
+        background-color: transparent; border: 1px solid #2d3348; padding: 12px 30px;
+        font-weight: 600; border-radius: 10px; color: #8b94a5; text-decoration: none; font-size: 0.95rem;
+    }
+    .btn-cancel-custom:hover { background-color: #2d3348; color: white; border-color: #2d3348; }
+    .alert-custom {
+        background-color: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.15);
+        border-radius: 10px; font-size: 0.9rem; padding: 15px; margin-bottom: 25px;
+        display: flex; align-items: center; gap: 10px;
+    }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Editar Empleado</h1>
+    <div class="page-subtitle">Modifica la información del empleado #@Model.Id en el sistema.</div>
+</div>
+
+<div class="form-card-premium">
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-custom">
+            <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+            <div><strong>Error de Validación:</strong> @ViewBag.ErrorMessage</div>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post" autocomplete="off">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="section-title">
+            <i class="bi bi-person-badge-fill text-primary"></i> Datos Personales
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <label class="form-label-custom">Nombres</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-person input-icon"></i>
+                    <input asp-for="FirstName" class="form-control-custom w-100" required />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Apellidos</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-person-add input-icon"></i>
+                    <input asp-for="LastName" class="form-control-custom w-100" required />
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section-title">
+            <i class="bi bi-briefcase-fill text-primary"></i> Información Laboral
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <label class="form-label-custom">Código de Empleado</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-upc-scan input-icon"></i>
+                    <input asp-for="EmployeeCode" class="form-control-custom w-100" required />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Departamento</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-building input-icon"></i>
+                    <input asp-for="Department" class="form-control-custom w-100" required />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <label class="form-label-custom">Correo Electrónico</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-envelope-at input-icon"></i>
+                    <input asp-for="Email" type="email" class="form-control-custom w-100" required />
+                </div>
+            </div>
+        </div>
+
+        <div class="row align-items-center bg-dark p-3 rounded-3 mb-4" style="background-color: #0f111a !important; border: 1px solid #2d3348;">
+            <div class="col">
+                <div style="font-weight: 500; color: white; font-size: 0.95rem;">Estado Operativo</div>
+                <div style="font-size: 0.8rem; color: #8b94a5;">Define si el empleado está habilitado para operar en plataforma.</div>
+            </div>
+            <div class="col-auto">
+                <div class="form-check form-switch p-0 m-0 d-flex align-items-center">
+                    <input asp-for="IsActive" class="form-check-input m-0" type="checkbox" id="switchStatus" />
+                    <label class="form-check-label-custom" for="switchStatus">Activo</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 justify-content-end mt-5 pt-3 border-top" style="border-color: #2d3348 !important;">
+            <a asp-action="Index" class="btn-cancel-custom">
+                <i class="bi bi-arrow-left me-1"></i> Cancelar
+            </a>
+            <button type="submit" class="btn-save-premium">
+                <i class="bi bi-cloud-check-fill me-2"></i> Actualizar Empleado
+            </button>
+        </div>
+    </form>
+</div>

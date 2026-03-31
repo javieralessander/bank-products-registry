@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+DotEnvLoader.LoadIfExists();
 var builder = WebApplication.CreateBuilder(args);
 
 var port = builder.Configuration["PORT"];

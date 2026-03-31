@@ -1,57 +1,60 @@
-using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using BankProductsRegistry.Frontend.Models;
 using Microsoft.AspNetCore.Authorization;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Text;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
     [Authorize]
-    public class FinancialProductsController : Controller
+    public class EmployeesController : Controller
     {
         private readonly HttpClient _httpClient;
 
-        public FinancialProductsController(HttpClient httpClient)
+        public EmployeesController(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             try
             {
-                var response = await _httpClient.GetAsync("api/financial-products");
+                var response = await _httpClient.GetAsync("api/employees");
                 if (response.IsSuccessStatusCode)
                 {
                     var jsonString = await response.Content.ReadAsStringAsync();
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var products = JsonSerializer.Deserialize<List<FinancialProductViewModel>>(jsonString, options);
-                    return View(products ?? new List<FinancialProductViewModel>());
+                    var employees = JsonSerializer.Deserialize<List<EmployeeViewModel>>(jsonString, options);
+                    return View(employees ?? new List<EmployeeViewModel>());
                 }
-                ViewBag.ErrorMessage = "Hubo un problema al cargar el catálogo de productos.";
+
+                ViewBag.ErrorMessage = "Hubo un problema al cargar los empleados desde el servidor.";
             }
             catch (HttpRequestException)
             {
                 ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
             }
-            return View(new List<FinancialProductViewModel>());
+
+            return View(new List<EmployeeViewModel>());
         }
 
-        // --- 1. CREAR PRODUCTO (GET) ---
         [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
-        // --- CREAR PRODUCTO (POST) ---
         [HttpPost]
-        public async Task<IActionResult> Create(FinancialProductViewModel model)
+        public async Task<IActionResult> Create(EmployeeViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
 
@@ -59,25 +62,33 @@ namespace BankProductsRegistry.Frontend.Controllers
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
-
             try
             {
-                var response = await _httpClient.PostAsync("api/financial-products", jsonContent);
-                if (response.IsSuccessStatusCode) return RedirectToAction("Index");
+                var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("api/employees", jsonContent);
 
-                // MEJORA: Capturamos el error real de la API
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToAction("Index");
+                }
+
+                if (response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    ViewBag.ErrorMessage = "No tienes permisos para crear empleados (solo Admin).";
+                    return View(model);
+                }
+
                 var errorDetail = await response.Content.ReadAsStringAsync();
-                ViewBag.ErrorMessage = $"La API rechazó la creación. Detalle: {errorDetail}";
+                ViewBag.ErrorMessage = $"No se pudo crear el empleado. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
             {
-                ViewBag.ErrorMessage = "Error de conexión al guardar el producto.";
+                ViewBag.ErrorMessage = "Error de conexión al crear el empleado.";
             }
+
             return View(model);
         }
 
-        // --- 3. EDITAR PRODUCTO (GET) ---
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -87,22 +98,25 @@ namespace BankProductsRegistry.Frontend.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/financial-products/{id}");
+                var response = await _httpClient.GetAsync($"api/employees/{id}");
                 if (response.IsSuccessStatusCode)
                 {
                     var jsonString = await response.Content.ReadAsStringAsync();
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var product = JsonSerializer.Deserialize<FinancialProductViewModel>(jsonString, options);
-                    return View(product);
+                    var employee = JsonSerializer.Deserialize<EmployeeViewModel>(jsonString, options);
+                    return View(employee);
                 }
             }
-            catch (HttpRequestException) { }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] = "Error de conexión al cargar el empleado.";
+            }
+
             return RedirectToAction("Index");
         }
 
-        // --- 4. EDITAR PRODUCTO (POST) ---
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, FinancialProductViewModel model)
+        public async Task<IActionResult> Edit(int id, EmployeeViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
 
@@ -110,25 +124,30 @@ namespace BankProductsRegistry.Frontend.Controllers
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
-
             try
             {
-                var response = await _httpClient.PutAsync($"api/financial-products/{id}", jsonContent);
+                var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PutAsync($"api/employees/{id}", jsonContent);
+
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
-                // MEJORA: Capturamos el error real de la API
+                if (response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    ViewBag.ErrorMessage = "No tienes permisos para editar empleados (solo Admin).";
+                    return View(model);
+                }
+
                 var errorDetail = await response.Content.ReadAsStringAsync();
-                ViewBag.ErrorMessage = $"La API rechazó la actualización. Detalle: {errorDetail}";
+                ViewBag.ErrorMessage = $"No se pudo actualizar el empleado. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
             {
-                ViewBag.ErrorMessage = "Error de conexión al actualizar.";
+                ViewBag.ErrorMessage = "Error de conexión al actualizar el empleado.";
             }
+
             return View(model);
         }
 
-        // --- 5. ELIMINAR PRODUCTO (POST) ---
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -138,18 +157,27 @@ namespace BankProductsRegistry.Frontend.Controllers
 
             try
             {
-                var response = await _httpClient.DeleteAsync($"api/financial-products/{id}");
+                var response = await _httpClient.DeleteAsync($"api/employees/{id}");
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
-                // Si la API devuelve Conflict (409), el producto está en uso
-                TempData["ErrorMessage"] = response.StatusCode == System.Net.HttpStatusCode.Conflict
-                    ? "No se puede eliminar el producto porque está siendo usado en cuentas bancarias activas."
-                    : "Error al intentar eliminar el producto financiero.";
+                if (response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] = "No tienes permisos para eliminar empleados (solo Admin).";
+                }
+                else if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    TempData["ErrorMessage"] = "No se puede eliminar el empleado porque tiene productos bancarios asignados.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Hubo un error al intentar eliminar el empleado.";
+                }
             }
             catch (HttpRequestException)
             {
-                TempData["ErrorMessage"] = "Error de conexión al eliminar.";
+                TempData["ErrorMessage"] = "Error de conexión al eliminar el empleado.";
             }
+
             return RedirectToAction("Index");
         }
     }
