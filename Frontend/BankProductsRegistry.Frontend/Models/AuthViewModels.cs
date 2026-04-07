@@ -16,15 +16,18 @@ namespace BankProductsRegistry.Frontend.Models
     public class AuthResponse
     {
         public string AccessToken { get; set; } = string.Empty;
-        public AuthenticatedUserResponse User { get; set; }
+        public AuthenticatedUserResponse? User { get; set; }
     }
 
     // El objeto de usuario que viene dentro de la respuesta
     public class AuthenticatedUserResponse
     {
+        public int Id { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public int? ClientId { get; set; }
         public List<string> Roles { get; set; } = new();
     }
 
@@ -41,8 +44,16 @@ namespace BankProductsRegistry.Frontend.Models
         [EmailAddress(ErrorMessage = "Formato de correo inválido.")]
         public string Email { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "La cédula es obligatoria.")]
+        [MaxLength(25, ErrorMessage = "La cédula no debe exceder 25 caracteres.")]
+        public string NationalId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El teléfono es obligatorio.")]
+        [MaxLength(25, ErrorMessage = "El teléfono no debe exceder 25 caracteres.")]
+        public string Phone { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "La contraseña es obligatoria.")]
-        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
+        [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres.")]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Debes confirmar tu contraseña.")]

@@ -4,7 +4,9 @@ using System.Text;
 using System.Text.Json;
 using BankProductsRegistry.Frontend.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
@@ -28,6 +30,12 @@ namespace BankProductsRegistry.Frontend.Controllers
             try
             {
                 var response = await _httpClient.GetAsync("api/users");
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    await HttpContext.SignOutAsync();
+                    return RedirectToAction("Login", "Auth");
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     var jsonString = await response.Content.ReadAsStringAsync();
@@ -47,15 +55,25 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            await LoadClientOptionsAsync();
             return View(new UserCreateViewModel());
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(UserCreateViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (string.Equals(model.Role, "Cliente", StringComparison.OrdinalIgnoreCase) && !model.ClientId.HasValue)
+            {
+                ModelState.AddModelError(nameof(model.ClientId), "Debes seleccionar un cliente para el rol Cliente.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadClientOptionsAsync();
+                return View(model);
+            }
 
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
@@ -71,6 +89,12 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return RedirectToAction("Index");
                 }
 
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    await HttpContext.SignOutAsync();
+                    return RedirectToAction("Login", "Auth");
+                }
+
                 var detail = await response.Content.ReadAsStringAsync();
                 ViewBag.ErrorMessage = $"No se pudo crear el usuario. Detalle: {detail}";
             }
@@ -79,6 +103,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
             }
 
+            await LoadClientOptionsAsync();
             return View(model);
         }
 
@@ -96,6 +121,12 @@ namespace BankProductsRegistry.Frontend.Controllers
             };
 
             var response = await _httpClient.SendAsync(request);
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                await HttpContext.SignOutAsync();
+                return RedirectToAction("Login", "Auth");
+            }
+
             if (response.IsSuccessStatusCode)
             {
                 TempData["SuccessMessage"] = "Estado de usuario actualizado.";
@@ -123,6 +154,12 @@ namespace BankProductsRegistry.Frontend.Controllers
             };
 
             var response = await _httpClient.SendAsync(request);
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                await HttpContext.SignOutAsync();
+                return RedirectToAction("Login", "Auth");
+            }
+
             if (response.IsSuccessStatusCode)
             {
                 TempData["SuccessMessage"] = "Rol de usuario actualizado.";
@@ -152,6 +189,12 @@ namespace BankProductsRegistry.Frontend.Controllers
             var payload = new { model.NewPassword };
             var json = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"api/users/{model.Id}/reset-password", json);
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                await HttpContext.SignOutAsync();
+                return RedirectToAction("Login", "Auth");
+            }
+
             if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NoContent)
             {
                 TempData["SuccessMessage"] = "Contraseña restablecida correctamente.";
@@ -163,6 +206,30 @@ namespace BankProductsRegistry.Frontend.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+        private async Task LoadClientOptionsAsync()
+        {
+            var token = User.FindFirstValue("jwt_token");
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                ViewBag.ClientOptions = new List<ClientViewModel>();
+                return;
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.GetAsync("api/clients");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                ViewBag.ClientOptions = new List<ClientViewModel>();
+                return;
+            }
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var clients = JsonSerializer.Deserialize<List<ClientViewModel>>(jsonString, options) ?? new List<ClientViewModel>();
+            ViewBag.ClientOptions = clients;
         }
     }
 }

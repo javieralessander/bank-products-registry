@@ -212,6 +212,25 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
+                        <label class="form-label">Cédula</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-person-vcard input-icon"></i>
+                            <input asp-for="NationalId" class="form-control" placeholder="001-0000000-0" />
+                        </div>
+                        <span asp-validation-for="NationalId" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-telephone input-icon"></i>
+                            <input asp-for="Phone" class="form-control" placeholder="809-000-0000" />
+                        </div>
+                        <span asp-validation-for="Phone" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label">Contraseña</label>
                         <div class="input-group-custom">
                             <i class="bi bi-lock input-icon"></i>

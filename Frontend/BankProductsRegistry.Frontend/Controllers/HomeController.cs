@@ -10,7 +10,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 // Verifica los roles exactos que usas en tu backend
-                if (User.IsInRole("Admin") || User.IsInRole("Employee"))
+                if (User.IsInRole("Admin") || User.IsInRole("Operador") || User.IsInRole("Consulta"))
                 {
                     return RedirectToAction("Index", "Dashboard");
                 }

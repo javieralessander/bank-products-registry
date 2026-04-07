@@ -24,6 +24,7 @@
     .badge-role-admin { background-color: rgba(245, 158, 11, 0.12); color: #f59e0b; border-color: rgba(245, 158, 11, 0.25); }
     .badge-role-operator { background-color: rgba(59, 130, 246, 0.12); color: #60a5fa; border-color: rgba(59, 130, 246, 0.25); }
     .badge-role-readonly { background-color: rgba(139, 148, 165, 0.14); color: #cbd5e1; border-color: rgba(139, 148, 165, 0.3); }
+    .badge-role-client { background-color: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.28); }
     .inline-form { display: flex; gap: 8px; align-items: center; }
     .input-small, .select-small {
         background: #0f111a; color: #d1d5db; border: 1px solid #2d3348;
@@ -90,12 +91,15 @@
                         ? "badge-role-admin"
                         : currentRole == "Operador"
                             ? "badge-role-operator"
+                            : currentRole == "Cliente"
+                                ? "badge-role-client"
                             : "badge-role-readonly";
                     var activeSelected = user.IsActive ? "selected" : null;
                     var inactiveSelected = user.IsActive ? null : "selected";
                     var adminSelected = currentRole == "Admin" ? "selected" : null;
                     var operatorSelected = currentRole == "Operador" ? "selected" : null;
                     var readonlySelected = currentRole == "Consulta" ? "selected" : null;
+                    var clientSelected = currentRole == "Cliente" ? "selected" : null;
                     <tr>
                         <td>@user.Id</td>
                         <td>@user.UserName</td>
@@ -129,6 +133,7 @@
                                         <option value="Admin" selected="@adminSelected">Admin</option>
                                         <option value="Operador" selected="@operatorSelected">Operador</option>
                                         <option value="Consulta" selected="@readonlySelected">Consulta</option>
+                                        <option value="Cliente" selected="@clientSelected">Cliente</option>
                                     </select>
                                     <button type="submit" class="btn-mini">Rol</button>
                                 </form>

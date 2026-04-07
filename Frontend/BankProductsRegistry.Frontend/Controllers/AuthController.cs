@@ -5,6 +5,7 @@ using BankProductsRegistry.Frontend.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
+using System.Net;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
@@ -28,7 +29,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             {
                 var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
-                if (roles.Contains("Admin") || roles.Contains("Employee"))
+                if (roles.Contains("Admin") || roles.Contains("Operador") || roles.Contains("Consulta"))
                 {
                     return RedirectToAction("Index", "Dashboard");
                 }
@@ -72,11 +73,18 @@ namespace BankProductsRegistry.Frontend.Controllers
                             }
                         }
 
+                        if (authResult.User?.ClientId is int clientId)
+                        {
+                            claims.Add(new Claim("client_id", clientId.ToString()));
+                        }
+
                         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-                        // ---> REDIRECCIONAMIENTO POR ROLES POST-LOGIN <---
-                        if (authResult.User?.Roles != null && (authResult.User.Roles.Contains("Admin") || authResult.User.Roles.Contains("Employee")))
+                        if (authResult.User?.Roles != null &&
+                            (authResult.User.Roles.Contains("Admin") ||
+                             authResult.User.Roles.Contains("Operador") ||
+                             authResult.User.Roles.Contains("Consulta")))
                         {
                             return RedirectToAction("Index", "Dashboard");
                         }
@@ -122,7 +130,15 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return RedirectToAction("Login");
                 }
 
-                // Si la API devuelve un 400 Bad Request
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var detail = await response.Content.ReadAsStringAsync();
+                    ViewBag.ErrorMessage = string.IsNullOrWhiteSpace(detail)
+                        ? "No se pudo crear la cuenta. Verifica los datos."
+                        : $"No se pudo crear la cuenta. {detail}";
+                    return View(model);
+                }
+
                 ViewBag.ErrorMessage = "No se pudo crear la cuenta. Verifica que los datos sean correctos o que el correo no esté en uso.";
             }
             catch (HttpRequestException)
