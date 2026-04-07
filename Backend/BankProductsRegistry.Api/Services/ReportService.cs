@@ -40,6 +40,7 @@ public sealed class ReportService(BankProductsDbContext dbContext) : IReportServ
                     .Where(transaction =>
                         transaction.TransactionType == TransactionType.Withdrawal ||
                         transaction.TransactionType == TransactionType.Payment ||
+                        transaction.TransactionType == TransactionType.Transfer ||
                         transaction.TransactionType == TransactionType.Fee)
                     .Sum(transaction => transaction.Amount);
 
@@ -90,6 +91,7 @@ public sealed class ReportService(BankProductsDbContext dbContext) : IReportServ
             $"{data.Client.FirstName} {data.Client.LastName}",
             data.Client.NationalId,
             data.Client.Email,
+            data.Client.Phone ?? string.Empty,
             generatedAt,
             score,
             overview,
@@ -107,6 +109,126 @@ public sealed class ReportService(BankProductsDbContext dbContext) : IReportServ
 
         return BuildCreditScore(data.Client, data.AccountProducts, DateTimeOffset.UtcNow);
     }
+
+    public async Task<ClientTransactionStatementDto?> GetClientTransactionStatementAsync(
+        int clientId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        int? accountProductId,
+        CancellationToken cancellationToken = default)
+    {
+        var client = await dbContext.Clients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == clientId, cancellationToken);
+
+        if (client is null)
+        {
+            return null;
+        }
+
+        var startUtc = new DateTimeOffset(fromDate.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        var endUtc = new DateTimeOffset(toDate.ToDateTime(new TimeOnly(23, 59, 59)), TimeSpan.Zero);
+
+        var accountsQuery = dbContext.AccountProducts
+            .AsNoTracking()
+            .Where(ap => ap.ClientId == clientId);
+
+        if (accountProductId.HasValue)
+        {
+            accountsQuery = accountsQuery.Where(ap => ap.Id == accountProductId.Value);
+        }
+
+        var accountProducts = await accountsQuery
+            .Include(ap => ap.FinancialProduct)
+            .OrderBy(ap => ap.AccountNumber)
+            .ToListAsync(cancellationToken);
+
+        if (accountProducts.Count == 0)
+        {
+            return null;
+        }
+
+        var ids = accountProducts.Select(ap => ap.Id).ToArray();
+        var allTransactions = await dbContext.Transactions
+            .AsNoTracking()
+            .Where(t => ids.Contains(t.AccountProductId))
+            .OrderBy(t => t.TransactionDate)
+            .ThenBy(t => t.Id)
+            .ToListAsync(cancellationToken);
+
+        var sections = new List<StatementAccountSectionDto>();
+        foreach (var ap in accountProducts)
+        {
+            var txsForAccount = allTransactions.Where(t => t.AccountProductId == ap.Id).ToList();
+            var rows = BuildStatementRows(ap.Amount, txsForAccount, startUtc, endUtc);
+            sections.Add(new StatementAccountSectionDto(
+                ap.Id,
+                ap.AccountNumber,
+                ap.FinancialProduct?.ProductName ?? "Producto",
+                rows));
+        }
+
+        var name = $"{client.FirstName} {client.LastName}".Trim();
+        return new ClientTransactionStatementDto(
+            client.Id,
+            name,
+            client.Email ?? string.Empty,
+            fromDate,
+            toDate,
+            DateTimeOffset.UtcNow,
+            sections);
+    }
+
+    private static IReadOnlyList<StatementTransactionRowDto> BuildStatementRows(
+        decimal currentAccountAmount,
+        List<BankTransaction> allForAccount,
+        DateTimeOffset startUtc,
+        DateTimeOffset endUtc)
+    {
+        static decimal Signed(BankTransaction t) =>
+            t.TransactionType == TransactionType.Deposit ? t.Amount : -t.Amount;
+
+        var netAfter = allForAccount
+            .Where(t => t.TransactionDate > endUtc)
+            .Sum(Signed);
+
+        var balanceAfterLastInRange = currentAccountAmount - netAfter;
+
+        var inRange = allForAccount
+            .Where(t => t.TransactionDate >= startUtc && t.TransactionDate <= endUtc)
+            .OrderBy(t => t.TransactionDate)
+            .ThenBy(t => t.Id)
+            .ToList();
+
+        var netInRange = inRange.Sum(Signed);
+        var running = balanceAfterLastInRange - netInRange;
+
+        var rows = new List<StatementTransactionRowDto>();
+        foreach (var t in inRange)
+        {
+            running += Signed(t);
+            rows.Add(new StatementTransactionRowDto(
+                t.TransactionDate,
+                TransactionTypeLabel(t.TransactionType),
+                t.ReferenceNumber,
+                string.IsNullOrWhiteSpace(t.Description) ? null : t.Description.Trim(),
+                Signed(t),
+                running));
+        }
+
+        return rows;
+    }
+
+    private static string TransactionTypeLabel(TransactionType t) =>
+        t switch
+        {
+            TransactionType.Deposit => "Depósito",
+            TransactionType.Withdrawal => "Retiro",
+            TransactionType.Payment => "Pago",
+            TransactionType.Transfer => "Transferencia",
+            TransactionType.Fee => "Cargo",
+            _ => t.ToString()
+        };
 
     private async Task<ClientCreditData?> LoadCreditDataAsync(int clientId, CancellationToken cancellationToken)
     {

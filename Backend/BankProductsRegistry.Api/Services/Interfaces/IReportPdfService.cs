@@ -11,4 +11,6 @@ public interface IReportPdfService
     byte[] BuildCreditScorePdf(ClientCreditScoreReportDto dto);
 
     byte[] BuildDashboardPdf(DashboardSummaryDto dto);
+
+    byte[] BuildTransactionStatementPdf(ClientTransactionStatementDto dto);
 }

@@ -61,6 +61,58 @@ public sealed class ReportsController(
         return File(pdf, "application/pdf", $"portafolio-cliente-{clientId}.pdf");
     }
 
+    [HttpGet("clients/{clientId:int}/transactions-statement/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetClientTransactionStatementPdfAsync(
+        int clientId,
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        [FromQuery] int? accountProductId,
+        CancellationToken cancellationToken)
+    {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
+        if (from > to)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rango no valido",
+                "La fecha inicial no puede ser posterior a la fecha final."));
+        }
+
+        var rangeDays = (to.ToDateTime(TimeOnly.MaxValue) - from.ToDateTime(TimeOnly.MinValue)).TotalDays;
+        if (rangeDays > 366)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rango no valido",
+                "El periodo no puede superar 366 dias."));
+        }
+
+        var report = await reportService.GetClientTransactionStatementAsync(
+            clientId,
+            from,
+            to,
+            accountProductId,
+            cancellationToken);
+
+        if (report is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Sin datos",
+                "No se encontraron productos o movimientos para exportar."));
+        }
+
+        var pdf = reportPdfService.BuildTransactionStatementPdf(report);
+        return File(pdf, "application/pdf", $"estado-cuenta-{clientId}-{from:yyyyMMdd}-{to:yyyyMMdd}.pdf");
+    }
+
     [HttpGet("clients/{clientId:int}/credit-history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
