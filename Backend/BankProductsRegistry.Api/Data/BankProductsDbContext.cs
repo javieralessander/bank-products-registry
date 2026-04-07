@@ -22,6 +22,8 @@ public sealed class BankProductsDbContext(DbContextOptions<BankProductsDbContext
     public DbSet<AccountProductTravelNoticeCountry> AccountProductTravelNoticeCountries => Set<AccountProductTravelNoticeCountry>();
     public DbSet<BankTransaction> Transactions => Set<BankTransaction>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<SystemNotification> SystemNotifications => Set<SystemNotification>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

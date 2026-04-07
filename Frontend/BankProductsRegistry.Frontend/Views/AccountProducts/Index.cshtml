@@ -30,22 +30,6 @@
         align-items: center;
     }
 
-    .search-input-top {
-        background-color: #1a1d2d;
-        border: 1px solid #2d3348;
-        color: white;
-        border-radius: 8px;
-        padding: 10px 16px;
-        width: 250px;
-        outline: none;
-        transition: 0.3s;
-    }
-
-        .search-input-top:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-        }
-
     .btn-primary-custom {
         background-color: #3b82f6;
         border: none;
@@ -310,7 +294,6 @@
             {
                 foreach (var contract in Model.Products)
                 {
-                    // Lógica para color de estado basada en los Enums de la API
                     var rawStatus = contract.Status?.ToLower() ?? "";
                     string badgeClass = "status-cerrado";
                     string displayStatus = "Desconocido";
@@ -349,8 +332,8 @@
                                     </svg>
                                 </a>
 
-                                <form asp-action="Delete" asp-route-id="@contract.Id" method="post" class="m-0 p-0" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este contrato? Esta acción no se puede deshacer.');">
-                                    <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;" title="Eliminar">
+                                <form asp-action="Delete" asp-route-id="@contract.Id" method="post" class="m-0 p-0" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este contrato?');">
+                                    <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
                                             <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
@@ -367,7 +350,7 @@
 </div>
 
 <script>
-    // Filtro por pestañas de Estado
+    // Lógica de filtrado original
     const tabs = document.querySelectorAll('.f-tab');
     const rows = document.querySelectorAll('.contract-row');
 
@@ -375,12 +358,9 @@
         tab.addEventListener('click', function() {
             tabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
-
             const filter = this.getAttribute('data-filter');
-
             rows.forEach(row => {
                 const rowStatus = row.getAttribute('data-status');
-
                 if (filter === 'Todos' || rowStatus.includes(filter)) {
                     row.style.display = '';
                 } else {
@@ -390,22 +370,11 @@
         });
     });
 
-    // Buscador en tiempo real por N° Cuenta, Cliente o Producto
     document.getElementById('tableSearch').addEventListener('keyup', function () {
         const searchValue = this.value.toLowerCase();
-
         rows.forEach(row => {
             const textContent = row.textContent.toLowerCase();
-            const activeFilter = document.querySelector('.f-tab.active').getAttribute('data-filter');
-            const rowStatus = row.getAttribute('data-status');
-
-            const matchFilter = activeFilter === 'Todos' || rowStatus.includes(activeFilter);
-
-            if (textContent.includes(searchValue) && matchFilter) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = textContent.includes(searchValue) ? '' : 'none';
         });
     });
 </script>

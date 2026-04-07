@@ -70,6 +70,18 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : ApiCont
         };
 
         dbContext.Clients.Add(client);
+
+        // ---> NOTIFICACIÓN AUTOMÁTICA <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Nuevo cliente registrado",
+            Message = $"El cliente {client.FirstName} {client.LastName} fue registrado en el sistema exitosamente.",
+            Type = "Sistema",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ---------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return CreatedAtRoute(GetClientByIdRoute, new { id = client.Id }, Map(client));
@@ -237,5 +249,4 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : ApiCont
             client.IsActive,
             client.CreatedAt,
             client.UpdatedAt);
-
 }

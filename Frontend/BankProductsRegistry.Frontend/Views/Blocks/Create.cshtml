@@ -1,0 +1,248 @@
+﻿@using System.Text.Json
+@model BankProductsRegistry.Frontend.Models.BlockCreateViewModel
+@{
+    ViewData["Title"] = "Nuevo Bloqueo";
+}
+
+<style>
+    body {
+        background-color: #0b0f19 !important;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .custom-modal {
+        background-color: #151928;
+        border-radius: 16px;
+        border: 1px solid #2d3348;
+        width: 100%;
+        max-width: 700px;
+        padding: 30px 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .modal-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 25px;
+        border-bottom: 1px solid #2d3348;
+        padding-bottom: 15px;
+    }
+
+    .modal-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: white;
+        margin: 0;
+    }
+
+    .modal-subtitle {
+        color: #8b94a5;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .close-btn {
+        background: transparent;
+        border: none;
+        color: #6b7280;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: 0.2s;
+        text-decoration: none;
+    }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+    .form-label-small {
+        color: #ef4444;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control-dark {
+        background-color: #0f111a;
+        border: 1px solid #2d3348;
+        color: white;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        width: 100%;
+    }
+
+        .form-control-dark:focus {
+            border-color: #ef4444;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(239,68,68,0.2);
+        }
+
+    .status-group {
+        display: flex;
+        background-color: #0f111a;
+        border-radius: 8px;
+        border: 1px solid #2d3348;
+        overflow: hidden;
+    }
+
+    .status-option {
+        flex: 1;
+        text-align: center;
+    }
+
+        .status-option input[type="radio"] {
+            display: none;
+        }
+
+        .status-option label {
+            display: block;
+            padding: 12px;
+            color: #8b94a5;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            margin: 0;
+        }
+
+        .status-option input[type="radio"]:checked + label {
+            background-color: #ef4444;
+            color: white;
+        }
+
+    .btn-create {
+        background-color: #ef4444;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+        .btn-create:hover {
+            background-color: #dc2626;
+        }
+
+    .btn-cancel {
+        background: transparent;
+        border: none;
+        color: #8b94a5;
+        font-weight: 600;
+        padding: 12px 25px;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .btn-cancel:hover {
+            color: white;
+        }
+</style>
+
+<div class="modal-overlay">
+    <div class="custom-modal">
+        <div class="modal-header-custom">
+            <div>
+                <h2 class="modal-title" style="color: #ef4444;">Aplicar Nuevo Bloqueo</h2>
+                <div class="modal-subtitle">Restringe temporal o permanentemente una cuenta bancaria</div>
+            </div>
+            <a asp-action="Index" class="close-btn">&times;</a>
+        </div>
+
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px;">
+                @ViewBag.ErrorMessage
+            </div>
+        }
+
+        <form asp-action="Create" method="post">
+
+            <div class="mb-4">
+                <div class="form-label-small">CUENTA A BLOQUEAR</div>
+                <select asp-for="AccountProductId" class="form-control-dark" required>
+                    <option value="" disabled selected>Selecciona la cuenta afectada...</option>
+                    @if (ViewBag.AccountProducts != null)
+                    {
+                        var accounts = JsonDocument.Parse(ViewBag.AccountProducts.ToString()).RootElement.EnumerateArray();
+                        foreach (var a in accounts)
+                        {
+                            // Solo mostramos cuentas que no estén cerradas/canceladas
+                            if (a.GetProperty("status").GetString() != "cerrado" && a.GetProperty("status").GetString() != "cancelado")
+                            {
+                                <option value="@a.GetProperty("id").GetInt32()">@a.GetProperty("accountNumber").GetString() — @a.GetProperty("clientName").GetString() (@a.GetProperty("financialProductName").GetString())</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-label-small">TIPO DE BLOQUEO</div>
+                <div class="status-group">
+                    <div class="status-option">
+                        <input type="radio" asp-for="BlockType" id="btTemp" value="1" onclick="toggleEndDate(true)" checked>
+                        <label for="btTemp">Temporal</label>
+                    </div>
+                    <div class="status-option">
+                        <input type="radio" asp-for="BlockType" id="btPerm" value="2" onclick="toggleEndDate(false)">
+                        <label for="btPerm">Permanente</label>
+                    </div>
+                    <div class="status-option">
+                        <input type="radio" asp-for="BlockType" id="btFraud" value="3" onclick="toggleEndDate(false)">
+                        <label for="btFraud">Fraude</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12" id="endDateContainer">
+                    <div class="form-label-small">FECHA DE FIN (Requerida para temporales)</div>
+                    <input asp-for="EndsAt" type="date" class="form-control-dark" id="endDateInput" min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-label-small">MOTIVO DEL BLOQUEO</div>
+                <textarea asp-for="Reason" class="form-control-dark" rows="3" placeholder="Describe detalladamente por qué se está bloqueando esta cuenta..." required></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3 mt-4 border-top pt-4" style="border-color: #2d3348 !important;">
+                <a asp-action="Index" class="btn-cancel">Cancelar</a>
+                <button type="submit" class="btn-create">Bloquear Cuenta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleEndDate(show) {
+        const container = document.getElementById('endDateContainer');
+        const input = document.getElementById('endDateInput');
+
+        if (show) {
+            container.style.display = 'block';
+            input.setAttribute('required', 'required');
+        } else {
+            container.style.display = 'none';
+            input.removeAttribute('required');
+            input.value = ''; // Limpiamos el valor
+        }
+    }
+</script>

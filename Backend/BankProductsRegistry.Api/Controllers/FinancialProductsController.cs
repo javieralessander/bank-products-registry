@@ -62,6 +62,18 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
         };
 
         dbContext.FinancialProducts.Add(product);
+
+        // ---> NOTIFICACIÓN AUTOMÁTICA <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Nuevo producto financiero",
+            Message = $"El producto '{product.ProductName}' fue agregado al catálogo oficial del banco.",
+            Type = "Sistema",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ---------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return CreatedAtRoute(GetFinancialProductByIdRoute, new { id = product.Id }, Map(product));
@@ -204,5 +216,4 @@ public sealed class FinancialProductsController(BankProductsDbContext dbContext)
             product.MinimumOpeningAmount,
             product.CreatedAt,
             product.UpdatedAt);
-
 }

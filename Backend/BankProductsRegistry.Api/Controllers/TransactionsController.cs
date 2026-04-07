@@ -111,6 +111,18 @@ public sealed class TransactionsController(
         };
 
         dbContext.Transactions.Add(transaction);
+
+        // ---> NOTIFICACIÓN AUTOMÁTICA DE TRANSACCIÓN <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Nueva transacción registrada",
+            Message = $"Se registró un movimiento de DOP {transaction.Amount:N2} en el producto #{transaction.AccountProductId}.",
+            Type = "Transaccion",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // -------------------------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await dbContext.Entry(transaction).Reference(currentTransaction => currentTransaction.AccountProduct).LoadAsync(cancellationToken);

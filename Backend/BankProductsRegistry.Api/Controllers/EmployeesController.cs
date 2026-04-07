@@ -70,6 +70,18 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
         };
 
         dbContext.Employees.Add(employee);
+
+        // ---> NOTIFICACIÓN AUTOMÁTICA <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Nuevo empleado registrado",
+            Message = $"El empleado {employee.FirstName} {employee.LastName} ({employee.Department}) ha sido registrado en el sistema.",
+            Type = "Sistema",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ---------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return CreatedAtRoute(GetEmployeeByIdRoute, new { id = employee.Id }, Map(employee));
@@ -237,5 +249,4 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
             employee.IsActive,
             employee.CreatedAt,
             employee.UpdatedAt);
-
 }

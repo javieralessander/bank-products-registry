@@ -1,0 +1,272 @@
+﻿@using System.Text.Json
+@model BankProductsRegistry.Frontend.Models.TravelNoticeCreateViewModel
+@{
+    ViewData["Title"] = "Registrar Viaje";
+}
+
+<style>
+    body {
+        background-color: #0b0f19 !important;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .custom-modal {
+        background-color: #151928;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        width: 100%;
+        max-width: 650px;
+        padding: 30px 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .modal-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 25px;
+        border-bottom: 1px solid #2d3348;
+        padding-bottom: 15px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: white;
+        margin: 0 0 4px 0;
+    }
+
+    .modal-subtitle {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .close-btn {
+        background: transparent;
+        border: 1px solid #2d3348;
+        color: #6b7280;
+        font-size: 1.2rem;
+        cursor: pointer;
+        text-decoration: none;
+        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+    }
+
+        .close-btn:hover {
+            background-color: #1f2335;
+            color: white;
+        }
+
+    .form-section-title {
+        color: #3b82f6;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .form-label-small {
+        color: #8b94a5;
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .form-control-dark {
+        background-color: #0b0d14;
+        border: 1px solid #2d3348;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        width: 100%;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+
+        .form-control-dark:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+        }
+
+    /* Ocultar el icono de calendario por defecto en Chrome/Edge para mantener el diseño limpio */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.5;
+        cursor: pointer;
+    }
+
+    .info-box {
+        background-color: rgba(59,130,246,0.1);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-left: 3px solid #3b82f6;
+        padding: 12px 16px;
+        border-radius: 6px;
+        color: #60a5fa;
+        font-size: 0.85rem;
+        margin-top: 5px;
+        margin-bottom: 25px;
+    }
+
+    .modal-footer-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-top: 1px solid #2d3348;
+        padding-top: 20px;
+        margin-top: 10px;
+    }
+
+    .footer-note {
+        color: #4b5563;
+        font-size: 0.75rem;
+    }
+
+    .btn-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-cancel {
+        background-color: #1f2335;
+        border: 1px solid #2d3348;
+        padding: 10px 20px;
+        border-radius: 8px;
+        color: #d1d5db;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .btn-cancel:hover {
+            background-color: #2d3348;
+            color: white;
+        }
+
+    .btn-create {
+        background-color: #3b82f6;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-create:hover {
+            background-color: #2563eb;
+        }
+</style>
+
+<div class="modal-overlay">
+    <div class="custom-modal">
+        <div class="modal-header-custom">
+            <div>
+                <h2 class="modal-title">Registrar Notificación de Viaje</h2>
+                <div class="modal-subtitle">Las tarjetas del cliente serán habilitadas en el destino</div>
+            </div>
+            <a asp-action="Index" class="close-btn">&times;</a>
+        </div>
+
+        <form asp-action="Create" method="post">
+
+            <div class="mb-4">
+                <div class="form-section-title">CLIENTE Y TARJETA</div>
+                <label class="form-label-small">Cliente y Tarjeta a habilitar *</label>
+                <select asp-for="AccountProductId" class="form-control-dark" required>
+                    <option value="" disabled selected>Selecciona el cliente y su tarjeta...</option>
+                    @if (ViewBag.AccountProducts != null)
+                    {
+                        var accounts = JsonDocument.Parse(ViewBag.AccountProducts.ToString()).RootElement.EnumerateArray();
+                        foreach (var a in accounts)
+                        {
+                            if (a.GetProperty("status").GetString() == "activo")
+                            {
+                                <option value="@a.GetProperty("id").GetInt32()">@a.GetProperty("clientName").GetString() — @a.GetProperty("financialProductName").GetString() (@a.GetProperty("accountNumber").GetString())</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="form-section-title mt-4">DESTINO Y FECHAS</div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label-small">País de Destino *</label>
+                    <select asp-for="CountryCode" class="form-control-dark" required>
+                        <option value="" disabled selected>Seleccione un país...</option>
+                        <option value="US">🇺🇸 Estados Unidos</option>
+                        <option value="ES">🇪🇸 España</option>
+                        <option value="MX">🇲🇽 México</option>
+                        <option value="CO">🇨🇴 Colombia</option>
+                        <option value="CA">🇨🇦 Canadá</option>
+                        <option value="GB">🇬🇧 Reino Unido</option>
+                        <option value="FR">🇫🇷 Francia</option>
+                        <option value="IT">🇮🇹 Italia</option>
+                        <option value="DE">🇩🇪 Alemania</option>
+                        <option value="BR">🇧🇷 Brasil</option>
+                        <option value="AR">🇦🇷 Argentina</option>
+                        <option value="CL">🇨🇱 Chile</option>
+                        <option value="PE">🇵🇪 Perú</option>
+                        <option value="PA">🇵🇦 Panamá</option>
+                        <option value="CR">🇨🇷 Costa Rica</option>
+                        <option value="JP">🇯🇵 Japón</option>
+                        <option value="CN">🇨🇳 China</option>
+                        <option value="AE">🇦🇪 Emiratos Árabes</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label-small">Ciudad(es)</label>
+                    <input asp-for="CitiesOrReason" class="form-control-dark" placeholder="Miami, Orlando, New York" required />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label-small">Fecha de Salida *</label>
+                    <input asp-for="StartsAt" type="date" class="form-control-dark" min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label-small">Fecha de Regreso *</label>
+                    <input asp-for="EndsAt" type="date" class="form-control-dark" min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                </div>
+            </div>
+
+            <div class="info-box">
+                Las tarjetas serán habilitadas automáticamente desde la fecha de salida hasta la de regreso.
+            </div>
+
+            <div class="modal-footer-custom">
+                <div class="footer-note">
+                    * Campos obligatorios — El cliente recibirá confirmación por email.
+                </div>
+                <div class="btn-actions">
+                    <a asp-action="Index" class="btn-cancel">Cancelar</a>
+                    <button type="submit" class="btn-create">Registrar Viaje &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

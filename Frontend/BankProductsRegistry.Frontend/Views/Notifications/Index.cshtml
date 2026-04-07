@@ -1,0 +1,388 @@
+﻿@model BankProductsRegistry.Frontend.Models.NotificationDashboardViewModel
+@{
+    ViewData["Title"] = "Centro de Notificaciones";
+}
+
+<style>
+    .page-header {
+        margin-bottom: 24px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+        color: #8b94a5;
+        font-size: 0.9rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .summary-card {
+        background-color: #151928;
+        border-radius: 10px;
+        border: 1px solid #2d3348;
+        padding: 15px 20px;
+    }
+
+    .card-border-red {
+        border-left: 3px solid #ef4444;
+    }
+
+    .card-border-orange {
+        border-left: 3px solid #f97316;
+    }
+
+    .card-border-gray {
+        border-left: 3px solid #6b7280;
+    }
+
+    .card-border-teal {
+        border-left: 3px solid #14b8a6;
+    }
+
+    .summary-label {
+        color: #8b94a5;
+        font-size: 0.75rem;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .summary-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: white;
+        line-height: 1;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 5px;
+        border-bottom: 1px solid #2d3348;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .f-tab {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        padding: 8px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+
+        .f-tab:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .f-tab.active {
+            background-color: #1e3a8a;
+            color: #60a5fa;
+        }
+
+    .notif-container {
+        background-color: #151928;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        overflow: hidden;
+    }
+
+    .notif-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 20px;
+        border-bottom: 1px solid #2d3348;
+        transition: 0.2s;
+        position: relative;
+    }
+
+        .notif-item:hover {
+            background-color: #1a1d2d;
+        }
+
+        .notif-item:last-child {
+            border-bottom: none;
+        }
+
+        .notif-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+    .type-riesgo::before {
+        background-color: #ef4444;
+    }
+
+    .type-viaje::before {
+        background-color: #3b82f6;
+    }
+
+    .type-transaccion::before {
+        background-color: #f97316;
+    }
+
+    .type-sistema::before {
+        background-color: #8b5cf6;
+    }
+
+    .type-bloqueo::before {
+        background-color: #ec4899;
+    }
+
+    .notif-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .icon-riesgo {
+        background-color: rgba(239,68,68,0.1);
+        color: #ef4444;
+    }
+
+    .icon-viaje {
+        background-color: rgba(59,130,246,0.1);
+        color: #3b82f6;
+    }
+
+    .icon-transaccion {
+        background-color: rgba(249,115,22,0.1);
+        color: #f97316;
+    }
+
+    .icon-sistema {
+        background-color: rgba(139,92,246,0.1);
+        color: #8b5cf6;
+    }
+
+    .icon-bloqueo {
+        background-color: rgba(236,72,153,0.1);
+        color: #ec4899;
+    }
+
+    .notif-content {
+        flex-grow: 1;
+        padding-right: 20px;
+    }
+
+    .notif-title {
+        color: white;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .notif-desc {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    .notif-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        min-width: 100px;
+        flex-shrink: 0;
+    }
+
+    .notif-time {
+        color: #6b7280;
+        font-size: 0.75rem;
+        margin-bottom: 10px;
+    }
+
+    .badge-type {
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .badge-riesgo {
+        color: #ef4444;
+        background-color: rgba(239,68,68,0.1);
+        border-color: rgba(239,68,68,0.2);
+    }
+
+    .badge-viaje {
+        color: #3b82f6;
+        background-color: rgba(59,130,246,0.1);
+        border-color: rgba(59,130,246,0.2);
+    }
+
+    .badge-transaccion {
+        color: #f97316;
+        background-color: rgba(249,115,22,0.1);
+        border-color: rgba(249,115,22,0.2);
+    }
+
+    .badge-sistema {
+        color: #8b5cf6;
+        background-color: rgba(139,92,246,0.1);
+        border-color: rgba(139,92,246,0.2);
+    }
+
+    .badge-bloqueo {
+        color: #ec4899;
+        background-color: rgba(236,72,153,0.1);
+        border-color: rgba(236,72,153,0.2);
+    }
+
+    .btn-read {
+        background: transparent;
+        border: 1px solid #2d3348;
+        color: #3b82f6;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .btn-read:hover {
+            background: rgba(59,130,246,0.1);
+            border-color: rgba(59,130,246,0.3);
+        }
+
+    .is-read {
+        opacity: 0.6;
+        filter: grayscale(50%);
+    }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Centro de Notificaciones</h1>
+    <div class="page-subtitle">Alertas del sistema, eventos de riesgo y actividad reciente</div>
+</div>
+
+<div class="summary-grid">
+    <div class="summary-card card-border-red">
+        <div class="summary-label">Sin Leer</div>
+        <div class="summary-value" id="unreadCounter">@Model.UnreadCount</div>
+    </div>
+    <div class="summary-card card-border-orange">
+        <div class="summary-label">Alertas de Riesgo</div>
+        <div class="summary-value">@Model.RiskCount</div>
+    </div>
+    <div class="summary-card card-border-gray">
+        <div class="summary-label">Informativas</div>
+        <div class="summary-value">@Model.InfoCount</div>
+    </div>
+    <div class="summary-card card-border-teal">
+        <div class="summary-label">Viajes Activos</div>
+        <div class="summary-value">@Model.ActiveTravelsCount</div>
+    </div>
+</div>
+
+<div class="filter-tabs">
+    <div class="f-tab active" data-filter="Todas">Todas</div>
+    <div class="f-tab" data-filter="SinLeer">Sin leer</div>
+    <div class="f-tab" data-filter="Bloqueo">Bloqueos</div>
+    <div class="f-tab" data-filter="Viaje">Viajes</div>
+    <div class="f-tab" data-filter="Transaccion">Transacciones</div>
+    <div class="f-tab" data-filter="Sistema">Sistema</div>
+</div>
+
+<div class="notif-container" id="notifList">
+    @if (!Model.Notifications.Any())
+    {
+        <div style="padding: 40px 20px; text-align: center; color: #8b94a5;">
+            No hay notificaciones recientes en el sistema.
+        </div>
+    }
+
+    @foreach (var n in Model.Notifications)
+    {
+        string typeClass = n.Type.ToLower();
+        string readClass = n.IsRead ? "is-read" : "";
+        string iconEmoji = n.Type == "Riesgo" || n.Type == "Transaccion" ? "⚠️" : n.Type == "Viaje" ? "✈️" : n.Type == "Bloqueo" ? "🚫" : "ℹ️";
+
+        var timeSpan = DateTimeOffset.UtcNow - n.CreatedAt;
+        string timeAgo = timeSpan.TotalMinutes < 60 ? $"Hace {Math.Floor(timeSpan.TotalMinutes)} min" :
+        timeSpan.TotalHours < 24 ? $"Hace {Math.Floor(timeSpan.TotalHours)} horas" :
+        $"Hace {Math.Floor(timeSpan.TotalDays)} días";
+
+        <div class="notif-item type-@typeClass @readClass" data-type="@n.Type" data-read="@n.IsRead.ToString().ToLower()">
+            <div class="notif-icon icon-@typeClass">@iconEmoji</div>
+            <div class="notif-content">
+                <div class="notif-title">@n.Title</div>
+                <div class="notif-desc">@n.Message</div>
+            </div>
+            <div class="notif-meta">
+                <div class="badge-type badge-@typeClass">@n.Type</div>
+                <div class="notif-time">@timeAgo</div>
+                @if (!n.IsRead)
+                {
+                    <button class="btn-read" onclick="markAsRead(this, @n.Id)">Marcar leída</button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    const tabs = document.querySelectorAll('.f-tab');
+    const items = document.querySelectorAll('.notif-item');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.getAttribute('data-filter');
+
+            items.forEach(item => {
+                const type = item.getAttribute('data-type');
+                const isRead = item.getAttribute('data-read');
+
+                if (filter === 'Todas') item.style.display = 'flex';
+                else if (filter === 'SinLeer') item.style.display = isRead === 'false' ? 'flex' : 'none';
+                else item.style.display = type === filter ? 'flex' : 'none';
+            });
+        });
+    });
+
+    function markAsRead(btn, id) {
+        const item = btn.closest('.notif-item');
+        item.classList.add('is-read');
+        item.setAttribute('data-read', 'true');
+        btn.remove();
+
+        const counterEl = document.getElementById('unreadCounter');
+        let currentCount = parseInt(counterEl.innerText);
+        if(currentCount > 0) counterEl.innerText = currentCount - 1;
+
+        fetch(`@Url.Action("MarkAsRead", "Notifications")/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+</script>

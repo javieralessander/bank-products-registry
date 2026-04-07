@@ -1,0 +1,163 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using BankProductsRegistry.Frontend.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text;
+
+namespace BankProductsRegistry.Frontend.Controllers
+{
+    [Authorize]
+    public class TravelNoticesController : Controller
+    {
+        private readonly HttpClient _httpClient;
+
+        public TravelNoticesController(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
+        }
+
+        // --- DASHBOARD GLOBAL (GET) ---
+        public async Task<IActionResult> Index()
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var dashboardData = new TravelNoticeDashboardViewModel();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            try
+            {
+                // 1. Obtenemos todas las cuentas
+                var accResponse = await _httpClient.GetAsync("api/account-products");
+                if (accResponse.IsSuccessStatusCode)
+                {
+                    var accJson = await accResponse.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(accJson);
+                    var accounts = doc.RootElement.EnumerateArray();
+
+                    // 2. Buscamos los viajes de cada cuenta
+                    foreach (var acc in accounts)
+                    {
+                        var accId = acc.GetProperty("id").GetInt32();
+                        var travelRes = await _httpClient.GetAsync($"api/account-products/{accId}/travel-notices");
+
+                        if (travelRes.IsSuccessStatusCode)
+                        {
+                            var travelJson = await travelRes.Content.ReadAsStringAsync();
+                            using var travelDoc = JsonDocument.Parse(travelJson);
+
+                            foreach (var notice in travelDoc.RootElement.EnumerateArray())
+                            {
+                                dashboardData.Notices.Add(new TravelNoticeCardViewModel
+                                {
+                                    AccountProductId = accId,
+                                    NoticeId = notice.GetProperty("id").GetInt32(),
+                                    ClientName = acc.GetProperty("clientName").GetString() ?? "",
+                                    AccountNumber = acc.GetProperty("accountNumber").GetString() ?? "",
+                                    ProductName = acc.GetProperty("financialProductName").GetString() ?? "",
+                                    StartsAt = notice.GetProperty("startsAt").GetDateTimeOffset(),
+                                    EndsAt = notice.GetProperty("endsAt").GetDateTimeOffset(),
+                                    IsActive = notice.GetProperty("isActive").GetBoolean(),
+                                    CancelledAt = notice.GetProperty("cancelledAt").ValueKind != JsonValueKind.Null ? notice.GetProperty("cancelledAt").GetDateTimeOffset() : null,
+                                    Countries = notice.GetProperty("countries").EnumerateArray().Select(c => c.GetString()).ToArray()!
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // 3. Calculamos Totales
+                var now = DateTimeOffset.UtcNow;
+                dashboardData.ActiveTravels = dashboardData.Notices.Count(n => n.IsActive);
+                dashboardData.UpcomingTravels = dashboardData.Notices.Count(n => n.StartsAt > now && n.CancelledAt == null);
+                dashboardData.FinishedTravels = dashboardData.Notices.Count(n => n.EndsAt < now && n.CancelledAt == null);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error cargando viajes: " + ex.Message;
+            }
+
+            return View(dashboardData);
+        }
+
+        // --- REGISTRAR VIAJE (GET) ---
+        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var prodRes = await _httpClient.GetAsync("api/account-products");
+            if (prodRes.IsSuccessStatusCode) ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+
+            return View(new TravelNoticeCreateViewModel());
+        }
+
+        // --- REGISTRAR VIAJE (POST) ---
+        [HttpPost]
+        public async Task<IActionResult> Create(TravelNoticeCreateViewModel model)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Armamos el payload exigido por tu backend (AccountProductTravelNoticeCreateRequest)
+            var payload = new
+            {
+                StartsAt = model.StartsAt,
+                EndsAt = model.EndsAt,
+                Reason = string.IsNullOrEmpty(model.CitiesOrReason) ? "Viaje internacional" : model.CitiesOrReason,
+                Countries = new[] { model.CountryCode } // Tu API requiere formato ISO (Ej. "US", "ES")
+            };
+
+            var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"api/account-products/{model.AccountProductId}/travel-notices", jsonContent);
+            if (response.IsSuccessStatusCode) return RedirectToAction("Index");
+
+            var errorDetail = await response.Content.ReadAsStringAsync();
+            ViewBag.ErrorMessage = $"Error: {errorDetail}";
+
+            var prodRes = await _httpClient.GetAsync("api/account-products");
+            if (prodRes.IsSuccessStatusCode) ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+            return View(model);
+        }
+
+        // --- CANCELAR VIAJE (POST) ---
+        [HttpPost]
+        public async Task<IActionResult> Cancel(int accountProductId, int noticeId, string reason)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Payload que exige la API para cancelar
+            var payload = new { reason = string.IsNullOrEmpty(reason) ? "Cancelado a petición del cliente" : reason };
+            var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/account-products/{accountProductId}/travel-notices/{noticeId}/cancel", jsonContent);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["ErrorMessage"] = "No se pudo cancelar el viaje.";
+                }
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Error de conexión al intentar cancelar.";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+
+
+
+    }
+}

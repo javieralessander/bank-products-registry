@@ -1,0 +1,437 @@
+﻿@model BankProductsRegistry.Frontend.Models.TravelNoticeDashboardViewModel
+@{
+    ViewData["Title"] = "Notificaciones de Viaje";
+}
+
+<style>
+    .page-header {
+        margin-bottom: 24px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+        color: #8b94a5;
+        font-size: 0.9rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        padding: 20px;
+    }
+
+    .card-border-blue {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .card-border-orange {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .card-border-green {
+        border-left: 4px solid #10b981;
+    }
+
+    .summary-label {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        line-height: 1;
+    }
+
+    .summary-subtext {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 5px;
+    }
+
+    .toolbar {
+        background-color: #1a1d2d;
+        border: 1px solid #2d3348;
+        border-radius: 12px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .search-inline {
+        background-color: #0f111a;
+        border: 1px solid #2d3348;
+        color: white;
+        border-radius: 8px;
+        outline: none;
+        flex-grow: 1;
+        padding: 10px 15px;
+        font-size: 0.95rem;
+    }
+
+    .btn-primary-custom {
+        background-color: #3b82f6;
+        border: none;
+        padding: 10px 25px;
+        font-weight: 600;
+        border-radius: 8px;
+        color: white;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #2d3348;
+        padding-bottom: 10px;
+    }
+
+    .f-tab {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        padding: 8px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+
+        .f-tab.active {
+            background-color: #1e3a8a;
+            color: #60a5fa;
+        }
+
+    /* Grid de Tarjetas */
+    .travel-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .t-card {
+        background-color: #1a1d2d;
+        border-radius: 12px;
+        border: 1px solid #2d3348;
+        padding: 20px;
+        border-top: 4px solid #2d3348;
+    }
+
+    .tc-active {
+        border-top-color: #10b981;
+    }
+
+    .tc-prog {
+        border-top-color: #f59e0b;
+    }
+
+    .tc-fin {
+        border-top-color: #4b5563;
+    }
+
+    .tc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .tc-country {
+        font-weight: 600;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .tc-city {
+        font-size: 0.8rem;
+        color: #8b94a5;
+    }
+
+    .badge-status {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+
+    .st-active {
+        background-color: rgba(16,185,129,0.1);
+        color: #10b981;
+        border-color: rgba(16,185,129,0.2);
+    }
+
+    .st-prog {
+        background-color: rgba(245,158,11,0.1);
+        color: #f59e0b;
+        border-color: rgba(245,158,11,0.2);
+    }
+
+    .st-fin {
+        background-color: rgba(75,85,99,0.1);
+        color: #9ca3af;
+        border-color: rgba(75,85,99,0.2);
+    }
+
+    .tc-client {
+        margin-bottom: 15px;
+    }
+
+    .tc-cname {
+        color: white;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .tc-cprod {
+        color: #8b94a5;
+        font-size: 0.8rem;
+    }
+
+    .tc-dates {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        margin-bottom: 15px;
+    }
+
+    .tc-dlabel {
+        color: #6b7280;
+        margin-bottom: 2px;
+    }
+
+    .tc-dval {
+        color: white;
+        font-weight: 500;
+    }
+
+    .tc-duration {
+        text-align: right;
+    }
+
+    .tc-dur-val {
+        font-weight: 600;
+        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .tc-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        border-top: 1px solid #2d3348;
+        padding-top: 15px;
+    }
+
+    .btn-act {
+        background: transparent;
+        border: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 10px;
+        border-radius: 4px;
+        transition: 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-cancel {
+        color: #ef4444;
+        background: rgba(239,68,68,0.1);
+    }
+
+        .btn-cancel:hover {
+            background: #ef4444;
+            color: white;
+        }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Notificaciones de Viaje</h1>
+    <div class="page-subtitle">Registro de viajes para evitar bloqueos por uso internacional</div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px; padding: 15px; border-radius: 8px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="summary-grid">
+    <div class="summary-card card-border-blue">
+        <div class="summary-label">Viajes Activos</div>
+        <div class="summary-value">@Model.ActiveTravels</div>
+        <div class="summary-subtext">Clientes en el extranjero</div>
+    </div>
+    <div class="summary-card card-border-orange">
+        <div class="summary-label">Próximos 7 días</div>
+        <div class="summary-value">@Model.UpcomingTravels</div>
+        <div class="summary-subtext">Viajes programados</div>
+    </div>
+    <div class="summary-card card-border-green">
+        <div class="summary-label">Finalizados este mes</div>
+        <div class="summary-value">@Model.FinishedTravels</div>
+        <div class="summary-subtext">Regresaron sin incidentes</div>
+    </div>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="searchInput" class="search-inline" placeholder="Buscar por cliente, país o destino..." />
+    <a href="@Url.Action("Create")" class="btn-primary-custom">+ Registrar Viaje</a>
+</div>
+
+<div class="filter-tabs">
+    <div class="f-tab active" data-filter="Todos">Todos</div>
+    <div class="f-tab" data-filter="Activo">Activos</div>
+    <div class="f-tab" data-filter="Programado">Programados</div>
+    <div class="f-tab" data-filter="Finalizado">Finalizados</div>
+    <div class="f-tab" data-filter="Cancelado">Cancelados</div>
+</div>
+
+<div class="travel-grid" id="cardsContainer">
+    @if (!Model.Notices.Any())
+    {
+        <div style="color: #6b7280; font-size: 0.95rem; grid-column: 1 / -1; padding: 20px 0;">
+            No hay notificaciones de viaje registradas en el sistema.
+        </div>
+    }
+
+    @foreach (var n in Model.Notices)
+    {
+        var now = DateTimeOffset.UtcNow;
+        string statusText = "Finalizado";
+        string cardClass = "tc-fin";
+        string badgeClass = "st-fin";
+        string durText = "Finalizado";
+        string durColor = "rgba(75,85,99,0.2)";
+        string durTextColor = "#9ca3af";
+
+        if (n.CancelledAt.HasValue)
+        {
+            statusText = "Cancelado";
+            durText = "Cancelado";
+        }
+        else if (n.StartsAt > now)
+        {
+            statusText = "Programado"; cardClass = "tc-prog"; badgeClass = "st-prog";
+            int days = (n.StartsAt - now).Days;
+            durText = $"Inicia en {Math.Max(1, days)} días";
+            durColor = "rgba(245,158,11,0.2)"; durTextColor = "#f59e0b";
+        }
+        else if (n.IsActive)
+        {
+            statusText = "Activo"; cardClass = "tc-active"; badgeClass = "st-active";
+            int days = (n.EndsAt - now).Days;
+            durText = $"{Math.Max(1, days)} días restantes";
+            durColor = "rgba(16,185,129,0.2)"; durTextColor = "#10b981";
+        }
+
+        string countryList = n.Countries.Any() ? string.Join(", ", n.Countries) : "Intl";
+
+        <div class="t-card @cardClass" data-status="@statusText">
+            <div class="tc-header">
+                <div>
+                    <div class="tc-country search-target">✈️ @countryList</div>
+                    <div class="tc-city">Destino internacional</div>
+                </div>
+                <div class="badge-status @badgeClass">@statusText</div>
+            </div>
+
+            <div class="tc-client">
+                <div class="tc-cname search-target">@n.ClientName</div>
+                <div class="tc-cprod search-target">@n.ProductName @n.AccountNumber</div>
+            </div>
+
+            <div class="tc-dates">
+                <div>
+                    <div class="tc-dlabel">Salida</div>
+                    <div class="tc-dval">@n.StartsAt.ToString("dd/MM/yy")</div>
+                </div>
+                <div>
+                    <div class="tc-dlabel">Regreso</div>
+                    <div class="tc-dval">@n.EndsAt.ToString("dd/MM/yy")</div>
+                </div>
+                <div class="tc-duration">
+                    <div class="tc-dlabel">Duración</div>
+                    <div class="tc-dur-val" style="background-color: @durColor; color: @durTextColor;">@durText</div>
+                </div>
+            </div>
+
+            <div class="tc-actions">
+                @if (statusText != "Finalizado" && statusText != "Cancelado")
+                {
+                    <form asp-action="Cancel" method="post" class="m-0 p-0" onsubmit="return confirmCancel(this);">
+                        <input type="hidden" name="accountProductId" value="@n.AccountProductId" />
+                        <input type="hidden" name="noticeId" value="@n.NoticeId" />
+                        <input type="hidden" name="reason" class="cancel-reason-input" />
+                        <button type="submit" class="btn-act btn-cancel">Cancelar Viaje</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    // NUEVA FUNCIÓN: Popup para pedir el motivo antes de cancelar
+    function confirmCancel(form) {
+        var reason = prompt("Indique el motivo de la cancelación:");
+        if (reason === null) {
+            return false; // El usuario le dio a "Cancelar" en el popup
+        }
+        form.querySelector('.cancel-reason-input').value = reason;
+        return true; // Continúa y envía el formulario
+    }
+
+    // Filtrado JS
+    const tabs = document.querySelectorAll('.f-tab');
+    const cards = document.querySelectorAll('.t-card');
+    const searchInput = document.getElementById('searchInput');
+
+    function filterCards() {
+        const activeTab = document.querySelector('.f-tab.active').getAttribute('data-filter');
+        const searchTerm = searchInput.value.toLowerCase();
+
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const textContent = card.innerText.toLowerCase();
+
+            const matchTab = (activeTab === 'Todos' || status === activeTab);
+            const matchSearch = textContent.includes(searchTerm);
+
+            card.style.display = (matchTab && matchSearch) ? 'block' : 'none';
+        });
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            filterCards();
+        });
+    });
+
+    searchInput.addEventListener('keyup', filterCards);
+</script>

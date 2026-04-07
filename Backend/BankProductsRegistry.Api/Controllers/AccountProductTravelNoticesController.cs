@@ -114,6 +114,19 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         };
 
         dbContext.AccountProductTravelNotices.Add(notice);
+
+        // ---> NOTIFICACIÓN AUTOMÁTICA DE VIAJE <---
+        var destinationCountries = string.Join(", ", normalizedCountries);
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = $"Viaje registrado — {actorUserName}",
+            Message = $"Viaje a {destinationCountries} del {request.StartsAt:dd/MM} al {request.EndsAt:dd/MM}. Producto contratado #{accountProductId}.",
+            Type = "Viaje",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ------------------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return StatusCode(StatusCodes.Status201Created, Map(notice));
@@ -157,6 +170,17 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         notice.CancelledByUserId = actorUserId;
         notice.CancelledByUserName = actorUserName;
         notice.CancellationReason = NormalizationHelper.NormalizeOptionalText(request.Reason);
+
+        // ---> NOTIFICACIÓN DE CANCELACIÓN DE VIAJE <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Viaje cancelado",
+            Message = $"El viaje programado para el producto #{accountProductId} fue cancelado por {actorUserName}.",
+            Type = "Sistema",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ----------------------------------------------
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(Map(notice));
@@ -232,5 +256,4 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
             notice.CreatedAt,
             notice.UpdatedAt);
     }
-
 }
