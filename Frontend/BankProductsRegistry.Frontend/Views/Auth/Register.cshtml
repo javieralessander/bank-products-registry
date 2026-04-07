@@ -10,8 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BankRED - Crear Cuenta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        /* Fondo Bancario Moderno con Gradientes */
         body {
             margin: 0;
             min-height: 100vh;
@@ -26,7 +26,6 @@
             padding: 40px 0;
         }
 
-            /* Brillos sutiles */
             body::before {
                 content: "";
                 position: absolute;
@@ -49,27 +48,40 @@
                 z-index: 0;
             }
 
-        /* Tarjeta Glassmorphism (Un poco más ancha para el registro) */
         .auth-card {
             background: rgba(26, 29, 45, 0.65);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
+            border-radius: 20px;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
             padding: 40px;
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
             position: relative;
             z-index: 1;
+        }
+
+        .input-group-custom {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            color: #6b7280;
+            font-size: 1.1rem;
+            z-index: 10;
         }
 
         .form-control {
             background-color: rgba(15, 17, 26, 0.7);
             border: 1px solid #2d3348;
             color: white;
-            padding: 10px 14px;
-            border-radius: 8px;
+            padding: 10px 14px 10px 42px;
+            border-radius: 10px;
             transition: 0.3s;
         }
 
@@ -84,20 +96,23 @@
                 color: #6b7280;
             }
 
-        .btn-primary {
-            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+        .btn-primary-custom {
+            background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
             border: none;
             padding: 12px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 10px;
             width: 100%;
+            color: white;
             transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
-            .btn-primary:hover {
-                background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            .btn-primary-custom:hover {
+                background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+                color: white;
             }
 
         .brand-logo {
@@ -105,23 +120,20 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
         }
 
-        .brand-dot {
-            width: 14px;
-            height: 14px;
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
+            .brand-logo span.text-blue {
+                color: #3b82f6;
+            }
 
         .auth-link {
             color: #60a5fa;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
             transition: 0.3s;
         }
 
@@ -129,58 +141,103 @@
                 color: #93c5fd;
                 text-decoration: underline;
             }
+
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #8b94a5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .back-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            color: #8b94a5;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+            .back-link:hover {
+                color: white;
+            }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <div class="brand-logo"><span class="brand-dot"></span> BankRED</div>
-        <p class="text-center text-muted mb-4" style="font-size: 0.95rem;">Crea una nueva cuenta para acceder al sistema</p>
+    <div style="position: relative; z-index: 1;">
+        <a href="@Url.Action("Index", "Home")" class="back-link"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
 
-        @if (ViewBag.ErrorMessage != null)
-        {
-            <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.9rem;">
-                @ViewBag.ErrorMessage
-            </div>
-        }
+        <div class="auth-card">
+            <div class="brand-logo">Bank<span class="text-blue">RED</span></div>
+            <p class="text-center text-muted mb-4" style="font-size: 0.95rem;">Abre tu cuenta digital en minutos</p>
 
-        <form asp-action="Register" method="post">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Nombre</label>
-                    <input asp-for="Nombre" class="form-control" placeholder="Juan" />
-                    <span asp-validation-for="Nombre" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger d-flex align-items-center gap-2" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.9rem; border-radius: 10px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @ViewBag.ErrorMessage
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Apellido</label>
-                    <input asp-for="Apellido" class="form-control" placeholder="Pérez" />
-                    <span asp-validation-for="Apellido" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+            }
+
+            <form asp-action="Register" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-person input-icon"></i>
+                            <input asp-for="Nombre" class="form-control" placeholder="Juan" />
+                        </div>
+                        <span asp-validation-for="Nombre" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Apellido</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-person-add input-icon"></i>
+                            <input asp-for="Apellido" class="form-control" placeholder="Pérez" />
+                        </div>
+                        <span asp-validation-for="Apellido" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="mb-3">
-                <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Correo Electrónico</label>
-                <input asp-for="Email" class="form-control" placeholder="ejemplo@banco.com" />
-                <span asp-validation-for="Email" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Correo Electrónico</label>
+                    <div class="input-group-custom">
+                        <i class="bi bi-envelope input-icon"></i>
+                        <input asp-for="Email" class="form-control" placeholder="ejemplo@banco.com" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Contraseña</label>
-                <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" />
-                <span asp-validation-for="Password" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
-            </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-lock input-icon"></i>
+                            <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">Confirmar Clave</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-shield-lock input-icon"></i>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="••••••••" />
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    </div>
+                </div>
 
-            <div class="mb-4">
-                <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Confirmar Contraseña</label>
-                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="••••••••" />
-                <span asp-validation-for="ConfirmPassword" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
-            </div>
+                <button type="submit" class="btn-primary-custom mb-4">
+                    <i class="bi bi-person-plus-fill me-1"></i> Crear Cuenta
+                </button>
 
-            <button type="submit" class="btn btn-primary mb-4">Crear Cuenta</button>
-
-            <div class="text-center" style="font-size: 0.9rem; color: #8b94a5;">
-                ¿Ya tienes una cuenta? <a asp-action="Login" asp-controller="Auth" class="auth-link">Inicia sesión</a>
-            </div>
-        </form>
+                <div class="text-center" style="font-size: 0.95rem; color: #8b94a5;">
+                    ¿Ya tienes una cuenta? <a asp-action="Login" asp-controller="Auth" class="auth-link">Inicia sesión</a>
+                </div>
+            </form>
+        </div>
     </div>
 </body>
 </html>

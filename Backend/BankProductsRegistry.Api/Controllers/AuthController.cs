@@ -30,6 +30,28 @@ public sealed class AuthController(IAuthService authService) : ApiControllerBase
     }
 
     [AllowAnonymous]
+    [HttpPost("register")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterAsync(
+        [FromBody] RegisterRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Llamada al servicio real
+        var (success, errorMessage) = await authService.RegisterAsync(request, cancellationToken);
+
+        if (!success)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Error en registro",
+                errorMessage));
+        }
+
+        return Ok(new { message = "Cuenta creada exitosamente" });
+    }
+
+    [AllowAnonymous]
     [HttpPost("refresh")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -101,5 +123,4 @@ public sealed class AuthController(IAuthService authService) : ApiControllerBase
                 "La cuenta autenticada ya no existe en el sistema."))
             : Ok(user);
     }
-
 }

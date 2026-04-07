@@ -5,6 +5,10 @@ namespace BankProductsRegistry.Api.Services.Interfaces;
 public interface IAuthService
 {
     Task<AuthResponse?> LoginAsync(LoginRequest request, string? remoteIpAddress, CancellationToken cancellationToken);
+
+    // ---> MÉTODO DE REGISTRO AGREGADO AQUÍ <---
+    Task<(bool Success, string ErrorMessage)> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
+
     Task<AuthResponse?> RefreshAsync(RefreshTokenRequest request, string? remoteIpAddress, CancellationToken cancellationToken);
     Task<bool> RevokeRefreshTokenAsync(int userId, RevokeRefreshTokenRequest request, string? remoteIpAddress, CancellationToken cancellationToken);
     Task<AuthenticatedUserResponse?> GetCurrentUserAsync(int userId, CancellationToken cancellationToken);

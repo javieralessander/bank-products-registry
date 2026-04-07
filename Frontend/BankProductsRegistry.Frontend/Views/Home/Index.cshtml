@@ -1,0 +1,589 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "BankRED - Banca Internacional y Mercados";
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #0f111a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- TICKER FINANCIERO (MERCADOS GLOBAL) --- */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background-color: #0a0c13;
+            border-bottom: 1px solid #1a1d2d;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 6px 0;
+            white-space: nowrap;
+            position: fixed;
+            top: 0;
+            z-index: 1050;
+        }
+
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker 40s linear infinite;
+        }
+
+            .ticker:hover {
+                animation-play-state: paused;
+            }
+
+        /* SOLUCIÓN AL ERROR: Doble arroba para que Razor no se confunda */
+        @@keyframes ticker {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+
+            100% {
+                transform: translate3d(-50%, 0, 0);
+            }
+        }
+
+        .ticker-item {
+            display: inline-block;
+            padding: 0 2rem;
+            color: #8b94a5;
+            border-right: 1px solid #2d3348;
+        }
+
+        .ticker-value {
+            color: white;
+            margin-left: 8px;
+        }
+
+        .ticker-up {
+            color: #10b981;
+            margin-left: 5px;
+        }
+
+        .ticker-down {
+            color: #ef4444;
+            margin-left: 5px;
+        }
+
+        /* --- NAVEGACIÓN --- */
+        .navbar-custom {
+            background-color: rgba(15, 17, 26, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #2d3348;
+            padding: 15px 0;
+            top: 30px; /* Debajo del ticker */
+            transition: all 0.3s ease;
+        }
+
+        .brand-logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+            .brand-logo span {
+                color: #3b82f6;
+            }
+
+        .nav-link-custom {
+            color: #8b94a5;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            margin: 0 15px;
+        }
+
+            .nav-link-custom:hover {
+                color: white;
+            }
+
+        /* --- BOTONES --- */
+        .btn-primary-custom {
+            background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+            .btn-primary-custom:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+                color: white;
+            }
+
+        /* --- HERO SECTION --- */
+        .hero-section {
+            padding: 180px 0 100px 0;
+            position: relative;
+        }
+
+        .hero-bg-glow {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+
+            .hero-title span {
+                background: linear-gradient(90deg, #60a5fa, #3b82f6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: #8b94a5;
+            max-width: 550px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* --- WIDGET TASAS DE CAMBIO --- */
+        .exchange-widget {
+            background: rgba(21, 25, 40, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid #2d3348;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .exchange-header {
+            border-bottom: 1px solid #2d3348;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .exchange-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: white;
+            }
+
+            .exchange-header span {
+                font-size: 0.75rem;
+                color: #8b94a5;
+                background: #1a1d2d;
+                padding: 4px 10px;
+                border-radius: 4px;
+            }
+
+        .currency-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .currency-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .flag-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #2d3348;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .rate-box {
+            text-align: right;
+        }
+
+        .rate-label {
+            font-size: 0.7rem;
+            color: #8b94a5;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .rate-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* --- SECCIONES COMUNES --- */
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .section-subtitle {
+            color: #8b94a5;
+            margin-bottom: 50px;
+            font-size: 1.1rem;
+        }
+
+        /* --- NOTICIAS Y MERCADOS --- */
+        .news-card {
+            background-color: #151928;
+            border: 1px solid #2d3348;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: 0.3s;
+            height: 100%;
+        }
+
+            .news-card:hover {
+                border-color: #3b82f6;
+                transform: translateY(-5px);
+            }
+
+        .news-img {
+            height: 160px;
+            background-color: #1a1d2d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .news-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #3b82f6;
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .news-content {
+            padding: 25px;
+        }
+
+        .news-date {
+            color: #8b94a5;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .news-title {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .news-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* --- FOOTER --- */
+        .footer {
+            background-color: #0a0c13;
+            padding: 60px 0 30px 0;
+            border-top: 1px solid #1a1d2d;
+            margin-top: 80px;
+        }
+
+        .footer-heading {
+            color: white;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .footer-link {
+            color: #6b7280;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+            .footer-link:hover {
+                color: #3b82f6;
+            }
+
+        .footer-disclaimer {
+            color: #4b5563;
+            font-size: 0.75rem;
+            border-top: 1px solid #1a1d2d;
+            padding-top: 20px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span class="ticker-item">S&P 500 <span class="ticker-value">5,123.69</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 0.8%</span></span>
+            <span class="ticker-item">DOW JONES <span class="ticker-value">39,087.38</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 0.4%</span></span>
+            <span class="ticker-item">NASDAQ <span class="ticker-value">16,274.94</span><span class="ticker-down"><i class="bi bi-caret-down-fill"></i> 0.2%</span></span>
+            <span class="ticker-item">EUR/USD <span class="ticker-value">1.0842</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 0.1%</span></span>
+            <span class="ticker-item">ORO (XAU) <span class="ticker-value">$2,345.10</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 1.2%</span></span>
+            <span class="ticker-item">PETRÓLEO (WTI) <span class="ticker-value">$86.91</span><span class="ticker-down"><i class="bi bi-caret-down-fill"></i> 0.5%</span></span>
+            <span class="ticker-item">S&P 500 <span class="ticker-value">5,123.69</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 0.8%</span></span>
+            <span class="ticker-item">DOW JONES <span class="ticker-value">39,087.38</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 0.4%</span></span>
+            <span class="ticker-item">NASDAQ <span class="ticker-value">16,274.94</span><span class="ticker-down"><i class="bi bi-caret-down-fill"></i> 0.2%</span></span>
+            <span class="ticker-item">EUR/USD <span class="ticker-value">1.0842</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 0.1%</span></span>
+            <span class="ticker-item">ORO (XAU) <span class="ticker-value">$2,345.10</span><span class="ticker-up"><i class="bi bi-caret-up-fill"></i> 1.2%</span></span>
+            <span class="ticker-item">PETRÓLEO (WTI) <span class="ticker-value">$86.91</span><span class="ticker-down"><i class="bi bi-caret-down-fill"></i> 0.5%</span></span>
+        </div>
+    </div>
+
+    <nav class="navbar-custom fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="#" class="brand-logo">Bank<span>RED</span></a>
+
+            <div class="d-none d-lg-flex align-items-center">
+                <a href="#" class="nav-link-custom">Banca Personal</a>
+                <a href="#" class="nav-link-custom">Banca Empresarial</a>
+                <a href="#" class="nav-link-custom">Inversiones y Mercados</a>
+                <a href="#" class="nav-link-custom">Acerca del Banco</a>
+            </div>
+
+            <div class="d-flex gap-3">
+                <a href="@Url.Action("Login", "Auth")" class="btn-primary-custom">
+                    <i class="bi bi-shield-lock-fill me-2"></i> Acceso Seguro
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div class="hero-bg-glow"></div>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-7 mb-5 mb-lg-0" style="z-index: 10;">
+                    <h1 class="hero-title">Conectando tu capital con el <span>mundo financiero.</span></h1>
+                    <p class="hero-subtitle">Operaciones cambiarias, portafolios de inversión y gestión de patrimonio con los más altos estándares regulatorios internacionales.</p>
+                    <div class="d-flex gap-3">
+                        <a href="@Url.Action("Login", "Auth")" class="btn-primary-custom" style="padding: 14px 32px; font-size: 1.1rem;">
+                            Ingresar a BankRED <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                        <button class="btn btn-outline-light" style="padding: 14px 32px; font-size: 1.1rem; border-color: #2d3348; font-weight: 600;">
+                            Mercados Hoy
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 offset-lg-1" style="z-index: 10;">
+                    <div class="exchange-widget">
+                        <div class="exchange-header">
+                            <h5>Indicadores de Divisas</h5>
+                            <span>En vivo</span>
+                        </div>
+
+                        <div class="currency-row border-bottom border-secondary pb-3" style="border-color: #2d3348 !important;">
+                            <div class="currency-name">
+                                <div class="flag-icon text-primary"><i class="bi bi-currency-dollar"></i></div> USD
+                            </div>
+                            <div class="d-flex gap-4">
+                                <div class="rate-box">
+                                    <div class="rate-label">Compra</div>
+                                    <div class="rate-value">58.95</div>
+                                </div>
+                                <div class="rate-box">
+                                    <div class="rate-label">Venta</div>
+                                    <div class="rate-value text-primary">59.35</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="currency-row pt-3">
+                            <div class="currency-name">
+                                <div class="flag-icon text-info"><i class="bi bi-currency-euro"></i></div> EUR
+                            </div>
+                            <div class="d-flex gap-4">
+                                <div class="rate-box">
+                                    <div class="rate-label">Compra</div>
+                                    <div class="rate-value">63.50</div>
+                                </div>
+                                <div class="rate-box">
+                                    <div class="rate-label">Venta</div>
+                                    <div class="rate-value text-info">64.10</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <a href="#" style="color: #60a5fa; font-size: 0.85rem; text-decoration: none;">Ver histórico y conversor <i class="bi bi-chevron-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container mt-5 pt-5 pb-5">
+        <div class="d-flex justify-content-between align-items-end mb-5">
+            <div>
+                <h2 class="section-title mb-2">Perspectivas del Mercado</h2>
+                <p class="section-subtitle mb-0">Análisis y noticias económicas para la toma de decisiones.</p>
+            </div>
+            <a href="#" class="btn btn-outline-light d-none d-md-block" style="border-color: #2d3348;">Ver todo el análisis</a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="news-card">
+                    <div class="news-img" style="background: linear-gradient(45deg, #1e3a8a, #3b82f6);">
+                        <span class="news-tag">Macroeconomía</span>
+                    </div>
+                    <div class="news-content">
+                        <div class="news-date">6 de Abril, 2026</div>
+                        <h4 class="news-title">Banco Central mantiene la Tasa de Política Monetaria ante proyecciones estables.</h4>
+                        <a href="#" class="news-link">Leer reporte completo <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="news-card">
+                    <div class="news-img" style="background: linear-gradient(45deg, #064e3b, #10b981);">
+                        <span class="news-tag">Mercados Globales</span>
+                    </div>
+                    <div class="news-content">
+                        <div class="news-date">5 de Abril, 2026</div>
+                        <h4 class="news-title">Los mercados tecnológicos repuntan tras los nuevos anuncios sobre IA corporativa.</h4>
+                        <a href="#" class="news-link">Análisis de la sesión <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="news-card">
+                    <div class="news-img" style="background: linear-gradient(45deg, #701a75, #d946ef);">
+                        <span class="news-tag">Banca Digital</span>
+                    </div>
+                    <div class="news-content">
+                        <div class="news-date">2 de Abril, 2026</div>
+                        <h4 class="news-title">BankRED implementa nuevo sistema de alertas de viaje con inteligencia predictiva.</h4>
+                        <a href="#" class="news-link">Novedades corporativas <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container my-5 py-5">
+        <div class="row align-items-center" style="background: #151928; border: 1px solid #2d3348; border-radius: 20px; overflow: hidden;">
+            <div class="col-lg-6 p-5">
+                <div style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px;">
+                    <i class="bi bi-calculator"></i>
+                </div>
+                <h2 class="text-white fw-bold mb-3">Planifica tu futuro financiero</h2>
+                <p style="color: #8b94a5; font-size: 1.1rem; margin-bottom: 30px;">Calcula los rendimientos de tus certificados de depósito o simula la cuota de tu próximo préstamo hipotecario en segundos.</p>
+                <button class="btn-primary-custom px-4">Ir a Calculadoras</button>
+            </div>
+            <div class="col-lg-6 p-0 d-none d-lg-block" style="background: #1a1d2d; height: 100%; border-left: 1px solid #2d3348; padding: 40px !important;">
+                <div style="background: #0f111a; border: 1px solid #2d3348; border-radius: 12px; padding: 25px;">
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="text-white fw-bold">Monto a Invertir</span>
+                        <span class="text-primary fw-bold">DOP 500,000</span>
+                    </div>
+                    <div class="progress mb-4" style="height: 6px; background-color: #2d3348;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 50%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="text-white fw-bold">Plazo (Meses)</span>
+                        <span class="text-primary fw-bold">12 Meses</span>
+                    </div>
+                    <div class="p-3 mt-4" style="background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">
+                        <div style="color: #10b981; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; margin-bottom: 5px;">Rendimiento Proyectado</div>
+                        <div style="color: white; font-size: 1.5rem; font-weight: 800;">DOP 35,000.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                    <a href="#" class="brand-logo d-block mb-4">Bank<span>RED</span></a>
+                    <p style="color: #8b94a5; font-size: 0.9rem;">El banco de próxima generación para operaciones financieras seguras y globales.</p>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                    <h5 class="footer-heading">Banca de Personas</h5>
+                    <a href="#" class="footer-link">Cuentas Corrientes</a>
+                    <a href="#" class="footer-link">Tarjetas de Crédito y Débito</a>
+                    <a href="#" class="footer-link">Préstamos Hipotecarios</a>
+                    <a href="#" class="footer-link">Certificados Financieros</a>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                    <h5 class="footer-heading">Banca Corporativa</h5>
+                    <a href="#" class="footer-link">Gestión de Tesorería</a>
+                    <a href="#" class="footer-link">Financiamiento Comercial</a>
+                    <a href="#" class="footer-link">Mesa de Cambio</a>
+                    <a href="#" class="footer-link">Pago a Proveedores</a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="footer-heading">Información Corporativa</h5>
+                    <a href="#" class="footer-link">Gobierno Corporativo</a>
+                    <a href="#" class="footer-link">Prevención de Lavado (AML)</a>
+                    <a href="#" class="footer-link">Políticas de Privacidad</a>
+                    <a href="#" class="footer-link">Seguridad de la Información</a>
+                </div>
+            </div>
+
+            <div class="footer-disclaimer text-center mt-5">
+                <p class="mb-2 fw-bold text-white">© 2026 BankRED S.A. Banco Múltiple.</p>
+                <p class="mb-0 text-muted" style="font-size: 0.75rem; max-width: 900px; margin: 0 auto; line-height: 1.6;">
+                    BankRED es una entidad de intermediación financiera sujeta a la regulación y supervisión de la Superintendencia de Bancos de la República Dominicana. Los depósitos de los clientes están garantizados por el Fondo de Contingencia regulado por la Ley Monetaria y Financiera. Las tasas de cambio e indicadores de mercado mostrados son de carácter referencial y pueden variar sin previo aviso.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

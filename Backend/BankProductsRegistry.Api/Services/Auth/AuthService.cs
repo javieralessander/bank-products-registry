@@ -33,6 +33,48 @@ public sealed class AuthService(
         return await IssueTokensAsync(user, remoteIpAddress, cancellationToken);
     }
 
+    // ====================================================================
+    // MÉTODO DE REGISTRO DE CLIENTES
+    // ====================================================================
+    public async Task<(bool Success, string ErrorMessage)> RegisterAsync(
+        RegisterRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = NormalizationHelper.NormalizeEmail(request.Email);
+
+        // 1. Verificar si ya existe un usuario con ese correo o username
+        var existingUser = await userManager.FindByEmailAsync(normalizedEmail);
+        if (existingUser != null)
+        {
+            return (false, "El correo electrónico proporcionado ya está en uso.");
+        }
+
+        // 2. Crear la entidad del nuevo usuario
+        var newUser = new ApplicationUser
+        {
+            UserName = normalizedEmail, // Usamos el correo como username
+            Email = normalizedEmail,
+            FullName = $"{request.Nombre.Trim()} {request.Apellido.Trim()}",
+            IsActive = true
+        };
+
+        // 3. Guardar en Base de Datos con contraseña hasheada
+        var result = await userManager.CreateAsync(newUser, request.Password);
+
+        if (!result.Succeeded)
+        {
+            // Devuelve los errores de Identity (ej. Password requiere mayúsculas, etc.)
+            var errors = string.Join(" ", result.Errors.Select(e => e.Description));
+            return (false, errors);
+        }
+
+        // 4. Asignar rol de "Client" por defecto
+        await userManager.AddToRoleAsync(newUser, "consulta");
+
+        return (true, string.Empty);
+    }
+    // ====================================================================
+
     public async Task<AuthResponse?> RefreshAsync(
         RefreshTokenRequest request,
         string? remoteIpAddress,

@@ -18,13 +18,23 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         /* ========================
-           LOGIN
+            LOGIN
         ======================== */
         [HttpGet]
         public IActionResult Login()
         {
+            // Si el usuario ya está logueado, leemos sus roles y lo mandamos a su pantalla
             if (User.Identity is not null && User.Identity.IsAuthenticated)
-                return RedirectToAction("Index", "Dashboard");
+            {
+                var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+
+                if (roles.Contains("Admin") || roles.Contains("Employee"))
+                {
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
+                return RedirectToAction("Index", "ClientPortal");
+            }
 
             return View();
         }
@@ -45,18 +55,15 @@ namespace BankProductsRegistry.Frontend.Controllers
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                     var authResult = JsonSerializer.Deserialize<AuthResponse>(jsonString, options);
 
-                    // AHORA BUSCAMOS EL "AccessToken"
                     if (authResult != null && !string.IsNullOrEmpty(authResult.AccessToken))
                     {
                         var claims = new List<Claim>
                         {
-                            // Guardamos el nombre real (ej: "Administrador General")
                             new Claim(ClaimTypes.Name, authResult.User?.FullName ?? model.UserNameOrEmail),
                             new Claim(ClaimTypes.Email, authResult.User?.Email ?? string.Empty),
-                            new Claim("jwt_token", authResult.AccessToken) // Guardamos el JWT
+                            new Claim("jwt_token", authResult.AccessToken)
                         };
 
-                        // AQUI AGREGAMOS LOS ROLES MAGICAMENTE
                         if (authResult.User?.Roles != null)
                         {
                             foreach (var role in authResult.User.Roles)
@@ -68,7 +75,13 @@ namespace BankProductsRegistry.Frontend.Controllers
                         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-                        return RedirectToAction("Index", "Dashboard");
+                        // ---> REDIRECCIONAMIENTO POR ROLES POST-LOGIN <---
+                        if (authResult.User?.Roles != null && (authResult.User.Roles.Contains("Admin") || authResult.User.Roles.Contains("Employee")))
+                        {
+                            return RedirectToAction("Index", "Dashboard");
+                        }
+
+                        return RedirectToAction("Index", "ClientPortal");
                     }
                 }
 
@@ -83,30 +96,51 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         /* ========================
-           REGISTRO
+            REGISTRO
         ======================== */
         [HttpGet]
         public IActionResult Register()
         {
-            TempData["ErrorMessage"] = "El registro público está deshabilitado. Solicita la creación de tu usuario a un administrador.";
-            return RedirectToAction("Login");
+            return View();
         }
 
         [HttpPost]
-        public IActionResult Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            TempData["ErrorMessage"] = "El registro público está deshabilitado. Solicita la creación de tu usuario a un administrador.";
-            return RedirectToAction("Login");
+            if (!ModelState.IsValid) return View(model);
+
+            try
+            {
+                var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+
+                // Llamamos a la API para crear el usuario
+                var response = await _httpClient.PostAsync("api/auth/register", jsonContent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Tu cuenta digital ha sido creada con éxito. Ya puedes iniciar sesión.";
+                    return RedirectToAction("Login");
+                }
+
+                // Si la API devuelve un 400 Bad Request
+                ViewBag.ErrorMessage = "No se pudo crear la cuenta. Verifica que los datos sean correctos o que el correo no esté en uso.";
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
+            }
+
+            return View(model);
         }
 
         /* ========================
-           LOGOUT
+            LOGOUT
         ======================== */
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login", "Auth");
+            return RedirectToAction("Index", "Home");
         }
     }
 }
