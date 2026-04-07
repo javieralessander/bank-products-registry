@@ -78,7 +78,7 @@ public sealed class TransactionsController(
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [Authorize(Roles = $"{AuthRoles.Admin},{AuthRoles.Operator},{AuthRoles.Client}")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<TransactionResponse>> CreateAsync(
@@ -97,12 +97,51 @@ public sealed class TransactionsController(
                 $"El producto contratado {request.AccountProductId} no existe."));
         }
 
+        var isClient = IsInRole(AuthRoles.Client);
+        var isStaff = IsInRole(AuthRoles.Admin) || IsInRole(AuthRoles.Operator);
+
+        if (!isClient && !isStaff)
+        {
+            return Forbid();
+        }
+
+        if (isClient)
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || accountProduct.ClientId != currentClientId.Value)
+            {
+                return Forbid();
+            }
+
+            if (accountProduct.Status is not AccountProductStatus.Active and not AccountProductStatus.Delinquent)
+            {
+                return Conflict(BuildProblem(
+                    StatusCodes.Status409Conflict,
+                    "Producto no disponible",
+                    "Solo puedes operar productos en estado activo o en mora."));
+            }
+
+            if (request.TransactionType is not TransactionType.Transfer
+                and not TransactionType.Payment
+                and not TransactionType.Withdrawal
+                and not TransactionType.Deposit)
+            {
+                return BadRequest(BuildProblem(
+                    StatusCodes.Status400BadRequest,
+                    "Tipo no permitido",
+                    "En el portal del cliente solo se permiten transferencias, pagos, depositos o retiros simulados."));
+            }
+        }
+
+        // Clientes siempre operan como banca en linea (evita suplantar canales internos).
+        var effectiveChannel = isClient ? TransactionChannel.Online : request.TransactionChannel;
+
         var normalizedCountryCode = NormalizeCountryCode(request.CountryCode);
 
         var transactionProblem = await ValidateAccountProductTransactionAsync(
             accountProduct,
             request.TransactionType,
-            request.TransactionChannel,
+            effectiveChannel,
             request.Amount,
             request.TransactionDate,
             normalizedCountryCode,
@@ -128,7 +167,7 @@ public sealed class TransactionsController(
         {
             AccountProductId = request.AccountProductId,
             TransactionType = request.TransactionType,
-            TransactionChannel = request.TransactionChannel,
+            TransactionChannel = effectiveChannel,
             Amount = request.Amount,
             TransactionDate = request.TransactionDate,
             Description = NormalizationHelper.NormalizeOptionalText(request.Description),

@@ -59,7 +59,6 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthPolicies.WriteAccess)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -77,6 +76,20 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
                 StatusCodes.Status404NotFound,
                 "Producto contratado no encontrado",
                 $"No existe un producto contratado con el id {accountProductId}."));
+        }
+
+        // Cliente: solo su propio producto. Personal: Admin/Operador. Consulta: sin alta.
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || accountProduct.ClientId != currentClientId.Value)
+            {
+                return Forbid();
+            }
+        }
+        else if (!IsInRole(AuthRoles.Admin) && !IsInRole(AuthRoles.Operator))
+        {
+            return Forbid();
         }
 
         if (accountProduct.Status == AccountProductStatus.Closed || accountProduct.Status == AccountProductStatus.Cancelled)
@@ -149,7 +162,6 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
     }
 
     [HttpPost("{noticeId:int}/cancel")]
-    [Authorize(Policy = AuthPolicies.WriteAccess)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -159,6 +171,19 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         [FromBody] AccountProductTravelNoticeCancelRequest request,
         CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || !await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return Forbid();
+            }
+        }
+        else if (!IsInRole(AuthRoles.Admin) && !IsInRole(AuthRoles.Operator))
+        {
+            return Forbid();
+        }
+
         var notice = await dbContext.AccountProductTravelNotices
             .Include(currentNotice => currentNotice.Countries)
             .FirstOrDefaultAsync(
