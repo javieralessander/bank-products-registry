@@ -50,6 +50,11 @@ public sealed class TokenService(
             claims.Add(new Claim(CustomClaimTypes.SecurityStamp, user.SecurityStamp));
         }
 
+        if (user.ClientId.HasValue)
+        {
+            claims.Add(new Claim(CustomClaimTypes.ClientId, user.ClientId.Value.ToString(CultureInfo.InvariantCulture)));
+        }
+
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));

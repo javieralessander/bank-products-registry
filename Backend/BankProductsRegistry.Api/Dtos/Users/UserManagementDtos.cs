@@ -19,6 +19,8 @@ public sealed record UserCreateRequest
     [Required, MaxLength(20)]
     public string Role { get; init; } = string.Empty;
 
+    public int? ClientId { get; init; }
+
     public bool IsActive { get; init; } = true;
 }
 

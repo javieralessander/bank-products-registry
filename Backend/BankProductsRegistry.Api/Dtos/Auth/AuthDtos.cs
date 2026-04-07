@@ -23,6 +23,12 @@ public sealed record RegisterRequest
     [Required, EmailAddress, MaxLength(150)]
     public string Email { get; init; } = string.Empty;
 
+    [Required, MaxLength(25)]
+    public string NationalId { get; init; } = string.Empty;
+
+    [Required, MaxLength(25)]
+    public string Phone { get; init; } = string.Empty;
+
     [Required, DataType(DataType.Password)]
     public string Password { get; init; } = string.Empty;
 }

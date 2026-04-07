@@ -27,9 +27,24 @@ public sealed class TransactionsController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<TransactionResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var transactions = await dbContext.Transactions
+        var transactionsQuery = dbContext.Transactions
             .AsNoTracking()
             .Include(transaction => transaction.AccountProduct)
+            .AsQueryable();
+
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            transactionsQuery = transactionsQuery.Where(
+                transaction => transaction.AccountProduct != null && transaction.AccountProduct.ClientId == currentClientId.Value);
+        }
+
+        var transactions = await transactionsQuery
             .OrderByDescending(transaction => transaction.TransactionDate)
             .ToListAsync(cancellationToken);
 
@@ -45,6 +60,17 @@ public sealed class TransactionsController(
             .AsNoTracking()
             .Include(currentTransaction => currentTransaction.AccountProduct)
             .FirstOrDefaultAsync(currentTransaction => currentTransaction.Id == id, cancellationToken);
+
+        if (transaction is not null && IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue ||
+                transaction.AccountProduct is null ||
+                transaction.AccountProduct.ClientId != currentClientId.Value)
+            {
+                return Forbid();
+            }
+        }
 
         return transaction is null
             ? NotFound(BuildProblem(StatusCodes.Status404NotFound, "Transaccion no encontrada", $"No existe una transaccion con el id {id}."))

@@ -22,10 +22,24 @@ public sealed class AccountProductsController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<AccountProductListItemResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var accountProducts = await dbContext.AccountProducts
+        var accountProductsQuery = dbContext.AccountProducts
             .AsNoTracking()
             .Include(accountProduct => accountProduct.Client)
             .Include(accountProduct => accountProduct.FinancialProduct)
+            .AsQueryable();
+
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            accountProductsQuery = accountProductsQuery.Where(accountProduct => accountProduct.ClientId == currentClientId.Value);
+        }
+
+        var accountProducts = await accountProductsQuery
             .OrderBy(accountProduct => accountProduct.AccountNumber)
             .ToListAsync(cancellationToken);
 
@@ -53,6 +67,15 @@ public sealed class AccountProductsController(
             .Include(currentAccountProduct => currentAccountProduct.Employee)
             .Include(currentAccountProduct => currentAccountProduct.FinancialProduct)
             .FirstOrDefaultAsync(currentAccountProduct => currentAccountProduct.Id == id, cancellationToken);
+
+        if (accountProduct is not null && IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || accountProduct.ClientId != currentClientId.Value)
+            {
+                return Forbid();
+            }
+        }
 
         var activeBlock = accountProduct is null
             ? null

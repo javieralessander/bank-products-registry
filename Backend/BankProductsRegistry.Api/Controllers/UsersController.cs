@@ -49,7 +49,7 @@ public sealed class UsersController(
             return BadRequest(BuildProblem(
                 StatusCodes.Status400BadRequest,
                 "Rol invalido",
-                $"El rol '{request.Role}' no es valido. Usa Admin, Operador o Consulta."));
+                $"El rol '{request.Role}' no es valido. Usa Admin, Operador, Consulta o Cliente."));
         }
 
         if (!await roleManager.RoleExistsAsync(roleName))
@@ -62,6 +62,38 @@ public sealed class UsersController(
 
         var normalizedUserName = request.UserName.Trim();
         var normalizedEmail = NormalizationHelper.NormalizeEmail(request.Email);
+        int? linkedClientId = null;
+
+        if (string.Equals(roleName, AuthRoles.Client, StringComparison.Ordinal))
+        {
+            if (!request.ClientId.HasValue)
+            {
+                return BadRequest(BuildProblem(
+                    StatusCodes.Status400BadRequest,
+                    "Cliente requerido",
+                    "Debes indicar ClientId para crear usuarios con rol Cliente."));
+            }
+
+            var clientExists = await dbContext.Clients.AnyAsync(client => client.Id == request.ClientId.Value, cancellationToken);
+            if (!clientExists)
+            {
+                return BadRequest(BuildProblem(
+                    StatusCodes.Status400BadRequest,
+                    "Cliente no encontrado",
+                    $"No existe un cliente con el id {request.ClientId.Value}."));
+            }
+
+            var hasLinkedUser = await dbContext.Users.AnyAsync(user => user.ClientId == request.ClientId.Value, cancellationToken);
+            if (hasLinkedUser)
+            {
+                return Conflict(BuildProblem(
+                    StatusCodes.Status409Conflict,
+                    "Cliente ya vinculado",
+                    "Ese cliente ya tiene una cuenta de usuario asociada."));
+            }
+
+            linkedClientId = request.ClientId.Value;
+        }
 
         var duplicatedUser = await dbContext.Users.AnyAsync(
             user => user.NormalizedUserName == normalizedUserName.ToUpperInvariant() ||
@@ -82,7 +114,8 @@ public sealed class UsersController(
             Email = normalizedEmail,
             FullName = NormalizationHelper.NormalizeName(request.FullName),
             IsActive = request.IsActive,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            ClientId = linkedClientId
         };
 
         var createResult = await userManager.CreateAsync(user, request.Password);
@@ -164,7 +197,7 @@ public sealed class UsersController(
             return BadRequest(BuildProblem(
                 StatusCodes.Status400BadRequest,
                 "Rol invalido",
-                $"El rol '{request.Role}' no es valido. Usa Admin, Operador o Consulta."));
+                $"El rol '{request.Role}' no es valido. Usa Admin, Operador, Consulta o Cliente."));
         }
 
         if (!await roleManager.RoleExistsAsync(roleName))

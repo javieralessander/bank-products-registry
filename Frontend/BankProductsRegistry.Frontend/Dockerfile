@@ -12,5 +12,7 @@ WORKDIR /app
 
 COPY --from=build /app/publish ./
 
-# Railway inyecta PORT; si no existe, usa 8080 por defecto.
-CMD ["sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-8080} dotnet BankProductsRegistry.Frontend.dll"]
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "BankProductsRegistry.Frontend.dll"]

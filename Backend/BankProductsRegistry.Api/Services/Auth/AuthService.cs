@@ -1,6 +1,8 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Auth;
+using BankProductsRegistry.Api.Models;
 using BankProductsRegistry.Api.Models.Auth;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Identity;
@@ -34,46 +36,82 @@ public sealed class AuthService(
     }
 
     // ====================================================================
-    // M…TODO DE REGISTRO DE CLIENTES
+    // MùTODO DE REGISTRO DE CLIENTES
     // ====================================================================
     public async Task<(bool Success, string ErrorMessage)> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
         var normalizedEmail = NormalizationHelper.NormalizeEmail(request.Email);
+        var normalizedNationalId = NormalizationHelper.NormalizeCode(request.NationalId);
 
-        // 1. Verificar si ya existe un usuario con ese correo o username
         var existingUser = await userManager.FindByEmailAsync(normalizedEmail);
         if (existingUser != null)
         {
-            return (false, "El correo electrÛnico proporcionado ya est· en uso.");
+            return (false, "El correo electronico proporcionado ya esta en uso.");
         }
 
-        // 2. Crear la entidad del nuevo usuario
+        var existingClient = await dbContext.Clients
+            .FirstOrDefaultAsync(
+                client => client.Email == normalizedEmail || client.NationalId == normalizedNationalId,
+                cancellationToken);
+
+        if (existingClient is null)
+        {
+            existingClient = new Client
+            {
+                FirstName = NormalizationHelper.NormalizeName(request.Nombre),
+                LastName = NormalizationHelper.NormalizeName(request.Apellido),
+                NationalId = normalizedNationalId,
+                Email = normalizedEmail,
+                Phone = NormalizationHelper.NormalizeCode(request.Phone),
+                IsActive = true
+            };
+
+            dbContext.Clients.Add(existingClient);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            var hasLinkedUser = await userManager.Users.AnyAsync(
+                user => user.ClientId == existingClient.Id,
+                cancellationToken);
+
+            if (hasLinkedUser)
+            {
+                return (false, "El cliente ya tiene una cuenta de acceso asociada.");
+            }
+        }
+
+        var userName = normalizedEmail;
         var newUser = new ApplicationUser
         {
-            UserName = normalizedEmail, // Usamos el correo como username
+            UserName = userName,
             Email = normalizedEmail,
             FullName = $"{request.Nombre.Trim()} {request.Apellido.Trim()}",
-            IsActive = true
+            IsActive = true,
+            EmailConfirmed = true,
+            ClientId = existingClient.Id
         };
 
-        // 3. Guardar en Base de Datos con contraseÒa hasheada
         var result = await userManager.CreateAsync(newUser, request.Password);
 
         if (!result.Succeeded)
         {
-            // Devuelve los errores de Identity (ej. Password requiere may˙sculas, etc.)
             var errors = string.Join(" ", result.Errors.Select(e => e.Description));
             return (false, errors);
         }
 
-        // 4. Asignar rol de "Client" por defecto
-        await userManager.AddToRoleAsync(newUser, "consulta");
+        var roleResult = await userManager.AddToRoleAsync(newUser, AuthRoles.Client);
+        if (!roleResult.Succeeded)
+        {
+            await userManager.DeleteAsync(newUser);
+            var errors = string.Join(" ", roleResult.Errors.Select(e => e.Description));
+            return (false, errors);
+        }
 
         return (true, string.Empty);
     }
-    // ====================================================================
 
     public async Task<AuthResponse?> RefreshAsync(
         RefreshTokenRequest request,

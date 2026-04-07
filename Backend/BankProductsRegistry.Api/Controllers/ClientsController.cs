@@ -19,6 +19,29 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : ApiCont
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<ClientResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            var currentClient = await dbContext.Clients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(client => client.Id == currentClientId.Value, cancellationToken);
+
+            if (currentClient is null)
+            {
+                return NotFound(BuildProblem(
+                    StatusCodes.Status404NotFound,
+                    "Cliente no encontrado",
+                    "Tu cuenta no tiene un cliente asociado valido."));
+            }
+
+            return Ok(new[] { Map(currentClient) });
+        }
+
         var clients = await dbContext.Clients
             .AsNoTracking()
             .OrderBy(client => client.LastName)
@@ -34,6 +57,15 @@ public sealed class ClientsController(BankProductsDbContext dbContext) : ApiCont
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ClientResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || currentClientId.Value != id)
+            {
+                return Forbid();
+            }
+        }
+
         var client = await dbContext.Clients
             .AsNoTracking()
             .FirstOrDefaultAsync(currentClient => currentClient.Id == id, cancellationToken);
