@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
-    [Authorize]
+    /// <summary>Catálogo de empleados del banco (entidad Employee); no confundir con el rol JWT <c>Operador</c>.</summary>
+    [Authorize(Roles = "Admin,Operador,Consulta")]
     public class EmployeesController : Controller
     {
         private readonly HttpClient _httpClient;

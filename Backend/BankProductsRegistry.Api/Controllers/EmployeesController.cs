@@ -16,6 +16,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
     private const string GetEmployeeByIdRoute = "GetEmployeeById";
 
     [HttpGet]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<EmployeeResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -30,6 +31,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
     }
 
     [HttpGet("{id:int}", Name = GetEmployeeByIdRoute)]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EmployeeResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -71,7 +73,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
 
         dbContext.Employees.Add(employee);
 
-        // ---> NOTIFICACI”N AUTOM¡TICA <---
+        // ---> NOTIFICACIùN AUTOMùTICA <---
         dbContext.SystemNotifications.Add(new SystemNotification
         {
             Title = "Nuevo empleado registrado",

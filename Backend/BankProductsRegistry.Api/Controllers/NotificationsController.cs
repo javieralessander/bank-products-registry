@@ -1,13 +1,17 @@
 ﻿using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Notifications;
+using BankProductsRegistry.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankProductsRegistry.Api.Controllers;
 
+/// <summary>
+/// Centro de alertas internas del banco (no filtrado por cliente; solo personal autorizado).
+/// </summary>
 [Route("api/notifications")]
-[Authorize]
+[Authorize(Roles = AuthRoles.InternalStaff)]
 public sealed class NotificationsController(BankProductsDbContext dbContext) : ApiControllerBase
 {
     [HttpGet]

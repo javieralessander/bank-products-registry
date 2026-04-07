@@ -6,7 +6,8 @@ using System.Text.Json;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
-    [Authorize]
+    /// <summary>Centro de alertas internas; mismo alcance que la API (no aplica a usuarios Cliente).</summary>
+    [Authorize(Roles = "Admin,Operador,Consulta")]
     public class NotificationsController : Controller
     {
         private readonly HttpClient _httpClient;
