@@ -48,6 +48,30 @@ namespace BankProductsRegistry.Frontend.Controllers
             return await ProxyPdfAsync($"api/reports/clients/{clientId}/credit-score/pdf", $"score-credito-{clientId}.pdf");
         }
 
+        /// <summary>Estado de cuenta: movimientos por rango de fechas (cliente).</summary>
+        [HttpGet]
+        public async Task<IActionResult> ClientTransactionStatementPdf(
+            int clientId,
+            DateOnly from,
+            DateOnly to,
+            int? accountProductId)
+        {
+            if (!EnsureClientScope(clientId))
+            {
+                return Forbid();
+            }
+
+            var query = $"from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}";
+            if (accountProductId.HasValue)
+            {
+                query += $"&accountProductId={accountProductId.Value}";
+            }
+
+            return await ProxyPdfAsync(
+                $"api/reports/clients/{clientId}/transactions-statement/pdf?{query}",
+                $"estado-cuenta-{clientId}-{from:yyyyMMdd}-{to:yyyyMMdd}.pdf");
+        }
+
         [HttpGet]
         [Authorize(Roles = "Admin,Operador,Consulta")]
         public async Task<IActionResult> DashboardPdf()

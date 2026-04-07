@@ -126,7 +126,10 @@ namespace BankProductsRegistry.Frontend.Controllers
 
                 if (response.StatusCode == HttpStatusCode.Forbidden)
                 {
-                    TempData["ErrorMessage"] = "No tienes permiso para operar este producto.";
+                    var forbiddenDetail = await ApiErrorParser.ExtractMessageAsync(response);
+                    TempData["ErrorMessage"] = string.IsNullOrWhiteSpace(forbiddenDetail)
+                        ? "No tienes permiso para completar esta operación. Si el problema continúa, cierra sesión y vuelve a entrar o verifica que el producto sea tuyo."
+                        : forbiddenDetail;
                     return RedirectToAction(nameof(Index));
                 }
 

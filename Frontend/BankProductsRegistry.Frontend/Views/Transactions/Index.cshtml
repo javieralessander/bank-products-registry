@@ -222,8 +222,8 @@
 
 @if (User.IsInRole("Cliente"))
 {
-    <div class="card-panel mb-4" style="background-color: #1a1d2d; border: 1px solid #2d3348; border-radius: 12px; padding: 24px;">
-        <h2 class="text-white h5 mb-3">Registrar movimiento</h2>
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 p-4">
+        <h2 class="h5 mb-3 text-dark">Registrar movimiento</h2>
         @if (Model.ClientAccounts == null || !Model.ClientAccounts.Any())
         {
             <p class="text-muted mb-0">No tienes productos activos para operar. Cuando un ejecutivo active un contrato, podrás registrar transferencias y otros movimientos simulados aquí.</p>
@@ -233,8 +233,8 @@
             <form asp-action="RegisterTransfer" method="post" class="row g-3">
                 @Html.AntiForgeryToken()
                 <div class="col-md-6">
-                    <label class="form-label text-secondary small">Producto / cuenta</label>
-                    <select name="AccountProductId" class="form-select bg-dark text-white border-secondary" required id="clientAccountSelect">
+                    <label class="form-label small text-secondary">Producto / cuenta</label>
+                    <select name="AccountProductId" class="form-select" required id="clientAccountSelect">
                         <option value="">— Selecciona —</option>
                         @foreach (var a in Model.ClientAccounts)
                         {
@@ -247,8 +247,8 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label text-secondary small">Tipo de operación</label>
-                    <select name="OperationKind" class="form-select bg-dark text-white border-secondary" id="operationKindSelect">
+                    <label class="form-label small text-secondary">Tipo de operación</label>
+                    <select name="OperationKind" class="form-select" id="operationKindSelect">
                         <option value="transferencia">Transferencia (salida)</option>
                         <option value="pago">Pago / abono (simulado; útil en tarjeta)</option>
                         <option value="deposito">Depósito (entrada)</option>
@@ -256,16 +256,16 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label text-secondary small">Monto (DOP)</label>
-                    <input name="Amount" type="number" step="0.01" min="0.01" class="form-control bg-dark text-white border-secondary" required placeholder="0.00" />
+                    <label class="form-label small text-secondary">Monto (DOP)</label>
+                    <input name="Amount" type="number" step="0.01" min="0.01" class="form-control" required placeholder="0.00" />
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label text-secondary small">Referencia (opcional)</label>
-                    <input name="ReferenceNumber" type="text" maxlength="60" class="form-control bg-dark text-white border-secondary" placeholder="Ej. ref. banco destino" />
+                    <label class="form-label small text-secondary">Referencia (opcional)</label>
+                    <input name="ReferenceNumber" type="text" maxlength="60" class="form-control" placeholder="Ej. ref. banco destino" />
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label text-secondary small">Nota (opcional)</label>
-                    <input name="Description" type="text" maxlength="300" class="form-control bg-dark text-white border-secondary" />
+                    <label class="form-label small text-secondary">Nota (opcional)</label>
+                    <input name="Description" type="text" maxlength="300" class="form-control" />
                 </div>
                 <div class="col-12">
                     <p class="small text-muted mb-2 d-none" id="cardHint">
@@ -287,6 +287,50 @@
                     sync();
                 })();
             </script>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 p-4">
+        <h2 class="h5 mb-2 text-dark">Exportar estado de cuenta (PDF)</h2>
+        <p class="small text-muted mb-3">Descarga tus movimientos por periodo (formato tipo estado de cuenta).</p>
+        @{
+            var clientIdPdfClaim = User.Claims.FirstOrDefault(c => c.Type == "client_id")?.Value;
+        }
+        @if (!string.IsNullOrEmpty(clientIdPdfClaim) && int.TryParse(clientIdPdfClaim, out var clientIdForPdf))
+        {
+            var hoy = DateTime.Today;
+            var desdeDefault = hoy.AddDays(-30);
+            <form method="get" asp-controller="ReportsExport" asp-action="ClientTransactionStatementPdf" class="row g-3 align-items-end">
+                <input type="hidden" name="clientId" value="@clientIdForPdf" />
+                <div class="col-md-3">
+                    <label class="form-label small text-secondary">Desde</label>
+                    <input type="date" name="from" class="form-control" value="@desdeDefault.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-secondary">Hasta</label>
+                    <input type="date" name="to" class="form-control" value="@hoy.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary">Producto (opcional)</label>
+                    <select name="accountProductId" class="form-select">
+                        <option value="">Todos mis productos</option>
+                        @if (Model.ClientAccounts != null)
+                        {
+                            foreach (var acc in Model.ClientAccounts)
+                            {
+                                <option value="@acc.Id">@acc.AccountNumber — @acc.FinancialProductName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">Descargar PDF</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <p class="text-muted mb-0 small">Tu sesión no tiene un perfil de cliente vinculado para exportar.</p>
         }
     </div>
 }

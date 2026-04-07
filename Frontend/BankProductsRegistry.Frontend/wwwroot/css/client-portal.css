@@ -1,0 +1,385 @@
+/**
+ * Tema portal cliente (rol Cliente): contraste AA sobre fondo claro.
+ * Se carga al final del body para sobrescribir estilos por vista y utilidades Bootstrap.
+ */
+body.layout-client {
+    background-color: #f1f5f9 !important;
+    color: #0f172a;
+}
+
+body.layout-client .main-content {
+    color: #0f172a;
+}
+
+/* Utilidades Bootstrap que fuerzan modo oscuro */
+body.layout-client .main-content .bg-dark {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.layout-client .main-content h1.text-white,
+body.layout-client .main-content h2.text-white:not(.btn),
+body.layout-client .main-content h3.text-white,
+body.layout-client .main-content .text-white:not(.btn):not(.badge):not(.bi):not(.btn-close) {
+    color: #0f172a !important;
+}
+
+/* Tarjeta de saldo (gradiente): mantener texto claro */
+body.layout-client .main-content .balance-card .text-white,
+body.layout-client .main-content .balance-card h1,
+body.layout-client .main-content .balance-card .balance-amount,
+body.layout-client .main-content .balance-card .balance-currency {
+    color: #ffffff !important;
+}
+
+/* Formularios */
+body.layout-client .main-content .form-control,
+body.layout-client .main-content .form-select,
+body.layout-client .main-content input.form-control,
+body.layout-client .main-content select.form-select,
+body.layout-client .main-content textarea.form-control {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.layout-client .main-content .form-control:focus,
+body.layout-client .main-content .form-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2) !important;
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .form-control::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.layout-client .main-content .form-label,
+body.layout-client .main-content .form-label-custom,
+body.layout-client .main-content label.small,
+body.layout-client .main-content .form-label-small {
+    color: #475569 !important;
+}
+
+body.layout-client .main-content .form-control-custom,
+body.layout-client .main-content .form-control-dark {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.layout-client .main-content .form-card {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+body.layout-client .main-content .text-muted {
+    color: #64748b !important;
+}
+
+/* Tablas */
+body.layout-client .main-content .custom-table th {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+
+body.layout-client .main-content .custom-table td {
+    color: #334155 !important;
+}
+
+body.layout-client .main-content .custom-table tr:hover td {
+    background-color: #f8fafc !important;
+}
+
+/* Búsqueda y barras */
+body.layout-client .main-content .search-input,
+body.layout-client .main-content .search-input-top,
+body.layout-client .main-content .search-inline {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* Tarjetas y contenedores */
+body.layout-client .main-content .toolbar,
+body.layout-client .main-content .table-container,
+body.layout-client .main-content .summary-card,
+body.layout-client .main-content .summary-grid .summary-card,
+body.layout-client .main-content .card-panel {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.layout-client .main-content .page-title,
+body.layout-client .main-content .welcome-text {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .page-subtitle,
+body.layout-client .main-content .date-text {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .summary-label {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .summary-value {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .f-tab {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .f-tab.active,
+body.layout-client .main-content .f-tab:hover {
+    color: #1e40af !important;
+    background-color: #e0e7ff !important;
+}
+
+body.layout-client .main-content .filter-tab {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .filter-tab.active-tab {
+    color: #1e40af !important;
+    background-color: #e0e7ff !important;
+}
+
+/* Productos / listas */
+body.layout-client .main-content .product-card,
+body.layout-client .main-content .form-card,
+body.layout-client .main-content .t-card,
+body.layout-client .main-content .product-item {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.layout-client .main-content .product-title,
+body.layout-client .main-content .tc-cname,
+body.layout-client .main-content .client-name-cell {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .product-category,
+body.layout-client .main-content .tc-cprod,
+body.layout-client .main-content .muted-line {
+    color: #64748b !important;
+}
+
+/* Portal: acciones rápidas y secciones */
+body.layout-client .main-content .action-btn {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #1e40af !important;
+}
+
+body.layout-client .main-content .action-btn:hover {
+    background-color: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1d4ed8 !important;
+}
+
+body.layout-client .main-content .section-heading {
+    color: #0f172a !important;
+    border-bottom-color: #e2e8f0 !important;
+}
+
+body.layout-client .main-content .product-info h5,
+body.layout-client .main-content .product-balance h4 {
+    color: #0f172a !important;
+}
+
+/* Detalle de producto (modal estilo tarjeta) */
+body.layout-client .detail-card {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12) !important;
+}
+
+body.layout-client .main-content .d-title,
+body.layout-client .main-content .d-value {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .btn-close-modal {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+body.layout-client .main-content .btn-close-modal:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .d-header {
+    border-bottom-color: #e2e8f0 !important;
+}
+
+body.layout-client .main-content .border-bottom {
+    border-color: #e2e8f0 !important;
+}
+
+/* Modales estilo “Create” (viajes, bloqueos) */
+body.layout-client .modal-overlay {
+    background-color: rgba(15, 23, 42, 0.4) !important;
+}
+
+body.layout-client .custom-modal {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12) !important;
+}
+
+body.layout-client .custom-modal .modal-title,
+body.layout-client .modal-title {
+    color: #0f172a !important;
+}
+
+body.layout-client .custom-modal .modal-subtitle,
+body.layout-client .modal-subtitle {
+    color: #64748b !important;
+}
+
+body.layout-client .custom-modal .modal-header-custom {
+    border-bottom-color: #e2e8f0 !important;
+}
+
+body.layout-client .custom-modal .close-btn {
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+body.layout-client .custom-modal .close-btn:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .status-group {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Alertas inline (por clase combinada; no forzar todo a error) */
+body.layout-client .main-content .alert-custom.alert-info {
+    background-color: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1e40af !important;
+}
+
+body.layout-client .main-content .alert-custom.alert-success {
+    background-color: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+    color: #047857 !important;
+}
+
+body.layout-client .main-content .alert-custom.alert-error {
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #b91c1c !important;
+}
+
+body.layout-client .main-content .alert-custom:not(.alert-info):not(.alert-success):not(.alert-error) {
+    background-color: #fff7ed !important;
+    border-color: #fed7aa !important;
+    color: #9a3412 !important;
+}
+
+/* Límites del producto (Views/AccountProducts/Limits.cshtml — tema oscuro embebido) */
+body.layout-client .main-content .metric-label {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .metric-value {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .section-title {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .section-kicker {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .kv-item {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.layout-client .main-content .kv-item-label {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .kv-item-value {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .nav-link-chip {
+    color: #1d4ed8 !important;
+    border-color: #bfdbfe !important;
+    background-color: #eff6ff !important;
+}
+
+body.layout-client .main-content .nav-link-chip:hover {
+    color: #1e3a8a !important;
+    border-color: #93c5fd !important;
+    background-color: #dbeafe !important;
+}
+
+body.layout-client .main-content .history-table {
+    color: #334155 !important;
+}
+
+body.layout-client .main-content .history-table th {
+    color: #475569 !important;
+}
+
+body.layout-client .main-content .history-lead {
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .form-group label {
+    color: #475569 !important;
+}
+
+body.layout-client .main-content .input-dark,
+body.layout-client .main-content .textarea-dark {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.layout-client .main-content .btn-secondary-custom {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+body.layout-client .main-content .validation-note {
+    color: #b91c1c !important;
+}
+
+body.layout-client .main-content .product-info p {
+    color: #64748b !important;
+}
+
+body.layout-client .main-content .balance-card .subtle-line {
+    color: #bfdbfe !important;
+}
+
+body.layout-client .main-content .product-status-other {
+    color: #64748b !important;
+    background: rgba(148, 163, 184, 0.15) !important;
+}
+
+/* Badges y estados legibles */
+body.layout-client .main-content .badge-success {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #047857 !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
