@@ -168,6 +168,8 @@ Si estas corriendo el backend desde tu maquina local, usa la URL publica:
 MYSQL_PUBLIC_URL=mysql://root:TU_PASSWORD@centerbeam.proxy.rlwy.net:52379/railway
 ```
 
+**Railway:** el plugin MySQL suele crear la base `railway`. Si la URL que inyecta la plataforma **no lleva nombre de base en el path** (p. ej. termina en `:3306` sin `/railway`), antes podía quedar `Database` vacío y ver errores como `database '' on server 'mysql.railway.internal'`. El API ahora completa el nombre con `MYSQLDATABASE` o, en hosts Railway, con `railway` por defecto. Igual conviene **vincular el servicio MySQL al backend** en el mismo proyecto y revisar en Variables que existan credenciales y, si aplica, `MYSQLDATABASE=railway`.
+
 #### Opcion 3: Variables MYSQL
 
 ```text

@@ -156,7 +156,36 @@ public static class MySqlConnectionResolver
             builder.AllowPublicKeyRetrieval = true;
         }
 
+        EnsureDatabaseName(builder);
+
         return builder.ConnectionString;
+    }
+
+    /// <summary>
+    /// Railway (y otros) suelen exponer MYSQL_URL sin path; el conector queda con Database vacío y falla con "database ''".
+    /// </summary>
+    private static void EnsureDatabaseName(MySqlConnectionStringBuilder builder)
+    {
+        if (!string.IsNullOrWhiteSpace(builder.Database))
+        {
+            return;
+        }
+
+        var fromEnv = ResolveEnvironmentValue("MYSQLDATABASE", "MYSQL_DATABASE", "DB_NAME");
+        if (!string.IsNullOrWhiteSpace(fromEnv))
+        {
+            builder.Database = fromEnv;
+            return;
+        }
+
+        if (builder.Server.Contains("railway.internal", StringComparison.OrdinalIgnoreCase) ||
+            builder.Server.Contains("rlwy.net", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.Database = "railway";
+            return;
+        }
+
+        builder.Database = "bank_products_registry_db";
     }
 
     private static bool LooksLikeConnectionUrl(string value) =>
