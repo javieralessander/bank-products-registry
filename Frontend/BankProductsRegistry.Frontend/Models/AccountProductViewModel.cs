@@ -48,6 +48,8 @@ namespace BankProductsRegistry.Frontend.Models
         public string AccountNumber { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string FinancialProductName { get; set; } = string.Empty;
+        public int EmployeeId { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public DateTimeOffset OpenDate { get; set; }
 

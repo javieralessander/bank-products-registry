@@ -346,7 +346,7 @@
                         <td style="color: #3b82f6; font-weight: 500;">@contract.AccountNumber</td>
                         <td style="color: white; font-weight: 500;">@contract.ClientName</td>
                         <td style="color: #d1d5db;">@contract.FinancialProductName</td>
-                        <td style="color: #8b94a5;">-</td>
+                        <td style="color: #8b94a5;">@(string.IsNullOrWhiteSpace(contract.EmployeeName) ? "—" : contract.EmployeeName)</td>
                         <td style="color: white; font-weight: 500;">DOP @contract.Amount.ToString("N0")</td>
                         <td style="color: #8b94a5;">@contract.OpenDate.ToString("dd/MM/yy")</td>
                         <td>

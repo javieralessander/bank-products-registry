@@ -241,6 +241,11 @@
         margin-top: 6px;
     }
 
+    .history-lead {
+        color: white;
+        font-weight: 600;
+    }
+
     @@media (max-width: 992px) {
         .summary-grid,
         .panel-grid,
@@ -528,7 +533,7 @@
                     {
                         <tr>
                             <td>
-                                <div style="color: white; font-weight: 600;">@entry.GetChangeTypeLabel()</div>
+                                <div class="history-lead">@entry.GetChangeTypeLabel()</div>
                                 <div class="muted-line">Registro #@entry.Id</div>
                             </td>
                             <td>

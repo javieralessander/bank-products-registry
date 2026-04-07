@@ -83,7 +83,9 @@ public sealed record AccountProductListItemResponse(
     DateTimeOffset OpenDate,
     AccountProductStatus Status,
     bool IsBlocked,
-    AccountProductBlockSummaryResponse? ActiveBlock);
+    AccountProductBlockSummaryResponse? ActiveBlock,
+    int EmployeeId,
+    string EmployeeName);
 
 public sealed record AccountProductResponse(
     int Id,

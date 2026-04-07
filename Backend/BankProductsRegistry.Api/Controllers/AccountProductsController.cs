@@ -27,6 +27,7 @@ public sealed class AccountProductsController(
             .AsNoTracking()
             .Include(accountProduct => accountProduct.Client)
             .Include(accountProduct => accountProduct.FinancialProduct)
+            .Include(accountProduct => accountProduct.Employee)
             .AsQueryable();
 
         if (IsInRole(AuthRoles.Client))
@@ -67,6 +68,7 @@ public sealed class AccountProductsController(
             .AsNoTracking()
             .Include(accountProduct => accountProduct.Client)
             .Include(accountProduct => accountProduct.FinancialProduct)
+            .Include(accountProduct => accountProduct.Employee)
             .Where(accountProduct => accountProduct.Status == AccountProductStatus.Pending)
             .OrderBy(accountProduct => accountProduct.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -612,7 +614,9 @@ public sealed class AccountProductsController(
             accountProduct.OpenDate,
             accountProduct.Status,
             activeBlock is not null,
-            MapActiveBlock(activeBlock));
+            MapActiveBlock(activeBlock),
+            accountProduct.EmployeeId,
+            accountProduct.Employee is null ? string.Empty : $"{accountProduct.Employee.FirstName} {accountProduct.Employee.LastName}");
 
     private static AccountProductResponse MapDetail(AccountProduct accountProduct, AccountProductBlock? activeBlock) =>
         new(
