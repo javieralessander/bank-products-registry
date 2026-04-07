@@ -160,6 +160,36 @@
             opacity: 0.95;
         }
 
+        .auth-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border-radius: 10px;
+            border: 1px solid transparent;
+        }
+
+        .auth-banner-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .auth-banner i {
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .auth-validation-error {
+            color: #f87171 !important;
+            font-size: 0.8rem;
+            margin-top: 0.35rem;
+            display: block;
+        }
+
         @@media (max-width: 768px) {
             body {
                 padding: 20px 14px;
@@ -182,8 +212,9 @@
 
             @if (ViewBag.ErrorMessage != null)
             {
-                <div class="alert alert-danger d-flex align-items-center gap-2" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.9rem; border-radius: 10px;">
-                    <i class="bi bi-exclamation-triangle-fill"></i> @ViewBag.ErrorMessage
+                <div class="auth-banner auth-banner-error" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>@ViewBag.ErrorMessage</span>
                 </div>
             }
 
@@ -195,7 +226,7 @@
                             <i class="bi bi-person input-icon"></i>
                             <input asp-for="Nombre" class="form-control" placeholder="Juan" />
                         </div>
-                        <span asp-validation-for="Nombre" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                        <span asp-validation-for="Nombre" class="auth-validation-error"></span>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Apellido</label>
@@ -203,7 +234,7 @@
                             <i class="bi bi-person-add input-icon"></i>
                             <input asp-for="Apellido" class="form-control" placeholder="Pérez" />
                         </div>
-                        <span asp-validation-for="Apellido" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                        <span asp-validation-for="Apellido" class="auth-validation-error"></span>
                     </div>
                 </div>
 
@@ -213,7 +244,7 @@
                         <i class="bi bi-envelope input-icon"></i>
                         <input asp-for="Email" class="form-control" placeholder="ejemplo@banco.com" />
                     </div>
-                    <span asp-validation-for="Email" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                    <span asp-validation-for="Email" class="auth-validation-error"></span>
                 </div>
 
                 <div class="row">
@@ -223,7 +254,7 @@
                             <i class="bi bi-person-vcard input-icon"></i>
                             <input asp-for="NationalId" class="form-control" placeholder="001-0000000-0" />
                         </div>
-                        <span asp-validation-for="NationalId" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                        <span asp-validation-for="NationalId" class="auth-validation-error"></span>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Teléfono</label>
@@ -231,7 +262,7 @@
                             <i class="bi bi-telephone input-icon"></i>
                             <input asp-for="Phone" class="form-control" placeholder="809-000-0000" />
                         </div>
-                        <span asp-validation-for="Phone" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                        <span asp-validation-for="Phone" class="auth-validation-error"></span>
                     </div>
                 </div>
 
@@ -242,7 +273,7 @@
                             <i class="bi bi-lock input-icon"></i>
                             <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" />
                         </div>
-                        <span asp-validation-for="Password" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                        <span asp-validation-for="Password" class="auth-validation-error"></span>
                     </div>
                     <div class="col-md-6 mb-4">
                         <label class="form-label">Confirmar Clave</label>
@@ -250,7 +281,7 @@
                             <i class="bi bi-shield-lock input-icon"></i>
                             <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="••••••••" />
                         </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
+                        <span asp-validation-for="ConfirmPassword" class="auth-validation-error"></span>
                     </div>
                 </div>
 

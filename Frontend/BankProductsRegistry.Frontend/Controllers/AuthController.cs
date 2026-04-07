@@ -38,7 +38,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 return RedirectToAction("Index", "ClientPortal");
             }
 
-            return View();
+            return View(new LoginViewModel());
         }
 
         [HttpPost]
@@ -110,7 +110,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            return View();
+            return View(new RegisterViewModel());
         }
 
         [HttpPost]

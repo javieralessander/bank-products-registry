@@ -24,8 +24,9 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Auth/Login"; // Si no estù logueado, lo manda aquù
-        options.ExpireTimeSpan = TimeSpan.FromHours(1); // Duraciùn de la sesiùn
+        options.LoginPath = "/Auth/Login";
+        options.AccessDeniedPath = "/Home/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(1);
     });
 
 var app = builder.Build();

@@ -1,9 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
     public class HomeController : Controller
     {
+        [Authorize]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
         public IActionResult Index()
         {
             // Si el usuario ya está logueado, lo redirigimos automáticamente
