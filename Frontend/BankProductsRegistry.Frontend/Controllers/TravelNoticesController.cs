@@ -2,6 +2,7 @@
 using BankProductsRegistry.Frontend.Models;
 using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
@@ -85,18 +86,23 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- REGISTRAR VIAJE (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador,Cliente")]
         public async Task<IActionResult> Create()
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            var model = new TravelNoticeCreateViewModel();
+
             try
             {
                 var prodRes = await _httpClient.GetAsync("api/account-products");
                 if (prodRes.IsSuccessStatusCode)
                 {
-                    ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+                    var json = await prodRes.Content.ReadAsStringAsync();
+                    ViewBag.AccountProducts = json;
+                    ClientAccountProductFormHelper.ApplyToTravelNotice(User, json, model);
                 }
                 else
                 {
@@ -111,11 +117,13 @@ namespace BankProductsRegistry.Frontend.Controllers
                 ViewBag.ErrorMessage = "Error de conexión: la API no está disponible.";
             }
 
-            return View(new TravelNoticeCreateViewModel());
+            return View(model);
         }
 
         // --- REGISTRAR VIAJE (POST) ---
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Operador,Cliente")]
         public async Task<IActionResult> Create(TravelNoticeCreateViewModel model)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -134,18 +142,31 @@ namespace BankProductsRegistry.Frontend.Controllers
             var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync($"api/account-products/{model.AccountProductId}/travel-notices", jsonContent);
-            if (response.IsSuccessStatusCode) return RedirectToAction("Index");
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["SuccessMessage"] = "Tu aviso de viaje fue registrado correctamente.";
+                return RedirectToAction("Index");
+            }
 
             var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
-            ViewBag.ErrorMessage = $"Error: {errorDetail}";
+            ViewBag.ErrorMessage = response.StatusCode == HttpStatusCode.Forbidden
+                ? "No tienes permiso para registrar un aviso sobre este producto. Usa solo tus tarjetas contratadas."
+                : (string.IsNullOrWhiteSpace(errorDetail) ? "No se pudo registrar el viaje." : errorDetail);
 
             var prodRes = await _httpClient.GetAsync("api/account-products");
-            if (prodRes.IsSuccessStatusCode) ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+            if (prodRes.IsSuccessStatusCode)
+            {
+                var json = await prodRes.Content.ReadAsStringAsync();
+                ViewBag.AccountProducts = json;
+                ClientAccountProductFormHelper.ApplyToTravelNotice(User, json, model);
+            }
+
             return View(model);
         }
 
         // --- CANCELAR VIAJE (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador,Cliente")]
         public async Task<IActionResult> Cancel(int accountProductId, int noticeId, string reason)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;

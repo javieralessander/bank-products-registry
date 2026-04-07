@@ -75,6 +75,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- DESBLOQUEAR CUENTA (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Release(int accountProductId, int blockId, string reason)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -105,21 +106,28 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- NUEVO BLOQUEO (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create()
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Cargamos la lista de productos contratados para el desplegable
+            var model = new BlockCreateViewModel();
             var prodRes = await _httpClient.GetAsync("api/account-products");
-            if (prodRes.IsSuccessStatusCode) ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+            if (prodRes.IsSuccessStatusCode)
+            {
+                var json = await prodRes.Content.ReadAsStringAsync();
+                ViewBag.AccountProducts = json;
+                ClientAccountProductFormHelper.ApplyToBlockCreate(User, json, model);
+            }
 
-            return View(new BlockCreateViewModel());
+            return View(model);
         }
 
         // --- NUEVO BLOQUEO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create(BlockCreateViewModel model)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -152,9 +160,13 @@ namespace BankProductsRegistry.Frontend.Controllers
                 ViewBag.ErrorMessage = $"Error de conexión: {ex.Message}";
             }
 
-            // Si falla, recargamos la lista para el combobox
             var prodRes = await _httpClient.GetAsync("api/account-products");
-            if (prodRes.IsSuccessStatusCode) ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+            if (prodRes.IsSuccessStatusCode)
+            {
+                var json = await prodRes.Content.ReadAsStringAsync();
+                ViewBag.AccountProducts = json;
+                ClientAccountProductFormHelper.ApplyToBlockCreate(User, json, model);
+            }
 
             return View(model);
         }

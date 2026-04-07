@@ -1,6 +1,7 @@
 ﻿@model BankProductsRegistry.Frontend.Models.TravelNoticeDashboardViewModel
 @{
     ViewData["Title"] = "Notificaciones de Viaje";
+    var canChangeTravel = !User.IsInRole("Consulta");
 }
 
 <style>
@@ -272,6 +273,12 @@
     <div class="page-subtitle">Registro de viajes para evitar bloqueos por uso internacional</div>
 </div>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div style="background-color: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); margin-bottom: 20px; padding: 15px; border-radius: 8px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px; padding: 15px; border-radius: 8px;">
@@ -299,7 +306,10 @@
 
 <div class="toolbar">
     <input type="text" id="searchInput" class="search-inline" placeholder="Buscar por cliente, país o destino..." />
-    <a href="@Url.Action("Create")" class="btn-primary-custom">+ Registrar Viaje</a>
+    @if (canChangeTravel)
+    {
+        <a href="@Url.Action("Create")" class="btn-primary-custom">+ Registrar Viaje</a>
+    }
 </div>
 
 <div class="filter-tabs">
@@ -380,7 +390,7 @@
             </div>
 
             <div class="tc-actions">
-                @if (statusText != "Finalizado" && statusText != "Cancelado")
+                @if (canChangeTravel && statusText != "Finalizado" && statusText != "Cancelado")
                 {
                     <form asp-action="Cancel" method="post" class="m-0 p-0" onsubmit="return confirmCancel(this);">
                         <input type="hidden" name="accountProductId" value="@n.AccountProductId" />

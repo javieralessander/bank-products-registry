@@ -45,6 +45,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 1. CREAR PRODUCTO (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public IActionResult Create()
         {
             return View();
@@ -52,6 +53,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- CREAR PRODUCTO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create(FinancialProductViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -80,6 +82,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 3. EDITAR PRODUCTO (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -103,6 +106,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 4. EDITAR PRODUCTO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id, FinancialProductViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -131,6 +135,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 5. ELIMINAR PRODUCTO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;

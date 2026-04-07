@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankProductsRegistry.Frontend.Controllers
 {
     /// <summary>Catálogo de empleados del banco (entidad Employee); no confundir con el rol JWT <c>Operador</c>.</summary>
-    [Authorize(Roles = "Admin,Operador,Consulta")]
+    [Authorize]
     public class EmployeesController : Controller
     {
         private readonly HttpClient _httpClient;
@@ -21,6 +21,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador,Consulta")]
         public async Task<IActionResult> Index()
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -50,12 +51,14 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(EmployeeViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -92,6 +95,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -118,6 +122,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, EmployeeViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -151,6 +156,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;

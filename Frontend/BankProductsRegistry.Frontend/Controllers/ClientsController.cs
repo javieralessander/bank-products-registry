@@ -51,6 +51,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // 2. Mostrar la pantalla vacía para crear un cliente
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create()
         {
             await LoadLinkableUsersAsync();
@@ -59,6 +60,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // 3. Recibir los datos del formulario y enviarlos a la API
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create(ClientViewModel model)
         {
             // Verificamos que los datos del formulario sean válidos antes de enviarlos
@@ -178,6 +180,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 5. ELIMINAR CLIENTE ---
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -204,6 +207,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 6. CARGAR VISTA DE EDITAR ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -223,6 +227,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 7. GUARDAR EDICIÓN ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id, ClientViewModel model)
         {
             if (!ModelState.IsValid) return View(model);

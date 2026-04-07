@@ -1,6 +1,8 @@
 ﻿@model BankProductsRegistry.Frontend.Models.BlockDashboardViewModel
 @{
     ViewData["Title"] = "Gestión de Bloqueos";
+    var canApplyBlock = User.IsInRole("Admin") || User.IsInRole("Operador");
+    var canReleaseBlock = User.IsInRole("Admin");
 }
 
 <style>
@@ -96,7 +98,10 @@
     </div>
     <div class="d-flex gap-3 align-items-center">
         <input type="text" id="tableSearch" class="search-inline flex-grow-1" placeholder="Buscar por N° cuenta, cliente o producto..." />
-        <a href="@Url.Action("Create", "Blocks")" class="btn-danger-custom text-decoration-none">+ Nuevo Bloqueo</a>
+        @if (canApplyBlock)
+        {
+            <a href="@Url.Action("Create", "Blocks")" class="btn-danger-custom text-decoration-none">+ Nuevo Bloqueo</a>
+        }
     </div>
 </div>
 
@@ -142,12 +147,19 @@
                         <td>
                             @if (b.BlockType != "permanente")
                             {
-                                <form asp-action="Release" method="post" class="m-0 p-0" onsubmit="return confirmRelease(this);">
-                                    <input type="hidden" name="accountProductId" value="@b.AccountProductId" />
-                                    <input type="hidden" name="blockId" value="@b.BlockId" />
-                                    <input type="hidden" name="reason" class="reason-input" />
-                                    <button type="submit" class="btn-release">Desbloquear</button>
-                                </form>
+                                @if (canReleaseBlock)
+                                {
+                                    <form asp-action="Release" method="post" class="m-0 p-0" onsubmit="return confirmRelease(this);">
+                                        <input type="hidden" name="accountProductId" value="@b.AccountProductId" />
+                                        <input type="hidden" name="blockId" value="@b.BlockId" />
+                                        <input type="hidden" name="reason" class="reason-input" />
+                                        <button type="submit" class="btn-release">Desbloquear</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span style="color: #6b7280; font-size: 0.75rem;" title="El desbloqueo lo realiza un administrador">Solo lectura</span>
+                                }
                             }
                             else
                             {
