@@ -5,7 +5,7 @@ Proyecto academico dividido en dos partes:
 - [Backend](#backend)
 - [Frontend](#frontend)
 
-El backend ya esta implementado. El frontend se encuentra en fase de definicion e implementacion inicial.
+El backend y el frontend estan implementados e integrados por API REST (JWT).
 
 ## Enlaces principales
 
@@ -13,8 +13,8 @@ El backend ya esta implementado. El frontend se encuentra en fase de definicion 
 - URL de produccion en Railway: `https://bank-products-registry-production.up.railway.app`
 - Swagger en produccion: `https://bank-products-registry-production.up.railway.app/swagger`
 - Informe Entregable 3 (integracion y pruebas): [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
-- Documento de requerimientos cumplidos: [Backend/Documento-Requerimientos-ejemplo.md](/Users/comunicaciones/Desktop/ALL/UNAPEC/bank-products-registry/Backend/Documento-Requerimientos-ejemplo.md)
-- Documento de descripcion del proyecto: [Backend/Documento-Descripcion-Proyecto.md](/Users/comunicaciones/Desktop/ALL/UNAPEC/bank-products-registry/Backend/Documento-Descripcion-Proyecto.md)
+- Documento de requerimientos cumplidos: [Backend/Documento-Requerimientos-ejemplo.md](Backend/Documento-Requerimientos-ejemplo.md)
+- Documento de descripcion del proyecto: [Backend/Documento-Descripcion-Proyecto.md](Backend/Documento-Descripcion-Proyecto.md)
 
 ## Estructura del proyecto
 
@@ -23,6 +23,7 @@ bank-products-registry/
   Backend/
     BankProductsRegistry.Api/
   Frontend/
+    BankProductsRegistry.Frontend/
 ```
 
 ## Backend
@@ -213,6 +214,7 @@ MYSQLPASSWORD=bank_password
 - `GET /api/reports/clients/{clientId}/portfolio`
 - `GET /api/reports/clients/{clientId}/credit-history`
 - `GET /api/reports/clients/{clientId}/credit-score`
+- `GET /api/reports/clients/{clientId}/transactions-statement/pdf` (exportar estado de cuenta PDF)
 
 ### Seguridad del API
 
@@ -277,33 +279,105 @@ dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.c
 
 ## Frontend
 
-El frontend corresponde a la segunda parte del proyecto y consumira la API REST desarrollada en el backend.
+Aplicacion web **ASP.NET Core MVC** (vistas Razor) que consume la API del backend mediante **HTTP** y **JWT**. La logica de negocio y la persistencia quedan en la API; el front se encarga de autenticacion de sesion, formularios, tablas y descarga de PDFs (proxy a la API).
 
-### Tecnologias definidas para el frontend
+### Tecnologias
 
-- HTML5 para la estructura base de las vistas.
-- CSS3 para estilos complementarios.
-- Bootstrap 5 como framework principal de interfaz.
-- JavaScript para validaciones en cliente, interacciones y consumo de endpoints HTTP.
-- DataTables como libreria de apoyo para tablas filtrables, busquedas y paginacion en el catalogo de productos.
+| Capa | Uso |
+|------|-----|
+| ASP.NET Core MVC | Controladores, vistas Razor (`Views/`), enrutamiento |
+| Bootstrap 5 | Layout, formularios, tablas, iconos (Bootstrap Icons) |
+| `HttpClient` + `IHttpClientFactory` | Cliente nombrado `"Api"` apuntando a `Api:BaseUrl` |
+| Autenticacion por cookies | Sesion del usuario; el access token JWT se guarda en claims para llamar a la API |
+| CSS propio | `wwwroot/css/` (incluye estilos de portal cliente) |
 
-### Enfoque de uso
+### Requisitos
 
-- La interfaz sera responsive para escritorio, tablet y movil.
-- Se utilizaran componentes de Bootstrap como formularios, tablas, modales, alerts y cards.
-- El catalogo de productos podra consultarse y filtrarse desde la interfaz para reducir duplicidad de registros.
-- El formulario de registro y edicion de productos aplicara validaciones en tiempo real antes de enviar la informacion al backend.
-- El frontend se mantendra ligero y enfocado en la capa de presentacion, delegando la logica de negocio y la persistencia al API en .NET.
+- .NET SDK 9 o superior
+- API del backend accesible en la URL configurada (local o desplegada)
 
-### Estado actual del frontend
+### Configuracion
 
-- La aplicacion web esta en `Frontend/BankProductsRegistry.Frontend/` (ASP.NET Core MVC, Bootstrap 5).
-- Consume la API mediante `HttpClient` y JWT; la base URL se configura con `Api:BaseUrl`.
-- Informe de integracion y pruebas (Entregable 3): [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
-- Guion de demo / manual rapido: [docs/GUIA_PRESENTACION_FRONTEND.md](docs/GUIA_PRESENTACION_FRONTEND.md)
+La base de la API se define en **`Api:BaseUrl`** (debe terminar en `/` o el arranque la normaliza):
 
-URL local tipica del API:
+| Archivo | Proposito |
+|---------|-----------|
+| `Frontend/BankProductsRegistry.Frontend/appsettings.json` | Valor por defecto / plantilla |
+| `Frontend/BankProductsRegistry.Frontend/appsettings.Development.json` | Desarrollo local, p. ej. `http://localhost:5039/` |
+
+Ejemplo (`appsettings.Development.json`):
+
+```json
+{
+  "Api": {
+    "BaseUrl": "http://localhost:5039/"
+  }
+}
+```
+
+En **Railway**, el frontend usa la variable de entorno **`PORT`** si esta definida; la URL publica del servicio la define la plataforma.
+
+### Como ejecutar el frontend (desarrollo)
+
+Desde la raiz del repositorio:
+
+```bash
+dotnet restore Frontend/BankProductsRegistry.Frontend/BankProductsRegistry.Frontend.csproj
+dotnet run --project Frontend/BankProductsRegistry.Frontend/BankProductsRegistry.Frontend.csproj
+```
+
+Por defecto queda escuchando en:
 
 ```text
-http://localhost:5039
+http://localhost:5160
 ```
+
+(perfil `http` en `Properties/launchSettings.json`.)
+
+Antes de iniciar sesion, levanta el **backend** en el mismo equipo o apunta `Api:BaseUrl` a la API desplegada.
+
+### Integracion con la API
+
+1. Los controladores inyectan `HttpClient` ya configurado con `BaseAddress = Api:BaseUrl`.
+2. Tras el login, el **access token JWT** se almacena en un claim (p. ej. `jwt_token`) y se envia en `Authorization: Bearer` en las peticiones.
+3. Respuestas de error (`ProblemDetails`) se interpretan con **`ApiErrorParser`** para mostrar mensajes claros al usuario.
+4. **Exportacion PDF** (reportes): rutas en `ReportsExportController` que llaman a los endpoints `.../pdf` de la API y devuelven el archivo al navegador.
+
+### Roles y areas principales
+
+| Rol | Areas tipicas en la UI |
+|-----|-------------------------|
+| **Admin** | Usuarios, empleados, productos, contratos, solicitudes, reportes amplios |
+| **Operador** | Clientes, productos, contratos, transacciones, bloqueos, solicitudes pendientes |
+| **Consulta** | Consulta de listados (solo lectura donde aplique) |
+| **Cliente** | Portal: resumen, transferencias/movimientos, productos propios, solicitudes, avisos de viaje, exportacion de PDFs (estado de cuenta, credito) |
+
+El layout del **portal cliente** usa la clase `layout-client` (tema claro); el personal interno conserva el tema oscuro en la barra lateral.
+
+### Documentacion adicional
+
+- Informe de integracion y pruebas: [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
+- Guion de demo / manual rapido: [docs/GUIA_PRESENTACION_FRONTEND.md](docs/GUIA_PRESENTACION_FRONTEND.md)
+
+### Comandos utiles (frontend)
+
+```bash
+# Compilar sin ejecutar
+dotnet build Frontend/BankProductsRegistry.Frontend/BankProductsRegistry.Frontend.csproj
+```
+
+### Resumen corto (frontend + API local)
+
+Terminal 1 — API:
+
+```bash
+dotnet run --project Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj
+```
+
+Terminal 2 — Frontend:
+
+```bash
+dotnet run --project Frontend/BankProductsRegistry.Frontend/BankProductsRegistry.Frontend.csproj
+```
+
+Abre el navegador en `http://localhost:5160` y la API en `http://localhost:5039/swagger` para validar contratos.
