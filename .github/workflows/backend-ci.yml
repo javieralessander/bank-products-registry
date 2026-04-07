@@ -36,3 +36,6 @@ jobs:
 
       - name: Compilar proyecto
         run: dotnet build Backend/BankProductsRegistry.Api/BankProductsRegistry.Api.csproj --configuration Release --no-restore
+
+      - name: Verificar build de imagen Docker (mismo contexto que Railway)
+        run: docker build -f Dockerfile -t bank-products-api-ci .
