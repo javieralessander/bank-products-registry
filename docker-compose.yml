@@ -1,22 +1,27 @@
+# MySQL local alineado con el desarrollo del API (misma base por defecto que appsettings).
+# Uso: docker compose up -d
+# Cadena para Backend: ver .env.example (seccion local).
+
 services:
   mysql:
-    image: mysql:8.4
-    container_name: bank-products-mysql
+    image: mysql:8.0
+    container_name: bank-products-registry-mysql
     restart: unless-stopped
     environment:
+      MYSQL_ROOT_PASSWORD: dev_root_change_me
       MYSQL_DATABASE: bank_products_registry_db
       MYSQL_USER: bank_user
-      MYSQL_PASSWORD: bank_password
-      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_PASSWORD: bank_dev_password
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - bank_products_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot_password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pdev_root_change_me"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 8
+      start_period: 40s
 
 volumes:
-  mysql_data:
+  bank_products_mysql_data:
