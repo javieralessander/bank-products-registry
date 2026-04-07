@@ -14,6 +14,13 @@ namespace BankProductsRegistry.Frontend.Models
         public List<EmployeeOptionViewModel> Employees { get; set; } = new();
     }
 
+    public class FinancialProductPickItem
+    {
+        public int Id { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
     public class ProductRequestFormViewModel
     {
         [Required(ErrorMessage = "Selecciona un producto.")]

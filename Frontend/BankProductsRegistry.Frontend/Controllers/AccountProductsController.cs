@@ -3,6 +3,7 @@ using BankProductsRegistry.Frontend.Models;
 using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 
 namespace BankProductsRegistry.Frontend.Controllers
@@ -236,6 +237,140 @@ namespace BankProductsRegistry.Frontend.Controllers
 
             await LoadDropdownsAsync();
             return View(model);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Operador,Consulta")]
+        public async Task<IActionResult> Pending()
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var page = new AccountProductsPendingPageViewModel();
+            page.Employees = await LoadEmployeeOptionsAsync();
+
+            try
+            {
+                var response = await _httpClient.GetAsync("api/account-products/pending");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    page.Pending = JsonSerializer.Deserialize<List<AccountProductItemViewModel>>(json, options) ?? new List<AccountProductItemViewModel>();
+                    return View(page);
+                }
+
+                ViewBag.ErrorMessage = "No se pudieron cargar las solicitudes pendientes.";
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.ErrorMessage = "Error de conexión con el servidor.";
+            }
+
+            return View(page);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int id, int employeeId)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var payload = new { employeeId };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/account-products/{id}/approve", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Solicitud aprobada y producto activado.";
+                }
+                else
+                {
+                    var detail = await ApiErrorParser.ExtractMessageAsync(response);
+                    TempData["ErrorMessage"] = string.IsNullOrWhiteSpace(detail) ? "No se pudo aprobar la solicitud." : detail;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] = "Error de conexión con el servidor.";
+            }
+
+            return RedirectToAction(nameof(Pending));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reject(int id)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/account-products/{id}/reject", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Solicitud rechazada.";
+                }
+                else
+                {
+                    var detail = await ApiErrorParser.ExtractMessageAsync(response);
+                    TempData["ErrorMessage"] = string.IsNullOrWhiteSpace(detail) ? "No se pudo rechazar la solicitud." : detail;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] = "Error de conexión con el servidor.";
+            }
+
+            return RedirectToAction(nameof(Pending));
+        }
+
+        private async Task<List<EmployeeOptionViewModel>> LoadEmployeeOptionsAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/employees");
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new List<EmployeeOptionViewModel>();
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var employees = JsonSerializer.Deserialize<List<EmployeePickItem>>(json, options) ?? new List<EmployeePickItem>();
+                return employees
+                    .Where(e => !string.Equals(e.EmployeeCode, "EMP000", StringComparison.OrdinalIgnoreCase))
+                    .Select(e => new EmployeeOptionViewModel
+                    {
+                        Id = e.Id,
+                        DisplayName = $"{e.FirstName} {e.LastName} ({e.EmployeeCode})"
+                    })
+                    .ToList();
+            }
+            catch
+            {
+                return new List<EmployeeOptionViewModel>();
+            }
+        }
+
+        private sealed class EmployeePickItem
+        {
+            public int Id { get; set; }
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public string EmployeeCode { get; set; } = string.Empty;
         }
     }
 }
