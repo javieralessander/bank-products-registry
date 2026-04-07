@@ -27,6 +27,12 @@
     public class BlockCreateViewModel
     {
         public int AccountProductId { get; set; }
+
+        /// <summary>Cliente con una sola cuenta elegible: solo lectura + hidden.</summary>
+        public bool ClientCardLocked { get; set; }
+
+        public string? ClientCardDisplayLabel { get; set; }
+
         public int BlockType { get; set; } = 1; // 1: Temporal, 2: Permanente, 3: Fraude
         public string Reason { get; set; } = string.Empty;
         public DateTimeOffset StartsAt { get; set; } = DateTimeOffset.UtcNow;

@@ -176,21 +176,35 @@
 
             <div class="mb-4">
                 <div class="form-label-small">CUENTA A BLOQUEAR</div>
-                <select asp-for="AccountProductId" class="form-control-dark" required>
-                    <option value="" disabled selected>Selecciona la cuenta afectada...</option>
-                    @if (ViewBag.AccountProducts != null)
-                    {
-                        var accounts = JsonDocument.Parse(ViewBag.AccountProducts.ToString()).RootElement.EnumerateArray();
-                        foreach (var a in accounts)
+                @if (Model.ClientCardLocked && Model.AccountProductId > 0)
+                {
+                    <input type="hidden" asp-for="AccountProductId" />
+                    <div class="form-control-dark" style="cursor: default; opacity: 0.95;">
+                        <span style="color: #e2e8f0;">@(Model.ClientCardDisplayLabel ?? "Tu cuenta")</span>
+                        <div style="font-size: 0.8rem; color: #6b7280; margin-top: 8px;">Cuenta asociada a tu perfil; el bloqueo aplica sobre esta.</div>
+                    </div>
+                }
+                else
+                {
+                    <select asp-for="AccountProductId" class="form-control-dark" required>
+                        @if (Model.AccountProductId <= 0)
                         {
-                            // Solo mostramos cuentas que no estén cerradas/canceladas
-                            if (a.GetProperty("status").GetString() != "cerrado" && a.GetProperty("status").GetString() != "cancelado")
+                            <option value="" disabled selected>Selecciona la cuenta afectada...</option>
+                        }
+                        @if (ViewBag.AccountProducts != null)
+                        {
+                            var accounts = JsonDocument.Parse(ViewBag.AccountProducts.ToString()).RootElement.EnumerateArray();
+                            foreach (var a in accounts)
                             {
-                                <option value="@a.GetProperty("id").GetInt32()">@a.GetProperty("accountNumber").GetString() — @a.GetProperty("clientName").GetString() (@a.GetProperty("financialProductName").GetString())</option>
+                                var st = a.GetProperty("status").GetString() ?? "";
+                                if (!string.Equals(st, "cerrado", StringComparison.OrdinalIgnoreCase) && !string.Equals(st, "cancelado", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <option value="@a.GetProperty("id").GetInt32()">@a.GetProperty("accountNumber").GetString() — @a.GetProperty("clientName").GetString() (@a.GetProperty("financialProductName").GetString())</option>
+                                }
                             }
                         }
-                    }
-                </select>
+                    </select>
+                }
             </div>
 
             <div class="mb-4">

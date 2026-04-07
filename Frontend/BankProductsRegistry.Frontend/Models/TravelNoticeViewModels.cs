@@ -25,6 +25,13 @@
     public class TravelNoticeCreateViewModel
     {
         public int AccountProductId { get; set; }
+
+        /// <summary>Si es true (cliente con una sola cuenta activa), la vista muestra solo lectura + hidden.</summary>
+        public bool ClientCardLocked { get; set; }
+
+        /// <summary>Texto mostrado cuando <see cref="ClientCardLocked"/> es true.</summary>
+        public string? ClientCardDisplayLabel { get; set; }
+
         public string CountryCode { get; set; } = string.Empty;
         public string CitiesOrReason { get; set; } = string.Empty;
         public DateTimeOffset StartsAt { get; set; } = DateTimeOffset.UtcNow;
