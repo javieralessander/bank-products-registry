@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using BankProductsRegistry.Frontend.Utilities;
 
 namespace BankProductsRegistry.Frontend.Models
 {
@@ -49,8 +51,11 @@ namespace BankProductsRegistry.Frontend.Models
         public int Id { get; set; }
         public string AccountNumber { get; set; } = string.Empty;
 
-        // La API serializa ambos como texto JSON (JsonStringEnumMemberName).
+        /// <summary>La API puede enviar texto (enum como string) o número según configuración de serialización.</summary>
+        [JsonConverter(typeof(JsonStringOrNumberConverter))]
         public string TransactionType { get; set; } = string.Empty;
+
+        [JsonConverter(typeof(JsonStringOrNumberConverter))]
         public string TransactionChannel { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }

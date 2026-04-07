@@ -47,13 +47,13 @@ namespace BankProductsRegistry.Frontend.Controllers
                     // 1. Asignar la lista de transacciones
                     dashboardData.Transactions = transactions;
 
-                    // 2. Calcular los totales (usando texto porque TransactionType ahora es string)
+                    // 2. Totales: la API puede enviar tipo como texto ("deposito") o como número de enum (1 = depósito).
                     dashboardData.TotalDeposits = transactions
-                        .Where(t => !string.IsNullOrEmpty(t.TransactionType) && t.TransactionType.ToLower().Contains("deposito"))
+                        .Where(t => IsDepositTransactionType(t.TransactionType))
                         .Sum(t => t.Amount);
 
                     dashboardData.TotalWithdrawals = transactions
-                        .Where(t => string.IsNullOrEmpty(t.TransactionType) || !t.TransactionType.ToLower().Contains("deposito"))
+                        .Where(t => !IsDepositTransactionType(t.TransactionType))
                         .Sum(t => t.Amount);
 
                     dashboardData.NetBalance = dashboardData.TotalDeposits - dashboardData.TotalWithdrawals;
@@ -201,6 +201,23 @@ namespace BankProductsRegistry.Frontend.Controllers
             {
                 // El historial de transacciones puede cargar igual; el formulario quedará vacío.
             }
+        }
+
+        /// <summary>Depósito si el JSON trae <c>deposito</c> o el valor numérico del enum API (1).</summary>
+        private static bool IsDepositTransactionType(string? transactionType)
+        {
+            if (string.IsNullOrWhiteSpace(transactionType))
+            {
+                return false;
+            }
+
+            var t = transactionType.Trim();
+            if (t.Equals("1", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return t.Contains("deposito", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
