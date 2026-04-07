@@ -4,6 +4,7 @@ namespace BankProductsRegistry.Frontend.Models
 {
     public sealed class ClientPortalPageViewModel
     {
+        public int? ClientId { get; set; }
         public string? ErrorMessage { get; set; }
         public ClientPortfolioViewModel? Portfolio { get; set; }
     }

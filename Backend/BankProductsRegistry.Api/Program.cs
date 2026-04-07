@@ -14,6 +14,7 @@ using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Swagger;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using QuestPDF.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 DotEnvLoader.LoadIfExists();
+QuestPDF.Settings.License = LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 var port = builder.Configuration["PORT"];
@@ -182,6 +184,7 @@ builder.Services.AddAuthorizationBuilder()
         policy.RequireRole(AuthRoles.Admin));
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddSingleton<IReportPdfService, ReportPdfService>();
 builder.Services.AddScoped<IAccountProductBlockService, AccountProductBlockService>();
 builder.Services.AddScoped<IAccountProductLimitService, AccountProductLimitService>();
 builder.Services.AddScoped<IAccountProductTravelNoticeService, AccountProductTravelNoticeService>();

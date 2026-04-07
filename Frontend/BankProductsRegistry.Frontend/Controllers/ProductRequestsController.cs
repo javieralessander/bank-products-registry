@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BankProductsRegistry.Frontend.Models;
@@ -31,7 +30,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 return View(new ProductRequestFormViewModel());
             }
 
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            _httpClient.SetBearerToken(token);
 
             try
             {
@@ -77,7 +76,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 return View(model);
             }
 
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            _httpClient.SetBearerToken(token);
 
             var payload = new { financialProductId = model.FinancialProductId, amount = model.Amount };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -115,7 +114,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         private async Task ReloadProductsAsync(string token)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            _httpClient.SetBearerToken(token);
             try
             {
                 var response = await _httpClient.GetAsync("api/financial-products");

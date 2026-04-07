@@ -36,6 +36,8 @@ namespace BankProductsRegistry.Frontend.Controllers
                 return View(model);
             }
 
+            model.ClientId = clientId;
+
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             try

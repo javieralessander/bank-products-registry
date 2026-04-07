@@ -218,6 +218,20 @@
                 <span class="me-3"><i class="bi bi-graph-up-arrow me-1"></i> Depósitos: DOP @portfolio.TotalDeposits.ToString("N2", culture)</span>
                 <span><i class="bi bi-graph-down-arrow me-1"></i> Retiros: DOP @portfolio.TotalWithdrawals.ToString("N2", culture)</span>
             </div>
+            @if (Model.ClientId.HasValue)
+            {
+                <div class="mt-3 d-flex flex-wrap gap-3">
+                    <a href="@Url.Action("ClientPortfolioPdf", "ReportsExport", new { clientId = Model.ClientId.Value })" class="text-decoration-none" style="color:#93c5fd;font-size:0.9rem;">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF portafolio
+                    </a>
+                    <a href="@Url.Action("ClientCreditHistoryPdf", "ReportsExport", new { clientId = Model.ClientId.Value })" class="text-decoration-none" style="color:#93c5fd;font-size:0.9rem;">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF historial crédito
+                    </a>
+                    <a href="@Url.Action("ClientCreditScorePdf", "ReportsExport", new { clientId = Model.ClientId.Value })" class="text-decoration-none" style="color:#93c5fd;font-size:0.9rem;">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF score
+                    </a>
+                </div>
+            }
         </div>
 
         <div class="section-heading">Operaciones rápidas</div>
@@ -267,6 +281,11 @@
                         <div class="product-balance">
                             <h4>DOP @account.Amount.ToString("N2", culture)</h4>
                             <span class="product-status @(account.IsActiveStatus() ? "product-status-active" : "product-status-other")">@account.GetStatusLabel()</span>
+                            <div class="mt-2">
+                                <a href="@Url.Action("Limits", "AccountProducts", new { id = account.AccountProductId })" class="text-decoration-none" style="color:#93c5fd;font-size:0.82rem;">
+                                    Ver límites
+                                </a>
+                            </div>
                         </div>
                     </div>
                 }
