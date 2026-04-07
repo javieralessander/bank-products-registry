@@ -1,5 +1,30 @@
-﻿namespace BankProductsRegistry.Frontend.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BankProductsRegistry.Frontend.Models
 {
+    public class EmployeeOptionViewModel
+    {
+        public int Id { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+    }
+
+    public class AccountProductsPendingPageViewModel
+    {
+        public List<AccountProductItemViewModel> Pending { get; set; } = new();
+        public List<EmployeeOptionViewModel> Employees { get; set; } = new();
+    }
+
+    public class ProductRequestFormViewModel
+    {
+        [Required(ErrorMessage = "Selecciona un producto.")]
+        [Display(Name = "Producto financiero")]
+        public int FinancialProductId { get; set; }
+
+        [Range(0, 9999999999999999.99, ErrorMessage = "El monto debe ser mayor o igual a cero.")]
+        [Display(Name = "Monto solicitado (DOP)")]
+        public decimal Amount { get; set; }
+    }
+
     public class AccountProductDashboardViewModel
     {
         public int TotalActive { get; set; }
@@ -11,6 +36,8 @@
     public class AccountProductItemViewModel
     {
         public int Id { get; set; }
+        public int ClientId { get; set; }
+        public int FinancialProductId { get; set; }
         public string AccountNumber { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string FinancialProductName { get; set; } = string.Empty;

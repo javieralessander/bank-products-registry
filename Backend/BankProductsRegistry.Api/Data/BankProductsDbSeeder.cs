@@ -158,6 +158,15 @@ public static class BankProductsDbSeeder
         {
             new Employee
             {
+                FirstName = "Sistema",
+                LastName = "Solicitudes Web",
+                EmployeeCode = "EMP000",
+                Email = "solicitudes@bank.local",
+                Department = "Sistema",
+                IsActive = true
+            },
+            new Employee
+            {
                 FirstName = "Rosa",
                 LastName = "Martinez",
                 EmployeeCode = "EMP001",

@@ -76,3 +76,20 @@ public sealed record AccountProductResponse(
     DateTimeOffset UpdatedAt,
     bool IsBlocked,
     AccountProductBlockSummaryResponse? ActiveBlock);
+
+/// <summary>Solicitud de producto desde el portal del cliente (queda en estado pendiente).</summary>
+public sealed record AccountProductClientRequest
+{
+    [Required]
+    public int FinancialProductId { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public decimal Amount { get; init; }
+}
+
+/// <summary>Operador asigna ejecutor y activa el contrato.</summary>
+public sealed record AccountProductApproveRequest
+{
+    [Required]
+    public int EmployeeId { get; init; }
+}
