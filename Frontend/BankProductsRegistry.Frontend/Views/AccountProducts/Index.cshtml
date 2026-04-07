@@ -30,22 +30,6 @@
         align-items: center;
     }
 
-    .search-input-top {
-        background-color: #1a1d2d;
-        border: 1px solid #2d3348;
-        color: white;
-        border-radius: 8px;
-        padding: 10px 16px;
-        width: 250px;
-        outline: none;
-        transition: 0.3s;
-    }
-
-        .search-input-top:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-        }
-
     .btn-primary-custom {
         background-color: #3b82f6;
         border: none;
@@ -226,6 +210,12 @@
         border-color: rgba(239, 68, 68, 0.2);
     }
 
+    .status-pendiente {
+        background-color: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+
     .action-icon {
         color: #6b7280;
         cursor: pointer;
@@ -242,12 +232,41 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Productos Contratados</h1>
-        <div class="page-subtitle">Cuentas bancarias y servicios vinculados a clientes</div>
+        <div class="page-subtitle">
+            @if (User.IsInRole("Cliente"))
+            {
+                <text>Tus cuentas y servicios. Las solicitudes nuevas aparecen como Pendiente hasta aprobación.</text>
+            }
+            else
+            {
+                <text>Cuentas bancarias y servicios vinculados a clientes</text>
+            }
+        </div>
     </div>
     <div class="header-actions">
-        <a href="@Url.Action("Create", "AccountProducts")" class="btn-primary-custom text-decoration-none">+ Nuevo Contrato</a>
+        @if (User.IsInRole("Admin") || User.IsInRole("Operador") || User.IsInRole("Consulta"))
+        {
+            <a href="@Url.Action("Pending", "AccountProducts")" class="btn-primary-custom text-decoration-none" style="background-color: #374151;">Solicitudes pendientes</a>
+        }
+        @if (User.IsInRole("Admin") || User.IsInRole("Operador"))
+        {
+            <a href="@Url.Action("Create", "AccountProducts")" class="btn-primary-custom text-decoration-none">+ Nuevo Contrato</a>
+        }
     </div>
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background-color: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
 
 @if (ViewBag.ErrorMessage != null)
 {
@@ -275,6 +294,7 @@
     <input type="text" id="tableSearch" class="search-inline" placeholder="Buscar por N° cuenta, cliente o producto..." />
     <div class="filter-tabs">
         <div class="f-tab active" data-filter="Todos">Todos</div>
+        <div class="f-tab" data-filter="pendiente">Pendiente</div>
         <div class="f-tab" data-filter="activo">Activo</div>
         <div class="f-tab" data-filter="cerrado">Cerrado</div>
         <div class="f-tab" data-filter="suspendido">Suspendido</div>
@@ -310,12 +330,12 @@
             {
                 foreach (var contract in Model.Products)
                 {
-                    // Lógica para color de estado basada en los Enums de la API
                     var rawStatus = contract.Status?.ToLower() ?? "";
                     string badgeClass = "status-cerrado";
                     string displayStatus = "Desconocido";
 
                     if (contract.IsBlocked) { badgeClass = "status-suspendido"; displayStatus = "Bloqueado"; rawStatus = "suspendido"; }
+                    else if (rawStatus.Contains("pendiente")) { badgeClass = "status-pendiente"; displayStatus = "Pendiente"; }
                     else if (rawStatus.Contains("activo")) { badgeClass = "status-activo"; displayStatus = "Activo"; }
                     else if (rawStatus.Contains("suspendido")) { badgeClass = "status-suspendido"; displayStatus = "Suspendido"; }
                     else if (rawStatus.Contains("mora")) { badgeClass = "status-mora"; displayStatus = "En Mora"; }
@@ -326,7 +346,7 @@
                         <td style="color: #3b82f6; font-weight: 500;">@contract.AccountNumber</td>
                         <td style="color: white; font-weight: 500;">@contract.ClientName</td>
                         <td style="color: #d1d5db;">@contract.FinancialProductName</td>
-                        <td style="color: #8b94a5;">-</td>
+                        <td style="color: #8b94a5;">@(string.IsNullOrWhiteSpace(contract.EmployeeName) ? "—" : contract.EmployeeName)</td>
                         <td style="color: white; font-weight: 500;">DOP @contract.Amount.ToString("N0")</td>
                         <td style="color: #8b94a5;">@contract.OpenDate.ToString("dd/MM/yy")</td>
                         <td>
@@ -336,27 +356,39 @@
                         </td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <a href="@Url.Action("Details", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Ver Detalles">
+                                <a href="@Url.Action("Details", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Ver detalles">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
                                         <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                                     </svg>
                                 </a>
 
-                                <a href="@Url.Action("Edit", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Editar">
+                                @if (User.IsInRole("Admin") || User.IsInRole("Operador"))
+                                {
+                                    <a href="@Url.Action("Edit", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Editar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                                        </svg>
+                                    </a>
+                                }
+
+                                <a href="@Url.Action("Limits", "AccountProducts", new { id = contract.Id })" class="action-icon" title="Ver limites">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                                        <path d="M8 0c.69 0 1.25.56 1.25 1.25V2h2.5A1.25 1.25 0 0 1 13 3.25v11.5c0 .69-.56 1.25-1.25 1.25h-7.5A1.25 1.25 0 0 1 3 14.75V3.25C3 2.56 3.56 2 4.25 2h2.5v-.75C6.75.56 7.31 0 8 0Zm0 1a.25.25 0 0 0-.25.25V2h.5v-.75A.25.25 0 0 0 8 1Zm3.75 2h-7.5a.25.25 0 0 0-.25.25v11.5c0 .14.11.25.25.25h7.5a.25.25 0 0 0 .25-.25V3.25a.25.25 0 0 0-.25-.25ZM5 5.5A.5.5 0 0 1 5.5 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5Zm0 3A.5.5 0 0 1 5.5 8h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 5 8.5Zm.5 2.5a.5.5 0 0 0 0 1H8a.5.5 0 0 0 0-1H5.5Z" />
                                     </svg>
                                 </a>
 
-                                <form asp-action="Delete" asp-route-id="@contract.Id" method="post" class="m-0 p-0" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este contrato? Esta acción no se puede deshacer.');">
-                                    <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;" title="Eliminar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-                                        </svg>
-                                    </button>
-                                </form>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <form asp-action="Delete" asp-route-id="@contract.Id" method="post" class="m-0 p-0" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este contrato?');">
+                                        <button type="submit" class="action-icon" style="background: transparent; border: none; padding: 0;" title="Eliminar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                }
                             </div>
                         </td>
                     </tr>
@@ -367,7 +399,7 @@
 </div>
 
 <script>
-    // Filtro por pestañas de Estado
+    // Lógica de filtrado original
     const tabs = document.querySelectorAll('.f-tab');
     const rows = document.querySelectorAll('.contract-row');
 
@@ -375,12 +407,9 @@
         tab.addEventListener('click', function() {
             tabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
-
             const filter = this.getAttribute('data-filter');
-
             rows.forEach(row => {
                 const rowStatus = row.getAttribute('data-status');
-
                 if (filter === 'Todos' || rowStatus.includes(filter)) {
                     row.style.display = '';
                 } else {
@@ -390,22 +419,11 @@
         });
     });
 
-    // Buscador en tiempo real por N° Cuenta, Cliente o Producto
     document.getElementById('tableSearch').addEventListener('keyup', function () {
         const searchValue = this.value.toLowerCase();
-
         rows.forEach(row => {
             const textContent = row.textContent.toLowerCase();
-            const activeFilter = document.querySelector('.f-tab.active').getAttribute('data-filter');
-            const rowStatus = row.getAttribute('data-status');
-
-            const matchFilter = activeFilter === 'Todos' || rowStatus.includes(activeFilter);
-
-            if (textContent.includes(searchValue) && matchFilter) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = textContent.includes(searchValue) ? '' : 'none';
         });
     });
 </script>

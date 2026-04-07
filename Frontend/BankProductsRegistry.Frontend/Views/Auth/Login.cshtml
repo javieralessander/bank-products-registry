@@ -8,169 +8,413 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
     <title>BankRED - Iniciar Sesión</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Fondo Bancario Moderno con Gradientes */
+        :root {
+            --auth-bg: #12141d;
+            --auth-bg-glow: #161a26;
+            --auth-card: #1c1f2a;
+            --auth-card-border: rgba(255, 255, 255, 0.06);
+            --auth-card-highlight: rgba(255, 255, 255, 0.04);
+            --auth-accent: #3b82f6;
+            --auth-accent-hover: #60a5fa;
+            --auth-text: #f8fafc;
+            --auth-muted: #94a3b8;
+            --auth-label: #8b94a5;
+            --auth-input-bg: #141821;
+            --auth-input-border: #2d3548;
+            --auth-input-focus-ring: rgba(59, 130, 246, 0.35);
+            --auth-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            color-scheme: dark;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', sans-serif;
-            color: #ffffff;
-            background: linear-gradient(135deg, #0f111a 0%, #151b2b 50%, #0f111a 100%);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            color: var(--auth-text);
+            background-color: var(--auth-bg);
+            background-image:
+                radial-gradient(ellipse 90% 70% at 50% -30%, rgba(59, 130, 246, 0.09), transparent 55%),
+                radial-gradient(ellipse 70% 50% at 100% 100%, rgba(59, 130, 246, 0.05), transparent 45%),
+                linear-gradient(180deg, var(--auth-bg-glow) 0%, var(--auth-bg) 45%, var(--auth-bg) 100%);
+            position: relative;
+            overflow-x: hidden;
+            padding: clamp(24px, 5vw, 48px) 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.04), transparent 42%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: min(480px, 100%);
+            display: flex;
+            justify-content: center;
+        }
+
+        .auth-card {
+            background: var(--auth-card);
+            border: 1px solid var(--auth-card-border);
+            border-radius: 16px;
+            box-shadow: var(--auth-shadow);
+            padding: clamp(28px, 5vw, 40px) clamp(22px, 4vw, 36px);
+            width: 100%;
             position: relative;
             overflow: hidden;
         }
 
-            /* Brillos sutiles en las esquinas (Efecto Fintech) */
-            body::before {
-                content: "";
-                position: absolute;
-                top: -20%;
-                left: -10%;
-                width: 60%;
-                height: 60%;
-                background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 60%);
-                z-index: 0;
-            }
-
-            body::after {
-                content: "";
-                position: absolute;
-                bottom: -20%;
-                right: -10%;
-                width: 60%;
-                height: 60%;
-                background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
-                z-index: 0;
-            }
-
-        /* Tarjeta con efecto Vidrio (Glassmorphism) */
-        .auth-card {
-            background: rgba(26, 29, 45, 0.65); /* Más transparente */
-            backdrop-filter: blur(16px); /* Desenfoque del fondo */
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08); /* Borde sutil brillante */
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
-            padding: 40px;
-            width: 100%;
-            max-width: 420px;
-            position: relative;
-            z-index: 1; /* Por encima de los brillos */
+        .auth-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 12%;
+            right: 12%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--auth-card-highlight), transparent);
+            pointer-events: none;
         }
-
-        .form-control {
-            background-color: rgba(15, 17, 26, 0.7);
-            border: 1px solid #2d3348;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-            .form-control:focus {
-                background-color: rgba(21, 25, 40, 0.9);
-                color: white;
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
-            }
-
-            .form-control::placeholder {
-                color: #6b7280;
-            }
-
-        .btn-primary {
-            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
-            border: none;
-            padding: 12px;
-            font-weight: 600;
-            border-radius: 8px;
-            width: 100%;
-            transition: 0.3s;
-        }
-
-            .btn-primary:hover {
-                background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-            }
 
         .brand-logo {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            font-size: 1.75rem;
-            font-weight: bold;
-            margin-bottom: 10px;
+            gap: 6px;
+            font-size: clamp(1.65rem, 4vw, 1.9rem);
+            font-weight: 800;
+            margin: 0 0 8px;
+            letter-spacing: -0.03em;
+            color: var(--auth-text);
+            line-height: 1.15;
         }
 
-        .brand-dot {
-            width: 16px;
-            height: 16px;
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        .brand-logo .text-blue {
+            color: var(--auth-accent);
+        }
+
+        .auth-subtitle {
+            color: var(--auth-muted);
+            font-size: 0.9375rem;
+            text-align: center;
+            margin: 0 0 1.75rem;
+            font-weight: 450;
+            line-height: 1.5;
+        }
+
+        .auth-feedback-slot {
+            min-height: 72px;
+            margin-bottom: 1.25rem;
+        }
+
+        .auth-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            padding: 0.8rem 1rem;
+            font-size: 0.875rem;
+            line-height: 1.45;
+            border-radius: 10px;
+            border: 1px solid transparent;
+        }
+
+        .auth-banner-success {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.22);
+        }
+
+        .auth-banner-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.22);
+        }
+
+        .auth-banner-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .form-block {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-block:last-of-type {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--auth-label);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .auth-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .auth-row .form-label {
+            margin-bottom: 0;
         }
 
         .auth-link {
-            color: #60a5fa;
+            color: var(--auth-accent);
             text-decoration: none;
             font-weight: 500;
-            transition: 0.3s;
+            transition: color 0.2s ease;
         }
 
-            .auth-link:hover {
-                color: #93c5fd;
-                text-decoration: underline;
+        .auth-link:hover {
+            color: var(--auth-accent-hover);
+            text-decoration: underline;
+        }
+
+        .auth-link:focus-visible {
+            outline: 2px solid var(--auth-accent);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        .auth-link-small {
+            font-size: 0.85rem;
+        }
+
+        .input-group-custom {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: #64748b;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-icon svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            opacity: 0.9;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--auth-input-bg);
+            border: 1px solid var(--auth-input-border);
+            color: var(--auth-text);
+            padding: 13px 14px 13px 44px;
+            border-radius: 10px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            outline: none;
+            font-size: 0.9375rem;
+        }
+
+        .form-control:hover {
+            border-color: #3d4659;
+        }
+
+        .form-control:focus {
+            background-color: #161922;
+            border-color: var(--auth-accent);
+            box-shadow: 0 0 0 3px var(--auth-input-focus-ring);
+        }
+
+        .form-control::placeholder {
+            color: #64748b;
+        }
+
+        .auth-validation-error {
+            color: #f87171;
+            font-size: 0.8rem;
+            margin-top: 0.35rem;
+            display: block;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(180deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
+            border: none;
+            padding: 14px 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            width: 100%;
+            color: #fff;
+            transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.12) inset,
+                0 4px 14px rgba(37, 99, 235, 0.35);
+            cursor: pointer;
+            font-size: 0.9375rem;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary-custom:hover {
+            filter: brightness(1.06);
+            transform: translateY(-1px);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.14) inset,
+                0 8px 22px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary-custom:active {
+            transform: translateY(0);
+            filter: brightness(0.98);
+        }
+
+        .btn-primary-custom:focus-visible {
+            outline: 2px solid var(--auth-accent-hover);
+            outline-offset: 3px;
+        }
+
+        .btn-content {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-content svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.25rem;
+            font-size: 0.9375rem;
+            color: var(--auth-label);
+            line-height: 1.5;
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .btn-primary-custom,
+            .btn-primary-custom:hover,
+            .auth-link {
+                transition: none;
             }
+
+            .btn-primary-custom:hover {
+                transform: none;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .auth-shell {
+                max-width: none;
+            }
+
+            .auth-card {
+                border-radius: 14px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <div class="brand-logo"><span class="brand-dot"></span> BankRED</div>
-        <p class="text-center text-muted mb-4" style="font-size: 0.95rem;">Bienvenido de nuevo, ingresa tus credenciales</p>
+    <main class="auth-shell" role="main" aria-labelledby="auth-title">
+        <div class="auth-card">
+            <h1 class="brand-logo" id="auth-title">Bank<span class="text-blue">RED</span></h1>
+            <p class="auth-subtitle">Acceso seguro a tu banca digital</p>
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.9rem;">
-                @TempData["SuccessMessage"]
+            <div class="auth-feedback-slot">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="auth-banner auth-banner-success" role="alert">
+                        <svg class="auth-banner-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM6.97 11.03 12.5 5.5l-1.06-1.06-4.47 4.47L4.56 6.5 3.5 7.56l3.47 3.47z" />
+                        </svg>
+                        <span>@TempData["SuccessMessage"]</span>
+                    </div>
+                }
+                else if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="auth-banner auth-banner-error" role="alert">
+                        <svg class="auth-banner-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.89 0 1.438-.99.982-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+                        </svg>
+                        <span>@ViewBag.ErrorMessage</span>
+                    </div>
+                }
             </div>
-        }
 
-        @if (ViewBag.ErrorMessage != null)
-        {
-            <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.9rem;">
-                @ViewBag.ErrorMessage
-            </div>
-        }
-
-        <form asp-action="Login" method="post">
-            <div class="mb-3">
-                <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Usuario o Correo</label>
-                <input asp-for="UserNameOrEmail" class="form-control" placeholder="admin o admin@bank.local" />
-                <span asp-validation-for="UserNameOrEmail" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
-            </div>
-
-            <div class="mb-4">
-                <div class="d-flex justify-content-between">
-                    <label class="form-label text-muted" style="font-size: 0.85rem; font-weight: 500;">Contraseña</label>
-                    <a href="#" class="auth-link" style="font-size: 0.85rem;">¿Olvidaste tu contraseña?</a>
+            <form asp-action="Login" method="post">
+                <div class="form-block">
+                    <label class="form-label">Usuario o Correo</label>
+                    <div class="input-group-custom">
+                        <span class="input-icon" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1c-2.67 0-5 1.34-5 3v1h10v-1c0-1.66-2.33-3-5-3zm0 1c2.205 0 4 1.005 4 2H4c0-.995 1.795-2 4-2z" />
+                            </svg>
+                        </span>
+                        <input asp-for="UserNameOrEmail" class="form-control" placeholder="admin o correo@bank.local" autocomplete="username" />
+                    </div>
+                    <span asp-validation-for="UserNameOrEmail" class="auth-validation-error"></span>
                 </div>
-                <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" />
-                <span asp-validation-for="Password" class="text-danger mt-1 d-block" style="font-size: 0.8rem;"></span>
-            </div>
 
-            <button type="submit" class="btn btn-primary mb-4">Iniciar Sesión</button>
+                <div class="form-block">
+                    <div class="auth-row">
+                        <label class="form-label">Contraseña</label>
+                        <a href="#" class="auth-link auth-link-small">¿Olvidaste tu clave?</a>
+                    </div>
+                    <div class="input-group-custom">
+                        <span class="input-icon" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 1a3 3 0 0 0-3 3v2H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-1V4a3 3 0 0 0-3-3zm2 5H6V4a2 2 0 1 1 4 0v2zm-6 1h8v7H4V7z" />
+                            </svg>
+                        </span>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" autocomplete="current-password" />
+                    </div>
+                    <span asp-validation-for="Password" class="auth-validation-error"></span>
+                </div>
 
-            <div class="text-center" style="font-size: 0.9rem; color: #8b94a5;">
-                ¿No tienes una cuenta? Solicita acceso al administrador del sistema.
-            </div>
-        </form>
-    </div>
+                <button type="submit" class="btn-primary-custom">
+                    <span class="btn-content">
+                        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                            <path d="M10.146 11.354 9.44 10.646 11.293 8.793H4v-1h7.293L9.44 5.94l.707-.707L13.207 8l-3.06 3.354z" />
+                            <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14H8v-1H2.5a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5H8V2H2.5z" />
+                        </svg>
+                        <span>Iniciar Sesión</span>
+                    </span>
+                </button>
+
+                <div class="auth-footer">
+                    ¿No tienes una cuenta? <a asp-action="Register" asp-controller="Auth" class="auth-link">Crear cuenta</a>
+                </div>
+            </form>
+        </div>
+    </main>
 </body>
 </html>

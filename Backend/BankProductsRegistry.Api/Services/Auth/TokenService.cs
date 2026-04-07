@@ -22,6 +22,22 @@ public sealed class TokenService(
 
     public async Task<(string Token, DateTimeOffset ExpiresAt)> CreateAccessTokenAsync(ApplicationUser user)
     {
+        if (string.IsNullOrWhiteSpace(user.SecurityStamp))
+        {
+            await userManager.UpdateSecurityStampAsync(user);
+            var refreshed = await userManager.FindByIdAsync(user.Id.ToString(CultureInfo.InvariantCulture));
+            if (refreshed is not null)
+            {
+                user = refreshed;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(user.SecurityStamp))
+        {
+            throw new InvalidOperationException(
+                "El usuario no tiene SecurityStamp; no se puede emitir un token JWT valido.");
+        }
+
         var now = DateTimeOffset.UtcNow;
         var expiresAt = now.AddMinutes(_jwtOptions.AccessTokenMinutes);
         var roles = await userManager.GetRolesAsync(user);
@@ -45,9 +61,11 @@ public sealed class TokenService(
             claims.Add(new Claim("full_name", user.FullName));
         }
 
-        if (!string.IsNullOrWhiteSpace(user.SecurityStamp))
+        claims.Add(new Claim(CustomClaimTypes.SecurityStamp, user.SecurityStamp));
+
+        if (user.ClientId.HasValue)
         {
-            claims.Add(new Claim(CustomClaimTypes.SecurityStamp, user.SecurityStamp));
+            claims.Add(new Claim(CustomClaimTypes.ClientId, user.ClientId.Value.ToString(CultureInfo.InvariantCulture)));
         }
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

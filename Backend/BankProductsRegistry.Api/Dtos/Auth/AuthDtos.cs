@@ -11,6 +11,29 @@ public sealed record LoginRequest
     public string Password { get; init; } = string.Empty;
 }
 
+// ---> ESTO ERA LO ÚNICO QUE TE FALTABA <---
+public sealed record RegisterRequest
+{
+    [Required, MaxLength(100)]
+    public string Nombre { get; init; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string Apellido { get; init; } = string.Empty;
+
+    [Required, EmailAddress, MaxLength(150)]
+    public string Email { get; init; } = string.Empty;
+
+    [Required, MaxLength(25)]
+    public string NationalId { get; init; } = string.Empty;
+
+    [Required, MaxLength(25)]
+    public string Phone { get; init; } = string.Empty;
+
+    [Required, DataType(DataType.Password)]
+    public string Password { get; init; } = string.Empty;
+}
+// ------------------------------------------
+
 public sealed record RefreshTokenRequest
 {
     [Required]
@@ -29,6 +52,7 @@ public sealed record AuthenticatedUserResponse(
     string Email,
     string FullName,
     bool IsActive,
+    int? ClientId,
     IReadOnlyCollection<string> Roles);
 
 public sealed record AuthResponse(

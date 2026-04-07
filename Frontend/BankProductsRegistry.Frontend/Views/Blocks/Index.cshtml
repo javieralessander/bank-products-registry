@@ -1,0 +1,226 @@
+﻿@model BankProductsRegistry.Frontend.Models.BlockDashboardViewModel
+@{
+    ViewData["Title"] = "Gestión de Bloqueos";
+    var canApplyBlock = User.IsInRole("Admin") || User.IsInRole("Operador");
+    var canReleaseBlock = User.IsInRole("Admin");
+}
+
+<style>
+    /* Estilos Generales */
+    .page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .page-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; color: white; }
+    .page-subtitle { color: #8b94a5; font-size: 0.9rem; }
+
+    .search-input-top { background-color: #1a1d2d; border: 1px solid #2d3348; color: white; border-radius: 8px; padding: 10px 16px; width: 250px; outline: none; transition: 0.3s;}
+
+    /* Tarjetas de Resumen */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+    .summary-card { background-color: #1a1d2d; border-radius: 12px; border: 1px solid #2d3348; padding: 20px; }
+    .card-border-red { border-left: 4px solid #ef4444; }
+    .card-border-orange { border-left: 4px solid #f59e0b; }
+    .card-border-green { border-left: 4px solid #10b981; }
+
+    .summary-label { color: #8b94a5; font-size: 0.85rem; margin-bottom: 8px; font-weight: 500;}
+    .summary-value { font-size: 1.8rem; font-weight: 700; color: white; line-height: 1;}
+    .summary-subtext { font-size: 0.75rem; color: #6b7280; margin-top: 5px; }
+
+    /* Barra de Filtros y Búsqueda */
+    .toolbar { background-color: #1a1d2d; border: 1px solid #2d3348; border-radius: 12px 12px 0 0; padding: 15px 20px; display: flex; flex-direction: column; gap: 15px; border-bottom: none;}
+    .search-inline { background-color: #0f111a; border: 1px solid #2d3348; color: white; border-radius: 8px; outline: none; width: 100%; padding: 12px 15px; font-size: 0.95rem;}
+
+    .filter-tabs { display: flex; gap: 5px; border-bottom: 1px solid #2d3348; padding-bottom: 15px;}
+    .f-tab { color: #8b94a5; font-size: 0.85rem; padding: 8px 20px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: 500;}
+    .f-tab:hover { color: white; background-color: rgba(255,255,255,0.05); }
+    .f-tab.active { background-color: #1e3a8a; color: #60a5fa; }
+
+    .btn-danger-custom { background-color: #ef4444; border: none; padding: 10px 25px; font-weight: 600; border-radius: 8px; color: white; transition: 0.3s;}
+    .btn-danger-custom:hover { background-color: #dc2626; }
+
+    /* Tabla */
+    .table-container { background-color: #1a1d2d; border-radius: 0 0 12px 12px; border: 1px solid #2d3348; overflow-x: auto; }
+    .custom-table { width: 100%; color: #d1d5db; font-size: 0.85rem; border-collapse: collapse; }
+    .custom-table th { padding: 16px 20px; font-weight: 500; color: #8b94a5; border-bottom: 1px solid #2d3348; text-align: left; }
+    .custom-table td { padding: 16px 20px; border-bottom: 1px solid #2d3348; vertical-align: middle; }
+    .custom-table tr:hover { background-color: #1f2335; }
+    .custom-table tr:last-child td { border-bottom: none; }
+
+    /* Estados y Tipos de Bloqueo */
+    .badge-type { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; border: 1px solid transparent; display: inline-block;}
+    .type-temporal { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.2); }
+    .type-permanente { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+
+    .badge-status { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;}
+    .btn-release { background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: 0.2s;}
+    .btn-release:hover { background-color: #10b981; color: #111; }
+
+    /* Truncar motivos largos */
+    .text-truncate-custom { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom;}
+</style>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Bloqueos</h1>
+        <div class="page-subtitle">Gestión de bloqueos y desbloqueos de productos bancarios</div>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="summary-grid">
+    <div class="summary-card card-border-red">
+        <div class="summary-label">Bloqueos Activos</div>
+        <div class="summary-value">@Model.TotalActiveBlocks</div>
+        <div class="summary-subtext">@Model.TemporaryBlocks temporales · @Model.PermanentBlocks permanentes</div>
+    </div>
+    <div class="summary-card card-border-orange">
+        <div class="summary-label">Reportados Robados / Fraude</div>
+        <div class="summary-value">@Model.FraudBlocks</div>
+        <div class="summary-subtext">Requieren gestión</div>
+    </div>
+    <div class="summary-card card-border-green">
+        <div class="summary-label">Desbloqueos Permitidos</div>
+        <div class="summary-value">@Model.TemporaryBlocks</div>
+        <div class="summary-subtext">Solo aplica para bloqueos temporales</div>
+    </div>
+</div>
+
+<div class="toolbar">
+    <div class="filter-tabs">
+        <div class="f-tab active" data-filter="Todos">Todos</div>
+        <div class="f-tab" data-filter="temporal">Temporales</div>
+        <div class="f-tab" data-filter="permanente">Permanentes</div>
+        <div class="f-tab" data-filter="fraude">Robados/Fraude</div>
+    </div>
+    <div class="d-flex gap-3 align-items-center">
+        <input type="text" id="tableSearch" class="search-inline flex-grow-1" placeholder="Buscar por N° cuenta, cliente o producto..." />
+        @if (canApplyBlock)
+        {
+            <a href="@Url.Action("Create", "Blocks")" class="btn-danger-custom text-decoration-none">+ Nuevo Bloqueo</a>
+        }
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>N° Cuenta</th>
+                <th>Cliente</th>
+                <th>Producto</th>
+                <th>Tipo Bloqueo</th>
+                <th>Motivo</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="blocksBody">
+            @if (!Model.Blocks.Any())
+            {
+                <tr>
+                    <td colspan="8" class="text-center" style="padding: 40px; color: #10b981;">
+                        <i class="bi bi-shield-check" style="font-size: 1.5rem; display: block; margin-bottom: 10px;"></i>
+                        No hay productos bloqueados actualmente. Todo seguro.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                foreach (var b in Model.Blocks)
+                {
+                    string badgeClass = b.BlockType == "temporal" ? "type-temporal" : "type-permanente";
+                    string displayType = char.ToUpper(b.BlockType[0]) + b.BlockType.Substring(1);
+
+                    <tr class="block-row" data-type="@b.BlockType">
+                        <td style="color: #3b82f6; font-weight: 500;">@b.AccountNumber</td>
+                        <td style="color: white; font-weight: 500;">@b.ClientName</td>
+                        <td style="color: #d1d5db;">@b.FinancialProductName</td>
+                        <td><span class="badge-type @badgeClass">@displayType</span></td>
+                        <td><span class="text-truncate-custom" title="@b.Reason">@b.Reason</span></td>
+                        <td style="color: #8b94a5;">@b.StartsAt.ToString("dd/MM/yy")</td>
+                        <td><span class="badge-status">Activo</span></td>
+                        <td>
+                            @if (b.BlockType != "permanente")
+                            {
+                                @if (canReleaseBlock)
+                                {
+                                    <form asp-action="Release" method="post" class="m-0 p-0" onsubmit="return confirmRelease(this);">
+                                        <input type="hidden" name="accountProductId" value="@b.AccountProductId" />
+                                        <input type="hidden" name="blockId" value="@b.BlockId" />
+                                        <input type="hidden" name="reason" class="reason-input" />
+                                        <button type="submit" class="btn-release">Desbloquear</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span style="color: #6b7280; font-size: 0.75rem;" title="El desbloqueo lo realiza un administrador">Solo lectura</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: #6b7280; font-size: 0.75rem;">Irreversible</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // JS para pedir el motivo del desbloqueo antes de enviar el formulario
+    function confirmRelease(form) {
+        var reason = prompt("Por favor, ingresa el motivo del desbloqueo:");
+        if (reason === null) {
+            return false; // El usuario canceló
+        }
+        form.querySelector('.reason-input').value = reason;
+        return true; // Continúa y envía a la API
+    }
+
+    // Filtros de pestañas
+    const tabs = document.querySelectorAll('.f-tab');
+    const rows = document.querySelectorAll('.block-row');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.getAttribute('data-filter');
+
+            rows.forEach(row => {
+                if (filter === 'Todos' || row.getAttribute('data-type') === filter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Buscador
+    document.getElementById('tableSearch').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+
+        rows.forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            const activeFilter = document.querySelector('.f-tab.active').getAttribute('data-filter');
+            const rowType = row.getAttribute('data-type');
+
+            const matchFilter = activeFilter === 'Todos' || rowType === activeFilter;
+
+            if (textContent.includes(searchValue) && matchFilter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>

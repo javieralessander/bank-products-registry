@@ -10,6 +10,7 @@ namespace BankProductsRegistry.Frontend.Models
         public string FullName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public bool EmailConfirmed { get; set; }
+        public int? ClientId { get; set; }
         public List<string> Roles { get; set; } = new();
     }
 
@@ -36,6 +37,8 @@ namespace BankProductsRegistry.Frontend.Models
         [MaxLength(20)]
         public string Role { get; set; } = "Operador";
 
+        public int? ClientId { get; set; }
+
         public bool IsActive { get; set; } = true;
     }
 
@@ -52,6 +55,8 @@ namespace BankProductsRegistry.Frontend.Models
         [Required]
         [MaxLength(20)]
         public string Role { get; set; } = "Operador";
+
+        public int? ClientId { get; set; }
     }
 
     public class UserResetPasswordViewModel

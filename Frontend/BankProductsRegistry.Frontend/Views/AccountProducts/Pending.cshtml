@@ -1,0 +1,112 @@
+@model BankProductsRegistry.Frontend.Models.AccountProductsPendingPageViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Solicitudes de producto";
+    var culture = CultureInfo.GetCultureInfo("es-DO");
+}
+
+<style>
+    .page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 1.5rem; font-weight: 600; color: white; margin-bottom: 4px; }
+    .page-subtitle { color: #8b94a5; font-size: 0.9rem; }
+    .table-container { background-color: #1a1d2d; border-radius: 12px; border: 1px solid #2d3348; overflow: hidden; }
+    .custom-table { width: 100%; color: #8b94a5; font-size: 0.9rem; margin-bottom: 0; border-collapse: collapse; }
+    .custom-table th { padding: 14px 16px; font-weight: 500; color: #8b94a5; border-bottom: 1px solid #2d3348; text-align: left; }
+    .custom-table td { padding: 14px 16px; vertical-align: middle; border-bottom: 1px solid #2d3348; color: #d1d5db; }
+    .badge-pendiente { background: rgba(245, 158, 11, 0.12); color: #fbbf24; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+    .btn-approve { background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; }
+    .btn-reject { background: transparent; color: #ef4444; border: 1px solid rgba(239,68,68,0.35); padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; }
+    .select-mini { background: #0f111a; color: #e5e7eb; border: 1px solid #2d3348; border-radius: 8px; padding: 6px 8px; font-size: 0.82rem; max-width: 220px; }
+    .alert-custom { background-color: rgba(239, 68, 68, 0.08); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 10px; padding: 14px; margin-bottom: 20px; }
+    .hint { color: #6b7280; font-size: 0.85rem; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Solicitudes pendientes</h1>
+        <div class="page-subtitle">Productos solicitados por clientes que esperan aprobación del banco</div>
+    </div>
+    <a href="@Url.Action("Index", "AccountProducts")" class="text-decoration-none" style="color: #3b82f6; font-size: 0.9rem;">← Volver a productos contratados</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background-color: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); padding: 12px; border-radius: 8px; margin-bottom: 16px;">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert-custom">@TempData["ErrorMessage"]</div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert-custom">@ViewBag.ErrorMessage</div>
+}
+
+<div class="table-container">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Producto</th>
+                <th>N° referencia</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Pending.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center" style="padding: 36px;">
+                        <span class="hint">No hay solicitudes pendientes.</span>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model.Pending)
+                {
+                    var st = item.Status?.ToLowerInvariant() ?? "";
+                    <tr>
+                        <td style="color: white; font-weight: 500;">@item.ClientName</td>
+                        <td>@item.FinancialProductName</td>
+                        <td style="color: #3b82f6;">@item.AccountNumber</td>
+                        <td>DOP @item.Amount.ToString("N2", culture)</td>
+                        <td>@item.OpenDate.ToString("dd/MM/yyyy HH:mm", culture)</td>
+                        <td><span class="badge-pendiente">@(st.Contains("pend") ? "Pendiente" : item.Status)</span></td>
+                        <td>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Operador"))
+                            {
+                                <div class="d-flex flex-column flex-md-row gap-2 align-items-start">
+                                    <form asp-action="Approve" method="post" class="d-flex flex-wrap gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <select name="employeeId" class="select-mini" required>
+                                            <option value="">Ejecutivo asignado…</option>
+                                            @foreach (var e in Model.Employees)
+                                            {
+                                                <option value="@e.Id">@e.DisplayName</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn-approve">Aprobar</button>
+                                    </form>
+                                    <form asp-action="Reject" method="post" onsubmit="return confirm('¿Rechazar esta solicitud?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn-reject">Rechazar</button>
+                                    </form>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="hint">Solo lectura</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

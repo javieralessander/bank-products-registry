@@ -24,7 +24,23 @@ public sealed class AccountProductBlocksController(
         int accountProductId,
         CancellationToken cancellationToken)
     {
-        if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (!await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return NotFound(BuildProblem(
+                    StatusCodes.Status404NotFound,
+                    "Producto contratado no encontrado",
+                    $"No existe un producto contratado con el id {accountProductId}."));
+            }
+        }
+        else if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
         {
             return NotFound(BuildProblem(
                 StatusCodes.Status404NotFound,
@@ -112,6 +128,18 @@ public sealed class AccountProductBlocksController(
         }
 
         dbContext.AccountProductBlocks.Add(block);
+
+        // ---> NOTIFICACIN AUTOMTICA DE BLOQUEO <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Bloqueo de seguridad activado",
+            Message = $"La cuenta/tarjeta #{accountProductId} ha sido bloqueada. Motivo: {block.Reason}.",
+            Type = "Riesgo",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // --------------------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var detail = request.BlockType switch
@@ -180,6 +208,17 @@ public sealed class AccountProductBlocksController(
         block.ReleasedByUserId = actorUserId;
         block.ReleasedByUserName = actorUserName;
         block.ReleaseReason = NormalizationHelper.NormalizeOptionalText(request.Reason);
+
+        // ---> NOTIFICACIN AUTOMTICA DE DESBLOQUEO <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Producto desbloqueado",
+            Message = $"El producto #{accountProductId} ha sido desbloqueado y vuelve a estar operativo.",
+            Type = "Bloqueo",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // -----------------------------------------------
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -262,5 +301,4 @@ public sealed class AccountProductBlocksController(
             AccountProductBlockType.Permanent => "permanente",
             _ => "fraude"
         };
-
 }

@@ -4,7 +4,7 @@
 }
 
 <style>
-    body {
+    body:not(.layout-client) {
         background-color: #0b0f19 !important;
     }
 
@@ -175,8 +175,9 @@
             </div>
         }
 
-        <div class="mt-5 text-end">
-            <a asp-action="Index" class="btn-close-modal">Cerrar Expediente</a>
+        <div class="mt-5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <a asp-action="Limits" asp-route-id="@Model.Id" class="btn-close-modal" style="border-color:#3b82f6;color:#93c5fd;">Límites de crédito</a>
+            <a asp-action="Index" class="btn-close-modal">Cerrar expediente</a>
         </div>
     </div>
 </div>

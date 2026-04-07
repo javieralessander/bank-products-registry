@@ -16,6 +16,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
     private const string GetEmployeeByIdRoute = "GetEmployeeById";
 
     [HttpGet]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<EmployeeResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -30,6 +31,7 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
     }
 
     [HttpGet("{id:int}", Name = GetEmployeeByIdRoute)]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EmployeeResponse>> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -70,6 +72,18 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
         };
 
         dbContext.Employees.Add(employee);
+
+        // ---> NOTIFICACIùN AUTOMùTICA <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Nuevo empleado registrado",
+            Message = $"El empleado {employee.FirstName} {employee.LastName} ({employee.Department}) ha sido registrado en el sistema.",
+            Type = "Sistema",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ---------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return CreatedAtRoute(GetEmployeeByIdRoute, new { id = employee.Id }, Map(employee));
@@ -237,5 +251,4 @@ public sealed class EmployeesController(BankProductsDbContext dbContext) : ApiCo
             employee.IsActive,
             employee.CreatedAt,
             employee.UpdatedAt);
-
 }

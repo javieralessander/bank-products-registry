@@ -267,7 +267,11 @@
 
 <div class="section-title-sm">
     <span>Detalle de Cuentas y Movimientos</span>
-    <a href="#" class="export-link">Exportar reporte &nearr;</a>
+    <span class="d-flex flex-wrap gap-2 justify-content-end" style="font-size:0.85rem;">
+        <a href="@Url.Action("ClientPortfolioPdf", "ReportsExport", new { clientId = Model.Client.Id })" class="export-link">PDF Portafolio</a>
+        <a href="@Url.Action("ClientCreditHistoryPdf", "ReportsExport", new { clientId = Model.Client.Id })" class="export-link">PDF Historial crédito</a>
+        <a href="@Url.Action("ClientCreditScorePdf", "ReportsExport", new { clientId = Model.Client.Id })" class="export-link">PDF Score</a>
+    </span>
 </div>
 
 <div class="table-container">
@@ -283,13 +287,14 @@
                 <th>Depósitos</th>
                 <th>Retiros</th>
                 <th>Estado</th>
+                <th>Límites</th>
             </tr>
         </thead>
         <tbody>
             @if (Model.Portfolio.Accounts == null || !Model.Portfolio.Accounts.Any())
             {
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 40px; color: #8b94a5;">
+                    <td colspan="10" class="text-center" style="padding: 40px; color: #8b94a5;">
                         <i class="bi bi-wallet2 fs-2 d-block mb-2"></i>
                         El cliente no tiene productos financieros registrados.
                     </td>
@@ -310,14 +315,17 @@
                         <td class="text-green">DOP @account.Deposits.ToString("N2")</td>
                         <td class="text-red">DOP @account.Withdrawals.ToString("N2")</td>
                         <td>
-                            @if (!string.IsNullOrEmpty(account.Status) && account.Status.ToUpper().Contains("ACTIV"))
+                            @if (account.IsActiveStatus())
                             {
-                                <span class="badge-active">@account.Status</span>
+                                <span class="badge-active">@account.GetStatusLabel()</span>
                             }
                             else
                             {
-                                <span class="badge-inactive">@account.Status</span>
+                                <span class="badge-inactive">@account.GetStatusLabel()</span>
                             }
+                        </td>
+                        <td>
+                            <a href="@Url.Action("Limits", "AccountProducts", new { id = account.AccountProductId })" class="export-link">Ver</a>
                         </td>
                     </tr>
                 }

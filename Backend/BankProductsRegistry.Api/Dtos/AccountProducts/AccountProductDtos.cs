@@ -14,6 +14,34 @@ public record AccountProductCreateRequest
     [Required]
     public int EmployeeId { get; init; }
 
+    /// <summary>
+    /// Opcional. Si se omite o viene vacío, la API genera un número único (nomenclatura BR + cliente + producto + sufijo).
+    /// </summary>
+    [MaxLength(30)]
+    public string? AccountNumber { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public decimal Amount { get; init; }
+
+    public DateTimeOffset OpenDate { get; init; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset? MaturityDate { get; init; }
+
+    public AccountProductStatus Status { get; init; } = AccountProductStatus.Active;
+}
+
+/// <summary>Actualización completa (PUT); el número de cuenta debe enviarse explícitamente.</summary>
+public sealed record AccountProductUpdateRequest
+{
+    [Required]
+    public int ClientId { get; init; }
+
+    [Required]
+    public int FinancialProductId { get; init; }
+
+    [Required]
+    public int EmployeeId { get; init; }
+
     [Required, MaxLength(30)]
     public string AccountNumber { get; init; } = string.Empty;
 
@@ -26,8 +54,6 @@ public record AccountProductCreateRequest
 
     public AccountProductStatus Status { get; init; } = AccountProductStatus.Active;
 }
-
-public sealed record AccountProductUpdateRequest : AccountProductCreateRequest;
 
 public sealed record AccountProductPatchRequest
 {
@@ -57,7 +83,9 @@ public sealed record AccountProductListItemResponse(
     DateTimeOffset OpenDate,
     AccountProductStatus Status,
     bool IsBlocked,
-    AccountProductBlockSummaryResponse? ActiveBlock);
+    AccountProductBlockSummaryResponse? ActiveBlock,
+    int EmployeeId,
+    string EmployeeName);
 
 public sealed record AccountProductResponse(
     int Id,
@@ -76,3 +104,20 @@ public sealed record AccountProductResponse(
     DateTimeOffset UpdatedAt,
     bool IsBlocked,
     AccountProductBlockSummaryResponse? ActiveBlock);
+
+/// <summary>Solicitud de producto desde el portal del cliente (queda en estado pendiente).</summary>
+public sealed record AccountProductClientRequest
+{
+    [Required]
+    public int FinancialProductId { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public decimal Amount { get; init; }
+}
+
+/// <summary>Operador asigna ejecutor y activa el contrato.</summary>
+public sealed record AccountProductApproveRequest
+{
+    [Required]
+    public int EmployeeId { get; init; }
+}

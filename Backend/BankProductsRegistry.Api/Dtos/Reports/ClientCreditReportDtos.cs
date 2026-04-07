@@ -26,6 +26,7 @@ public sealed record ClientCreditHistoryReportDto(
     string ClientName,
     string NationalId,
     string Email,
+    string Phone,
     DateTimeOffset GeneratedAt,
     ClientCreditScoreReportDto Score,
     ClientCreditOverviewDto Overview,

@@ -13,6 +13,7 @@ namespace BankProductsRegistry.Api.Controllers;
 [Authorize]
 public sealed class ReportsController(
     IReportService reportService,
+    IReportPdfService reportPdfService,
     BankProductsDbContext dbContext) : ApiControllerBase
 {
     [HttpGet("clients/{clientId:int}/portfolio")]
@@ -22,6 +23,11 @@ public sealed class ReportsController(
         int clientId,
         CancellationToken cancellationToken)
     {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
         var report = await reportService.GetClientPortfolioAsync(clientId, cancellationToken);
 
         return report is null
@@ -32,6 +38,81 @@ public sealed class ReportsController(
             : Ok(report);
     }
 
+    [HttpGet("clients/{clientId:int}/portfolio/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetClientPortfolioPdfAsync(int clientId, CancellationToken cancellationToken)
+    {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
+        var report = await reportService.GetClientPortfolioAsync(clientId, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Reporte no encontrado",
+                $"No se pudo generar el reporte del cliente {clientId}."));
+        }
+
+        var pdf = reportPdfService.BuildPortfolioPdf(report);
+        return File(pdf, "application/pdf", $"portafolio-cliente-{clientId}.pdf");
+    }
+
+    [HttpGet("clients/{clientId:int}/transactions-statement/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetClientTransactionStatementPdfAsync(
+        int clientId,
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        [FromQuery] int? accountProductId,
+        CancellationToken cancellationToken)
+    {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
+        if (from > to)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rango no valido",
+                "La fecha inicial no puede ser posterior a la fecha final."));
+        }
+
+        var rangeDays = (to.ToDateTime(TimeOnly.MaxValue) - from.ToDateTime(TimeOnly.MinValue)).TotalDays;
+        if (rangeDays > 366)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Rango no valido",
+                "El periodo no puede superar 366 dias."));
+        }
+
+        var report = await reportService.GetClientTransactionStatementAsync(
+            clientId,
+            from,
+            to,
+            accountProductId,
+            cancellationToken);
+
+        if (report is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Sin datos",
+                "No se encontraron productos o movimientos para exportar."));
+        }
+
+        var pdf = reportPdfService.BuildTransactionStatementPdf(report);
+        return File(pdf, "application/pdf", $"estado-cuenta-{clientId}-{from:yyyyMMdd}-{to:yyyyMMdd}.pdf");
+    }
+
     [HttpGet("clients/{clientId:int}/credit-history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -39,6 +120,11 @@ public sealed class ReportsController(
         int clientId,
         CancellationToken cancellationToken)
     {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
         var report = await reportService.GetClientCreditHistoryAsync(clientId, cancellationToken);
 
         return report is null
@@ -49,6 +135,29 @@ public sealed class ReportsController(
             : Ok(report);
     }
 
+    [HttpGet("clients/{clientId:int}/credit-history/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetClientCreditHistoryPdfAsync(int clientId, CancellationToken cancellationToken)
+    {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
+        var report = await reportService.GetClientCreditHistoryAsync(clientId, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Reporte no encontrado",
+                $"No se pudo generar el historial crediticio interno del cliente {clientId}."));
+        }
+
+        var pdf = reportPdfService.BuildCreditHistoryPdf(report);
+        return File(pdf, "application/pdf", $"historial-credito-cliente-{clientId}.pdf");
+    }
+
     [HttpGet("clients/{clientId:int}/credit-score")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -56,6 +165,11 @@ public sealed class ReportsController(
         int clientId,
         CancellationToken cancellationToken)
     {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
         var report = await reportService.GetClientCreditScoreAsync(clientId, cancellationToken);
 
         return report is null
@@ -66,28 +180,74 @@ public sealed class ReportsController(
             : Ok(report);
     }
 
-    // --- NUEVO ENDPOINT PARA EL DASHBOARD ---
+    [HttpGet("clients/{clientId:int}/credit-score/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetClientCreditScorePdfAsync(int clientId, CancellationToken cancellationToken)
+    {
+        if (!EnsureClientScope(clientId))
+        {
+            return Forbid();
+        }
+
+        var report = await reportService.GetClientCreditScoreAsync(clientId, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Reporte no encontrado",
+                $"No se pudo generar el score interno del cliente {clientId}."));
+        }
+
+        var pdf = reportPdfService.BuildCreditScorePdf(report);
+        return File(pdf, "application/pdf", $"score-credito-cliente-{clientId}.pdf");
+    }
+
     [HttpGet("dashboard")]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<DashboardSummaryDto>> GetDashboardSummaryAsync(CancellationToken cancellationToken)
     {
-        // 1. Contar Clientes Activos
+        var summary = await BuildDashboardSummaryAsync(cancellationToken);
+        return Ok(summary);
+    }
+
+    [HttpGet("dashboard/pdf")]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDashboardPdfAsync(CancellationToken cancellationToken)
+    {
+        var summary = await BuildDashboardSummaryAsync(cancellationToken);
+        var pdf = reportPdfService.BuildDashboardPdf(summary);
+        return File(pdf, "application/pdf", "dashboard-resumen.pdf");
+    }
+
+    private bool EnsureClientScope(int clientId)
+    {
+        if (!IsInRole(AuthRoles.Client))
+        {
+            return true;
+        }
+
+        var currentClientId = GetCurrentClientId();
+        return currentClientId.HasValue && currentClientId.Value == clientId;
+    }
+
+    private async Task<DashboardSummaryDto> BuildDashboardSummaryAsync(CancellationToken cancellationToken)
+    {
         var totalClients = await dbContext.Clients.CountAsync(c => c.IsActive, cancellationToken);
 
-        // 2. Contar Productos Activos
         var activeProducts = await dbContext.AccountProducts
             .CountAsync(p => p.Status == AccountProductStatus.Active, cancellationToken);
 
-        // 3. Contar y Sumar Transacciones (Usamos decimal? por si la tabla está vacía)
         var totalTransactions = await dbContext.Transactions.CountAsync(cancellationToken);
         var totalVolume = await dbContext.Transactions.SumAsync(t => (decimal?)t.Amount, cancellationToken) ?? 0m;
 
-        // 4. Obtener las 5 transacciones más recientes con los datos de Cliente y Producto
         var recentTransactions = await dbContext.Transactions
             .Include(t => t.AccountProduct)
-                .ThenInclude(ap => ap.Client)
+                .ThenInclude(ap => ap!.Client)
             .Include(t => t.AccountProduct)
-                .ThenInclude(ap => ap.FinancialProduct)
+                .ThenInclude(ap => ap!.FinancialProduct)
             .OrderByDescending(t => t.TransactionDate)
             .Take(5)
             .Select(t => new RecentTransactionDto(
@@ -104,13 +264,11 @@ public sealed class ReportsController(
             ))
             .ToListAsync(cancellationToken);
 
-        var summary = new DashboardSummaryDto(
+        return new DashboardSummaryDto(
             totalClients,
             activeProducts,
             totalTransactions,
             totalVolume,
             recentTransactions);
-
-        return Ok(summary);
     }
 }

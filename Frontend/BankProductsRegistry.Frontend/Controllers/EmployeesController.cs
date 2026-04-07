@@ -3,11 +3,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankProductsRegistry.Frontend.Controllers
 {
+    /// <summary>Catálogo de empleados del banco (entidad Employee); no confundir con el rol JWT <c>Operador</c>.</summary>
     [Authorize]
     public class EmployeesController : Controller
     {
@@ -19,6 +21,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador,Consulta")]
         public async Task<IActionResult> Index()
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -48,12 +51,14 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(EmployeeViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -78,7 +83,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return View(model);
                 }
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"No se pudo crear el empleado. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
@@ -90,6 +95,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -116,6 +122,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, EmployeeViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -137,7 +144,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return View(model);
                 }
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"No se pudo actualizar el empleado. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
@@ -149,6 +156,7 @@ namespace BankProductsRegistry.Frontend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;

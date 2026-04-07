@@ -23,7 +23,23 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         int accountProductId,
         CancellationToken cancellationToken)
     {
-        if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (!await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return NotFound(BuildProblem(
+                    StatusCodes.Status404NotFound,
+                    "Producto contratado no encontrado",
+                    $"No existe un producto contratado con el id {accountProductId}."));
+            }
+        }
+        else if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
         {
             return NotFound(BuildProblem(
                 StatusCodes.Status404NotFound,
@@ -43,7 +59,6 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthPolicies.WriteAccess)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -61,6 +76,20 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
                 StatusCodes.Status404NotFound,
                 "Producto contratado no encontrado",
                 $"No existe un producto contratado con el id {accountProductId}."));
+        }
+
+        // Cliente: solo su propio producto. Personal: Admin/Operador. Consulta: sin alta.
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || accountProduct.ClientId != currentClientId.Value)
+            {
+                return Forbid();
+            }
+        }
+        else if (!IsInRole(AuthRoles.Admin) && !IsInRole(AuthRoles.Operator))
+        {
+            return Forbid();
         }
 
         if (accountProduct.Status == AccountProductStatus.Closed || accountProduct.Status == AccountProductStatus.Cancelled)
@@ -114,13 +143,25 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         };
 
         dbContext.AccountProductTravelNotices.Add(notice);
+
+        // ---> NOTIFICACIN AUTOMTICA DE VIAJE <---
+        var destinationCountries = string.Join(", ", normalizedCountries);
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = $"Viaje registrado  {actorUserName}",
+            Message = $"Viaje a {destinationCountries} del {request.StartsAt:dd/MM} al {request.EndsAt:dd/MM}. Producto contratado #{accountProductId}.",
+            Type = "Viaje",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ------------------------------------------
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return StatusCode(StatusCodes.Status201Created, Map(notice));
     }
 
     [HttpPost("{noticeId:int}/cancel")]
-    [Authorize(Policy = AuthPolicies.WriteAccess)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -130,6 +171,19 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         [FromBody] AccountProductTravelNoticeCancelRequest request,
         CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || !await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return Forbid();
+            }
+        }
+        else if (!IsInRole(AuthRoles.Admin) && !IsInRole(AuthRoles.Operator))
+        {
+            return Forbid();
+        }
+
         var notice = await dbContext.AccountProductTravelNotices
             .Include(currentNotice => currentNotice.Countries)
             .FirstOrDefaultAsync(
@@ -157,6 +211,17 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         notice.CancelledByUserId = actorUserId;
         notice.CancelledByUserName = actorUserName;
         notice.CancellationReason = NormalizationHelper.NormalizeOptionalText(request.Reason);
+
+        // ---> NOTIFICACIN DE CANCELACIN DE VIAJE <---
+        dbContext.SystemNotifications.Add(new SystemNotification
+        {
+            Title = "Viaje cancelado",
+            Message = $"El viaje programado para el producto #{accountProductId} fue cancelado por {actorUserName}.",
+            Type = "Sistema",
+            CreatedAt = DateTimeOffset.UtcNow,
+            IsRead = false
+        });
+        // ----------------------------------------------
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(Map(notice));
@@ -232,5 +297,4 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
             notice.CreatedAt,
             notice.UpdatedAt);
     }
-
 }

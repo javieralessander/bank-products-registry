@@ -8,6 +8,7 @@ public sealed class Client : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
+    public Auth.ApplicationUser? User { get; set; }
 
     public ICollection<AccountProduct> AccountProducts { get; set; } = new List<AccountProduct>();
 }

@@ -1,0 +1,566 @@
+@model BankProductsRegistry.Frontend.Models.AccountProductLimitsPageViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Limites del Producto";
+    var culture = CultureInfo.GetCultureInfo("es-DO");
+
+    string FormatAmount(decimal? value) => value.HasValue
+        ? $"DOP {value.Value.ToString("N2", culture)}"
+        : "No definido";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .page-title {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .page-subtitle, .muted-line {
+        color: #8b94a5;
+        font-size: 0.9rem;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .nav-link-chip {
+        color: #60a5fa;
+        text-decoration: none;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        background: rgba(59, 130, 246, 0.08);
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+    }
+
+    .nav-link-chip:hover {
+        color: white;
+        border-color: rgba(96, 165, 250, 0.35);
+    }
+
+    .summary-grid, .panel-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 24px;
+    }
+
+    .card-panel {
+        background-color: #1a1d2d;
+        border: 1px solid #2d3348;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    }
+
+    .metric-label {
+        color: #8b94a5;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .section-title {
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .section-kicker {
+        color: #8b94a5;
+        font-size: 0.82rem;
+        margin-bottom: 16px;
+    }
+
+    .kv-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .kv-item {
+        background-color: #151928;
+        border: 1px solid #2d3348;
+        border-radius: 10px;
+        padding: 14px;
+    }
+
+    .kv-item-label {
+        color: #8b94a5;
+        font-size: 0.78rem;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .kv-item-value {
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #cbd5e1;
+        font-size: 0.88rem;
+        font-weight: 500;
+    }
+
+    .input-dark, .textarea-dark {
+        width: 100%;
+        background-color: #0f111a;
+        border: 1px solid #2d3348;
+        border-radius: 10px;
+        color: white;
+        padding: 12px 14px;
+        outline: none;
+    }
+
+    .textarea-dark {
+        min-height: 96px;
+        resize: vertical;
+    }
+
+    .input-dark:focus, .textarea-dark:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    .btn-primary-custom, .btn-secondary-custom {
+        border: none;
+        border-radius: 10px;
+        padding: 11px 16px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary-custom {
+        background-color: #2563eb;
+        color: white;
+    }
+
+    .btn-secondary-custom {
+        background-color: #111827;
+        border: 1px solid #2d3348;
+        color: #e5e7eb;
+    }
+
+    .btn-primary-custom:hover, .btn-secondary-custom:hover {
+        color: white;
+    }
+
+    .alert-custom {
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+    }
+
+    .alert-error {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .alert-success {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .alert-info {
+        background-color: rgba(59, 130, 246, 0.08);
+        color: #93c5fd;
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        color: #d1d5db;
+    }
+
+    .history-table th,
+    .history-table td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #2d3348;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .history-table th {
+        color: #8b94a5;
+        font-weight: 500;
+    }
+
+    .history-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .validation-note {
+        color: #fca5a5;
+        font-size: 0.8rem;
+        margin-top: 6px;
+    }
+
+    .history-lead {
+        color: white;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 992px) {
+        .summary-grid,
+        .panel-grid,
+        .form-grid,
+        .kv-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="nav-links">
+    <a asp-action="Index" class="nav-link-chip">&larr; Volver a productos</a>
+    <a asp-action="Details" asp-route-id="@Model.Product.Id" class="nav-link-chip">Ver expediente del producto</a>
+</div>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Limites del producto contratado</h1>
+        <div class="page-subtitle">Gestion operativa y consulta de topes por producto financiero.</div>
+    </div>
+    <div class="muted-line">Cuenta @Model.Product.AccountNumber</div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert-custom alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert-custom alert-error">@Model.ErrorMessage</div>
+}
+
+<div class="summary-grid">
+    <div class="card-panel">
+        <div class="metric-label">Cliente</div>
+        <div class="metric-value">@Model.Product.ClientName</div>
+    </div>
+    <div class="card-panel">
+        <div class="metric-label">Producto</div>
+        <div class="metric-value">@Model.Product.FinancialProductName</div>
+    </div>
+    <div class="card-panel">
+        <div class="metric-label">Balance actual</div>
+        <div class="metric-value">@FormatAmount(Model.Product.Amount)</div>
+    </div>
+    <div class="card-panel">
+        <div class="metric-label">Estado</div>
+        <div class="metric-value">@(Model.Product.IsBlocked ? "Bloqueado" : Model.Product.Status)</div>
+    </div>
+</div>
+
+<div class="panel-grid mb-4">
+    <div class="card-panel">
+        <div class="section-title">Limites vigentes</div>
+        <div class="section-kicker">Valores base y efectivos actualmente aplicados al producto.</div>
+
+        @if (Model.CurrentLimits == null)
+        {
+            <div class="alert-custom alert-info mb-0">
+                Este producto aun no tiene limites configurados.
+            </div>
+        }
+        else
+        {
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <div class="kv-item-label">Credito base</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.BaseCreditLimitTotal)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Credito efectivo</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.EffectiveCreditLimitTotal)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Consumo diario base</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.BaseDailyConsumptionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Consumo diario efectivo</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.EffectiveDailyConsumptionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Por transaccion base</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.BasePerTransactionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Por transaccion efectivo</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.EffectivePerTransactionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Retiro cajero base</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.BaseAtmWithdrawalLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Retiro cajero efectivo</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.EffectiveAtmWithdrawalLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Internacional base</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.BaseInternationalConsumptionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Internacional efectivo</div>
+                    <div class="kv-item-value">@FormatAmount(Model.CurrentLimits.EffectiveInternationalConsumptionLimit)</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card-panel">
+        <div class="section-title">Ajuste temporal activo</div>
+        <div class="section-kicker">Solo se muestra cuando existe una ampliacion o ajuste vigente.</div>
+
+        @if (Model.CurrentLimits?.ActiveTemporaryAdjustment == null)
+        {
+            <div class="alert-custom alert-info mb-0">
+                No hay ajustes temporales activos para este producto.
+            </div>
+        }
+        else
+        {
+            var activeAdjustment = Model.CurrentLimits.ActiveTemporaryAdjustment;
+            <div class="kv-grid">
+                <div class="kv-item">
+                    <div class="kv-item-label">Ventana</div>
+                    <div class="kv-item-value">@activeAdjustment.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") - @activeAdjustment.EndsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Autorizado por</div>
+                    <div class="kv-item-value">@(!string.IsNullOrWhiteSpace(activeAdjustment.ApprovedByUserName) ? activeAdjustment.ApprovedByUserName : "N/D")</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Credito temporal</div>
+                    <div class="kv-item-value">@FormatAmount(activeAdjustment.CreditLimitTotal)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Consumo diario temporal</div>
+                    <div class="kv-item-value">@FormatAmount(activeAdjustment.DailyConsumptionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Por transaccion temporal</div>
+                    <div class="kv-item-value">@FormatAmount(activeAdjustment.PerTransactionLimit)</div>
+                </div>
+                <div class="kv-item">
+                    <div class="kv-item-label">Internacional temporal</div>
+                    <div class="kv-item-value">@FormatAmount(activeAdjustment.InternationalConsumptionLimit)</div>
+                </div>
+            </div>
+
+            <div class="mt-3 muted-line">@activeAdjustment.Reason</div>
+        }
+    </div>
+</div>
+
+@if (Model.CanEdit)
+{
+    <div class="panel-grid mb-4">
+        <div class="card-panel">
+            <div class="section-title">Actualizar limites base</div>
+            <div class="section-kicker">Disponible para usuarios con rol Admin u Operador.</div>
+
+            <form asp-action="SaveLimits" asp-route-id="@Model.Product.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-note mb-3"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label asp-for="BaseForm.CreditLimitTotal"></label>
+                        <input asp-for="BaseForm.CreditLimitTotal" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="BaseForm.CreditLimitTotal" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="BaseForm.DailyConsumptionLimit"></label>
+                        <input asp-for="BaseForm.DailyConsumptionLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="BaseForm.DailyConsumptionLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="BaseForm.PerTransactionLimit"></label>
+                        <input asp-for="BaseForm.PerTransactionLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="BaseForm.PerTransactionLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="BaseForm.AtmWithdrawalLimit"></label>
+                        <input asp-for="BaseForm.AtmWithdrawalLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="BaseForm.AtmWithdrawalLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label asp-for="BaseForm.InternationalConsumptionLimit"></label>
+                        <input asp-for="BaseForm.InternationalConsumptionLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="BaseForm.InternationalConsumptionLimit" class="validation-note"></span>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn-primary-custom">Guardar limites base</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-panel">
+            <div class="section-title">Programar ajuste temporal</div>
+            <div class="section-kicker">Permite aplicar una ampliacion o restriccion por una ventana definida.</div>
+
+            <form asp-action="CreateTemporaryAdjustment" asp-route-id="@Model.Product.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.CreditLimitTotal"></label>
+                        <input asp-for="TemporaryAdjustmentForm.CreditLimitTotal" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.CreditLimitTotal" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.DailyConsumptionLimit"></label>
+                        <input asp-for="TemporaryAdjustmentForm.DailyConsumptionLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.DailyConsumptionLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.PerTransactionLimit"></label>
+                        <input asp-for="TemporaryAdjustmentForm.PerTransactionLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.PerTransactionLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.AtmWithdrawalLimit"></label>
+                        <input asp-for="TemporaryAdjustmentForm.AtmWithdrawalLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.AtmWithdrawalLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.InternationalConsumptionLimit"></label>
+                        <input asp-for="TemporaryAdjustmentForm.InternationalConsumptionLimit" class="input-dark" type="number" step="0.01" min="0.01" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.InternationalConsumptionLimit" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.StartsAtLocal"></label>
+                        <input asp-for="TemporaryAdjustmentForm.StartsAtLocal" class="input-dark" type="datetime-local" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.StartsAtLocal" class="validation-note"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="TemporaryAdjustmentForm.EndsAtLocal"></label>
+                        <input asp-for="TemporaryAdjustmentForm.EndsAtLocal" class="input-dark" type="datetime-local" />
+                        <span asp-validation-for="TemporaryAdjustmentForm.EndsAtLocal" class="validation-note"></span>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label asp-for="TemporaryAdjustmentForm.Reason"></label>
+                        <textarea asp-for="TemporaryAdjustmentForm.Reason" class="textarea-dark"></textarea>
+                        <span asp-validation-for="TemporaryAdjustmentForm.Reason" class="validation-note"></span>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn-primary-custom">Programar ajuste temporal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="card-panel">
+    <div class="section-title">Historial de cambios</div>
+    <div class="section-kicker">Bitacora de configuraciones y ajustes registrados sobre este producto.</div>
+
+    @if (Model.History == null || !Model.History.Any())
+    {
+        <div class="alert-custom alert-info mb-0">
+            Aun no hay eventos de limites registrados para este producto.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Vigencia</th>
+                        <th>Credito</th>
+                        <th>Diario</th>
+                        <th>Por transaccion</th>
+                        <th>Motivo</th>
+                        <th>Usuario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.History)
+                    {
+                        <tr>
+                            <td>
+                                <div class="history-lead">@entry.GetChangeTypeLabel()</div>
+                                <div class="muted-line">Registro #@entry.Id</div>
+                            </td>
+                            <td>
+                                <div>@entry.EffectiveFrom.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                <div class="muted-line">@(entry.EffectiveTo.HasValue ? entry.EffectiveTo.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Sin fecha fin")</div>
+                            </td>
+                            <td>
+                                <div>@FormatAmount(entry.NewCreditLimitTotal)</div>
+                                <div class="muted-line">Antes: @FormatAmount(entry.PreviousCreditLimitTotal)</div>
+                            </td>
+                            <td>
+                                <div>@FormatAmount(entry.NewDailyConsumptionLimit)</div>
+                                <div class="muted-line">Antes: @FormatAmount(entry.PreviousDailyConsumptionLimit)</div>
+                            </td>
+                            <td>
+                                <div>@FormatAmount(entry.NewPerTransactionLimit)</div>
+                                <div class="muted-line">Antes: @FormatAmount(entry.PreviousPerTransactionLimit)</div>
+                            </td>
+                            <td>@entry.Reason</td>
+                            <td>
+                                <div>@(!string.IsNullOrWhiteSpace(entry.PerformedByUserName) ? entry.PerformedByUserName : "Sistema")</div>
+                                <div class="muted-line">@entry.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -14,6 +14,14 @@ public abstract class ApiControllerBase : ControllerBase
         return int.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 
+    protected int? GetCurrentClientId()
+    {
+        var clientIdClaim = User.FindFirstValue(Security.CustomClaimTypes.ClientId);
+        return int.TryParse(clientIdClaim, out var clientId) ? clientId : null;
+    }
+
+    protected bool IsInRole(string role) => User.IsInRole(role);
+
     protected (int? UserId, string UserName) GetCurrentActor()
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

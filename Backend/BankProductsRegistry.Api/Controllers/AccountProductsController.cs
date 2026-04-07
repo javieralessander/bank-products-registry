@@ -1,6 +1,7 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.AccountProducts;
 using BankProductsRegistry.Api.Models;
+using BankProductsRegistry.Api.Models.Enums;
 using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Utilities;
@@ -22,10 +23,25 @@ public sealed class AccountProductsController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<AccountProductListItemResponse>>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var accountProducts = await dbContext.AccountProducts
+        var accountProductsQuery = dbContext.AccountProducts
             .AsNoTracking()
             .Include(accountProduct => accountProduct.Client)
             .Include(accountProduct => accountProduct.FinancialProduct)
+            .Include(accountProduct => accountProduct.Employee)
+            .AsQueryable();
+
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            accountProductsQuery = accountProductsQuery.Where(accountProduct => accountProduct.ClientId == currentClientId.Value);
+        }
+
+        var accountProducts = await accountProductsQuery
             .OrderBy(accountProduct => accountProduct.AccountNumber)
             .ToListAsync(cancellationToken);
 
@@ -42,6 +58,207 @@ public sealed class AccountProductsController(
         return Ok(response);
     }
 
+    [HttpGet("pending")]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<AccountProductListItemResponse>>> GetPendingAsync(
+        CancellationToken cancellationToken)
+    {
+        var accountProducts = await dbContext.AccountProducts
+            .AsNoTracking()
+            .Include(accountProduct => accountProduct.Client)
+            .Include(accountProduct => accountProduct.FinancialProduct)
+            .Include(accountProduct => accountProduct.Employee)
+            .Where(accountProduct => accountProduct.Status == AccountProductStatus.Pending)
+            .OrderBy(accountProduct => accountProduct.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var activeBlocks = await blockService.GetActiveBlocksAsync(
+            accountProducts.Select(accountProduct => accountProduct.Id).ToArray(),
+            cancellationToken);
+
+        var response = accountProducts
+            .Select(accountProduct => MapList(
+                accountProduct,
+                activeBlocks.GetValueOrDefault(accountProduct.Id)))
+            .ToList();
+
+        return Ok(response);
+    }
+
+    [HttpPost("me/request")]
+    [Authorize(Roles = AuthRoles.Client)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AccountProductResponse>> RequestProductFromClientAsync(
+        [FromBody] AccountProductClientRequest request,
+        CancellationToken cancellationToken)
+    {
+        var clientId = GetCurrentClientId();
+        if (!clientId.HasValue)
+        {
+            return Forbid();
+        }
+
+        if (!await dbContext.FinancialProducts.AnyAsync(
+                product => product.Id == request.FinancialProductId,
+                cancellationToken))
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Producto no valido",
+                $"No existe un producto financiero con el id {request.FinancialProductId}."));
+        }
+
+        var duplicatePending = await dbContext.AccountProducts.AnyAsync(
+            accountProduct =>
+                accountProduct.ClientId == clientId.Value &&
+                accountProduct.FinancialProductId == request.FinancialProductId &&
+                accountProduct.Status == AccountProductStatus.Pending,
+            cancellationToken);
+
+        if (duplicatePending)
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Solicitud duplicada",
+                "Ya tienes una solicitud pendiente para este producto financiero."));
+        }
+
+        var placeholderEmployee = await dbContext.Employees
+            .AsNoTracking()
+            .Where(employee => employee.EmployeeCode == "EMP000")
+            .Select(employee => (int?)employee.Id)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? await dbContext.Employees
+                .AsNoTracking()
+                .OrderBy(employee => employee.Id)
+                .Select(employee => (int?)employee.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        if (!placeholderEmployee.HasValue)
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Configuracion incompleta",
+                "No hay empleados registrados para procesar solicitudes."));
+        }
+
+        var accountNumber = await GenerateUniqueRequestAccountNumberAsync(clientId.Value, cancellationToken);
+
+        var accountProduct = new AccountProduct
+        {
+            ClientId = clientId.Value,
+            FinancialProductId = request.FinancialProductId,
+            EmployeeId = placeholderEmployee.Value,
+            AccountNumber = accountNumber,
+            Amount = request.Amount,
+            OpenDate = DateTimeOffset.UtcNow,
+            MaturityDate = null,
+            Status = AccountProductStatus.Pending
+        };
+
+        dbContext.AccountProducts.Add(accountProduct);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await LoadRelationsAsync(accountProduct, cancellationToken);
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        return CreatedAtRoute(GetAccountProductByIdRoute, new { id = accountProduct.Id }, MapDetail(accountProduct, activeBlock));
+    }
+
+    [HttpPost("{id:int}/approve")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AccountProductResponse>> ApprovePendingAsync(
+        int id,
+        [FromBody] AccountProductApproveRequest request,
+        CancellationToken cancellationToken)
+    {
+        var accountProduct = await dbContext.AccountProducts
+            .Include(currentAccountProduct => currentAccountProduct.Client)
+            .Include(currentAccountProduct => currentAccountProduct.Employee)
+            .Include(currentAccountProduct => currentAccountProduct.FinancialProduct)
+            .FirstOrDefaultAsync(currentAccountProduct => currentAccountProduct.Id == id, cancellationToken);
+
+        if (accountProduct is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Producto contratado no encontrado",
+                $"No existe un producto contratado con el id {id}."));
+        }
+
+        if (accountProduct.Status != AccountProductStatus.Pending)
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Estado no valido",
+                "Solo se pueden aprobar solicitudes en estado pendiente."));
+        }
+
+        if (!await dbContext.Employees.AnyAsync(employee => employee.Id == request.EmployeeId, cancellationToken))
+        {
+            return BadRequest(BuildProblem(
+                StatusCodes.Status400BadRequest,
+                "Empleado no valido",
+                $"No existe un empleado con el id {request.EmployeeId}."));
+        }
+
+        accountProduct.Status = AccountProductStatus.Active;
+        accountProduct.EmployeeId = request.EmployeeId;
+        accountProduct.OpenDate = DateTimeOffset.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await LoadRelationsAsync(accountProduct, cancellationToken);
+
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        return Ok(MapDetail(accountProduct, activeBlock));
+    }
+
+    [HttpPost("{id:int}/reject")]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AccountProductResponse>> RejectPendingAsync(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var accountProduct = await dbContext.AccountProducts
+            .Include(currentAccountProduct => currentAccountProduct.Client)
+            .Include(currentAccountProduct => currentAccountProduct.Employee)
+            .Include(currentAccountProduct => currentAccountProduct.FinancialProduct)
+            .FirstOrDefaultAsync(currentAccountProduct => currentAccountProduct.Id == id, cancellationToken);
+
+        if (accountProduct is null)
+        {
+            return NotFound(BuildProblem(
+                StatusCodes.Status404NotFound,
+                "Producto contratado no encontrado",
+                $"No existe un producto contratado con el id {id}."));
+        }
+
+        if (accountProduct.Status != AccountProductStatus.Pending)
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Estado no valido",
+                "Solo se pueden rechazar solicitudes en estado pendiente."));
+        }
+
+        accountProduct.Status = AccountProductStatus.Cancelled;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await LoadRelationsAsync(accountProduct, cancellationToken);
+
+        var activeBlock = await blockService.GetActiveBlockAsync(accountProduct.Id, cancellationToken);
+        return Ok(MapDetail(accountProduct, activeBlock));
+    }
+
     [HttpGet("{id:int}", Name = GetAccountProductByIdRoute)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -53,6 +270,15 @@ public sealed class AccountProductsController(
             .Include(currentAccountProduct => currentAccountProduct.Employee)
             .Include(currentAccountProduct => currentAccountProduct.FinancialProduct)
             .FirstOrDefaultAsync(currentAccountProduct => currentAccountProduct.Id == id, cancellationToken);
+
+        if (accountProduct is not null && IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || accountProduct.ClientId != currentClientId.Value)
+            {
+                return Forbid();
+            }
+        }
 
         var activeBlock = accountProduct is null
             ? null
@@ -71,11 +297,15 @@ public sealed class AccountProductsController(
         [FromBody] AccountProductCreateRequest request,
         CancellationToken cancellationToken)
     {
+        var resolvedAccountNumber = string.IsNullOrWhiteSpace(request.AccountNumber)
+            ? await GenerateUniqueAccountNumberAsync(request.ClientId, request.FinancialProductId, cancellationToken)
+            : NormalizationHelper.NormalizeCode(request.AccountNumber);
+
         var validationResult = await ValidateRelationsAsync(
             request.ClientId,
             request.FinancialProductId,
             request.EmployeeId,
-            request.AccountNumber,
+            resolvedAccountNumber,
             null,
             cancellationToken);
 
@@ -89,7 +319,7 @@ public sealed class AccountProductsController(
             ClientId = request.ClientId,
             FinancialProductId = request.FinancialProductId,
             EmployeeId = request.EmployeeId,
-            AccountNumber = NormalizationHelper.NormalizeCode(request.AccountNumber),
+            AccountNumber = resolvedAccountNumber,
             Amount = request.Amount,
             OpenDate = request.OpenDate,
             MaturityDate = request.MaturityDate,
@@ -272,6 +502,60 @@ public sealed class AccountProductsController(
         return NoContent();
     }
 
+    private async Task<string> GenerateUniqueRequestAccountNumberAsync(int clientId, CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 25; attempt++)
+        {
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            var candidate = NormalizationHelper.NormalizeCode($"REQ-{clientId}-{suffix}");
+            if (candidate.Length > 30)
+            {
+                candidate = candidate[..30];
+            }
+
+            var exists = await dbContext.AccountProducts.AnyAsync(
+                accountProduct => accountProduct.AccountNumber == candidate,
+                cancellationToken);
+            if (!exists)
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException("No se pudo generar un numero de cuenta unico.");
+    }
+
+    /// <summary>
+    /// Cuentas activas/creadas por personal: BR + id cliente (4) + P + id producto financiero (4) + 6 hex aleatorios.
+    /// Ejemplo: BR0042P0007A3F9E2 (≤ 30 caracteres).
+    /// </summary>
+    private async Task<string> GenerateUniqueAccountNumberAsync(
+        int clientId,
+        int financialProductId,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 25; attempt++)
+        {
+            var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+            var raw = $"BR{clientId:D4}P{financialProductId:D4}{suffix}";
+            var candidate = NormalizationHelper.NormalizeCode(raw);
+            if (candidate.Length > 30)
+            {
+                candidate = candidate[..30];
+            }
+
+            var exists = await dbContext.AccountProducts.AnyAsync(
+                accountProduct => accountProduct.AccountNumber == candidate,
+                cancellationToken);
+            if (!exists)
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException("No se pudo generar un numero de cuenta unico.");
+    }
+
     private async Task<ActionResult?> ValidateRelationsAsync(
         int clientId,
         int financialProductId,
@@ -330,7 +614,9 @@ public sealed class AccountProductsController(
             accountProduct.OpenDate,
             accountProduct.Status,
             activeBlock is not null,
-            MapActiveBlock(activeBlock));
+            MapActiveBlock(activeBlock),
+            accountProduct.EmployeeId,
+            accountProduct.Employee is null ? string.Empty : $"{accountProduct.Employee.FirstName} {accountProduct.Employee.LastName}");
 
     private static AccountProductResponse MapDetail(AccountProduct accountProduct, AccountProductBlock? activeBlock) =>
         new(

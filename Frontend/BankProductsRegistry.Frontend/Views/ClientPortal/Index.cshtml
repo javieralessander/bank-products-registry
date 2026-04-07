@@ -1,0 +1,295 @@
+﻿@model BankProductsRegistry.Frontend.Models.ClientPortalPageViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Mi Portal";
+    var culture = CultureInfo.GetCultureInfo("es-DO");
+    var portfolio = Model.Portfolio;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    .welcome-text {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 5px;
+    }
+
+    .date-text {
+        color: #8b94a5;
+        font-size: 0.95rem;
+        margin-bottom: 30px;
+    }
+
+    .balance-card {
+        background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
+        border-radius: 16px;
+        padding: 30px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #2563eb;
+        box-shadow: 0 10px 30px rgba(29, 78, 216, 0.2);
+        margin-bottom: 30px;
+    }
+
+        .balance-card::after {
+            content: '\F18E';
+            font-family: "bootstrap-icons";
+            position: absolute;
+            right: -20px;
+            bottom: -30px;
+            font-size: 12rem;
+            color: rgba(255,255,255,0.03);
+        }
+
+    .balance-label {
+        color: #93c5fd;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+
+    .balance-amount {
+        font-size: 3rem;
+        font-weight: 800;
+        color: white;
+        line-height: 1;
+        margin-bottom: 20px;
+    }
+
+    .balance-currency {
+        font-size: 1.5rem;
+        font-weight: 500;
+        color: #93c5fd;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 40px;
+    }
+
+    .action-btn {
+        background-color: #151928;
+        border: 1px solid #2d3348;
+        border-radius: 12px;
+        padding: 20px 10px;
+        text-align: center;
+        color: white;
+        text-decoration: none;
+        transition: 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .action-btn:hover {
+            background-color: #1e243b;
+            border-color: #3b82f6;
+            transform: translateY(-3px);
+            color: white;
+        }
+
+    .action-icon { font-size: 1.8rem; }
+    .action-text { font-size: 0.9rem; font-weight: 600; }
+
+    .section-heading {
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #2d3348;
+        padding-bottom: 10px;
+    }
+
+    .product-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .product-item {
+        background-color: #151928;
+        border: 1px solid #2d3348;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.2s;
+    }
+
+        .product-item:hover {
+            background-color: #1a1d2d;
+            border-color: #4b5563;
+        }
+
+    .product-info h5 {
+        color: white;
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0 0 5px 0;
+    }
+
+    .product-info p {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin: 0;
+        letter-spacing: 1px;
+    }
+
+    .product-balance { text-align: right; }
+
+        .product-balance h4 {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+        }
+
+    .product-status {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .product-status-active {
+        background: rgba(16,185,129,0.1);
+        color: #10b981;
+    }
+
+    .product-status-other {
+        background: rgba(148,163,184,0.12);
+        color: #cbd5e1;
+    }
+
+    .alert-portal {
+        background-color: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.15);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 24px;
+    }
+
+    .subtle-line {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin-top: 8px;
+    }
+</style>
+
+<div>
+    <h1 class="welcome-text">
+        @if (portfolio != null && !string.IsNullOrWhiteSpace(portfolio.ClientName))
+        {
+            @:Hola, @portfolio.ClientName
+        }
+        else
+        {
+            @:Bienvenido a tu Banca Digital
+        }
+    </h1>
+    <p class="date-text">@DateTime.Now.ToString("dd 'de' MMMM, yyyy", culture)</p>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert-portal">
+            <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+        </div>
+    }
+
+    @if (portfolio != null)
+    {
+        <div class="balance-card">
+            <div class="balance-label">Balance consolidado</div>
+            <div class="balance-amount">
+                <span class="balance-currency">DOP</span> @portfolio.CurrentBalance.ToString("N2", culture)
+            </div>
+            <div style="color: #bfdbfe; font-size: 0.9rem;"><i class="bi bi-shield-check"></i> Tus fondos están protegidos</div>
+            <div class="subtle-line">
+                <span class="me-3"><i class="bi bi-graph-up-arrow me-1"></i> Depósitos: DOP @portfolio.TotalDeposits.ToString("N2", culture)</span>
+                <span><i class="bi bi-graph-down-arrow me-1"></i> Retiros: DOP @portfolio.TotalWithdrawals.ToString("N2", culture)</span>
+            </div>
+            @if (Model.ClientId.HasValue)
+            {
+                <div class="mt-3 d-flex flex-wrap gap-3">
+                    <a href="@Url.Action("ClientPortfolioPdf", "ReportsExport", new { clientId = Model.ClientId.Value })" class="text-decoration-none" style="color:#93c5fd;font-size:0.9rem;">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF portafolio
+                    </a>
+                    <a href="@Url.Action("ClientCreditHistoryPdf", "ReportsExport", new { clientId = Model.ClientId.Value })" class="text-decoration-none" style="color:#93c5fd;font-size:0.9rem;">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF historial crédito
+                    </a>
+                    <a href="@Url.Action("ClientCreditScorePdf", "ReportsExport", new { clientId = Model.ClientId.Value })" class="text-decoration-none" style="color:#93c5fd;font-size:0.9rem;">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF score
+                    </a>
+                </div>
+            }
+        </div>
+
+        <div class="section-heading">Operaciones rápidas</div>
+        <div class="quick-actions" style="grid-template-columns: repeat(5, 1fr);">
+            <a href="@Url.Action("Index", "ProductRequests")" class="action-btn">
+                <i class="bi bi-plus-circle action-icon" style="color: #a78bfa;"></i>
+                <span class="action-text">Solicitar producto</span>
+            </a>
+            <a href="@Url.Action("Index", "Transactions")" class="action-btn">
+                <i class="bi bi-send-fill action-icon" style="color: #10b981;"></i>
+                <span class="action-text">Transferir</span>
+            </a>
+            <a href="@Url.Action("Index", "TravelNotices")" class="action-btn">
+                <i class="bi bi-airplane-fill action-icon" style="color: #3b82f6;"></i>
+                <span class="action-text">Notificar viaje</span>
+            </a>
+            <a href="@Url.Action("Index", "Blocks")" class="action-btn">
+                <i class="bi bi-shield-lock-fill action-icon" style="color: #ef4444;"></i>
+                <span class="action-text">Seguridad</span>
+            </a>
+            <a href="@Url.Action("Index", "Transactions")" class="action-btn">
+                <i class="bi bi-receipt action-icon" style="color: #f59e0b;"></i>
+                <span class="action-text">Movimientos</span>
+            </a>
+        </div>
+
+        <div class="section-heading mt-4">Mis productos</div>
+        @if (portfolio.Accounts == null || !portfolio.Accounts.Any())
+        {
+            <p style="color: #8b94a5;">Aún no tienes productos contratados. Cuando el banco active un producto, aparecerá aquí.</p>
+        }
+        else
+        {
+            <div class="product-list">
+                @foreach (var account in portfolio.Accounts)
+                {
+                    <div class="product-item">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div style="width: 48px; height: 48px; background: rgba(59,130,246,0.1); color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                <i class="bi bi-credit-card-fill"></i>
+                            </div>
+                            <div class="product-info">
+                                <h5>@account.ProductName</h5>
+                                <p>@account.AccountNumber</p>
+                            </div>
+                        </div>
+                        <div class="product-balance">
+                            <h4>DOP @account.Amount.ToString("N2", culture)</h4>
+                            <span class="product-status @(account.IsActiveStatus() ? "product-status-active" : "product-status-other")">@account.GetStatusLabel()</span>
+                            <div class="mt-2">
+                                <a href="@Url.Action("Limits", "AccountProducts", new { id = account.AccountProductId })" class="text-decoration-none" style="color:#93c5fd;font-size:0.82rem;">
+                                    Ver límites
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

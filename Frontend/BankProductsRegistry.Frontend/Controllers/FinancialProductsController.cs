@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -44,6 +45,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 1. CREAR PRODUCTO (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public IActionResult Create()
         {
             return View();
@@ -51,6 +53,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- CREAR PRODUCTO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create(FinancialProductViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -67,7 +70,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
                 // MEJORA: Capturamos el error real de la API
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"La API rechazó la creación. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
@@ -79,6 +82,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 3. EDITAR PRODUCTO (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -102,6 +106,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 4. EDITAR PRODUCTO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id, FinancialProductViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -118,7 +123,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
                 // MEJORA: Capturamos el error real de la API
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"La API rechazó la actualización. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
@@ -130,6 +135,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- 5. ELIMINAR PRODUCTO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;

@@ -1,6 +1,7 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Auth;
 using BankProductsRegistry.Api.Models.Auth;
+using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Interfaces;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Identity;
@@ -31,6 +32,54 @@ public sealed class AuthService(
         }
 
         return await IssueTokensAsync(user, remoteIpAddress, cancellationToken);
+    }
+
+    public async Task<(bool Success, string ErrorMessage)> RegisterAsync(
+        RegisterRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = NormalizationHelper.NormalizeEmail(request.Email);
+        var normalizedNationalId = NormalizationHelper.NormalizeCode(request.NationalId);
+        var normalizedPhone = NormalizationHelper.NormalizeCode(request.Phone);
+
+        var existingUser = await userManager.FindByEmailAsync(normalizedEmail);
+        if (existingUser != null)
+        {
+            return (false, "El correo electronico proporcionado ya esta en uso.");
+        }
+
+        var duplicatedNationalId = await userManager.Users.AnyAsync(
+            user => user.NationalId == normalizedNationalId,
+            cancellationToken);
+        if (duplicatedNationalId)
+        {
+            return (false, "Ya existe una solicitud o usuario con la misma cedula.");
+        }
+
+        var userName = normalizedEmail;
+        var newUser = new ApplicationUser
+        {
+            UserName = userName,
+            Email = normalizedEmail,
+            FirstName = NormalizationHelper.NormalizeName(request.Nombre),
+            LastName = NormalizationHelper.NormalizeName(request.Apellido),
+            NationalId = normalizedNationalId,
+            Phone = normalizedPhone,
+            FullName = $"{NormalizationHelper.NormalizeName(request.Nombre)} {NormalizationHelper.NormalizeName(request.Apellido)}",
+            IsActive = false,
+            EmailConfirmed = true,
+            ClientId = null
+        };
+
+        var result = await userManager.CreateAsync(newUser, request.Password);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(" ", result.Errors.Select(e => e.Description));
+            return (false, errors);
+        }
+
+        return (true, string.Empty);
     }
 
     public async Task<AuthResponse?> RefreshAsync(
@@ -168,5 +217,6 @@ public sealed class AuthService(
             user.Email ?? string.Empty,
             user.FullName,
             user.IsActive,
+            user.ClientId,
             roles.OrderBy(role => role).ToArray());
 }

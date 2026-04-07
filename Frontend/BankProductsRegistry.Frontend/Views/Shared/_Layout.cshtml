@@ -4,6 +4,7 @@
     // 1. Extraemos el Nombre y el Rol del usuario logueado
     var userName = User.Identity?.Name ?? "Usuario";
     var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Sin Rol";
+    var isClientLayout = User.IsInRole("Cliente");
 
     // 2. Calculamos las iniciales
     var initials = "";
@@ -23,8 +24,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BankRED - Dashboard</title>
+    <title>BankRED - @(isClientLayout ? "Portal" : "Dashboard")</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
             --bg-main: #0f111a;
@@ -66,6 +68,8 @@
             transition: 0.3s;
             font-size: 0.95rem;
             text-decoration: none;
+            display: flex;
+            align-items: center;
         }
 
             .nav-link:hover, .nav-link.active {
@@ -92,13 +96,13 @@
             display: inline-block;
         }
 
-        /* NUEVO: Tarjeta de Perfil de Usuario */
+        /* Tarjeta de Perfil de Usuario */
         .user-profile-wrapper {
             position: absolute;
             bottom: 20px;
             left: 0;
             width: 100%;
-            padding: 0 15px; /* Margen a los lados */
+            padding: 0 15px;
         }
 
         .user-profile-card {
@@ -108,7 +112,7 @@
             padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 12px; /* Separación entre la info y el botón */
+            gap: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
@@ -134,10 +138,10 @@
 
         .user-details {
             flex-grow: 1;
-            min-width: 0; /* Necesario para que el truncate funcione */
+            min-width: 0;
         }
 
-        /* NUEVO: Botón de Logout Ancho Completo */
+        /* Botón de Logout Ancho Completo */
         .logout-btn-full {
             background-color: rgba(239, 68, 68, 0.08);
             border: 1px solid rgba(239, 68, 68, 0.2);
@@ -160,23 +164,98 @@
                 color: white;
                 border-color: #ef4444;
             }
+
+        /* --- Portal cliente: tema claro (personal interno mantiene dark arriba) --- */
+        body.layout-client {
+            --bg-main: #f1f5f9;
+            --bg-sidebar: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body.layout-client .sidebar {
+            box-shadow: 4px 0 24px rgba(15, 23, 42, 0.06);
+        }
+
+        body.layout-client .nav-link {
+            color: #475569;
+        }
+
+        body.layout-client .nav-link:hover,
+        body.layout-client .nav-link.active {
+            background-color: #e0e7ff;
+            color: #1e40af;
+        }
+
+        body.layout-client .brand-logo {
+            color: #0f172a;
+        }
+
+        body.layout-client .user-profile-card {
+            background-color: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        }
     </style>
 </head>
-<body>
+<body class="@(isClientLayout ? "layout-client" : "layout-staff")">
     <div class="container-fluid p-0">
         <div class="row g-0">
             <div class="col-2 sidebar">
                 <a href="#" class="brand-logo"><span class="brand-dot"></span> BankRED</a>
+
                 <ul class="nav flex-column mb-auto">
-                    <li class="nav-item w-100"><a href="@Url.Action("Index", "Dashboard")" class="nav-link ">Dashboard</a></li>
-                    <li class="nav-item w-100"><a href="@Url.Action("Index", "Clients")" class="nav-link ">Clientes</a></li>
-                    <li class="nav-item w-100"><a href="@Url.Action("Index", "FinancialProducts")" class="nav-link">Prod. Financieros</a></li>
-                    <li class="nav-item w-100"><a href="@Url.Action("Index", "AccountProducts")" class="nav-link">Prod. Contratados</a></li>
-                    <li class="nav-item w-100"><a href="@Url.Action("Index", "Transactions")" class="nav-link">Transacciones</a></li>
-                    <li class="nav-item w-100"><a href="@Url.Action("Index", "Employees")" class="nav-link">Empleados</a></li>
-                    @if (User.IsInRole("Admin"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("Operador") || User.IsInRole("Consulta"))
                     {
-                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Users")" class="nav-link">Usuarios</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Dashboard")" class="nav-link">Dashboard</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Clients")" class="nav-link">Clientes</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "FinancialProducts")" class="nav-link">Prod. Financieros</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "AccountProducts")" class="nav-link">Prod. Contratados</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Pending", "AccountProducts")" class="nav-link">Solic. producto</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Transactions")" class="nav-link">Transacciones</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Employees")" class="nav-link">Empleados</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Blocks")" class="nav-link">Bloqueos</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "TravelNotices")" class="nav-link">Notif. de Viaje</a></li>
+                        <li class="nav-item w-100"><a href="@Url.Action("Index", "Notifications")" class="nav-link">Notificaciones</a></li>
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item w-100"><a href="@Url.Action("Index", "Users")" class="nav-link">Usuarios</a></li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="nav-item w-100">
+                            <a href="@Url.Action("Index", "ClientPortal")" class="nav-link">
+                                <i class="bi bi-house-door me-2"></i> Mi Resumen
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a href="@Url.Action("Index", "Transactions")" class="nav-link">
+                                <i class="bi bi-send me-2"></i> Transferencias
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a href="@Url.Action("Index", "AccountProducts")" class="nav-link">
+                                <i class="bi bi-wallet2 me-2"></i> Mis Productos
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a href="@Url.Action("Index", "ProductRequests")" class="nav-link">
+                                <i class="bi bi-plus-circle me-2"></i> Solicitar producto
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a href="@Url.Action("Index", "TravelNotices")" class="nav-link">
+                                <i class="bi bi-airplane me-2"></i> Avisos de Viaje
+                            </a>
+                        </li>
+                        <li class="nav-item w-100">
+                            <a href="@Url.Action("Index", "Blocks")" class="nav-link">
+                                <i class="bi bi-shield-lock me-2"></i> Seguridad
+                            </a>
+                        </li>
                     }
                 </ul>
 
@@ -185,8 +264,8 @@
                         <div class="user-info-container">
                             <div class="user-avatar">@initials</div>
                             <div class="user-details">
-                                <div class="text-white text-truncate" style="font-size: 0.9rem; font-weight: 500;" title="@userName">@userName</div>
-                                <div class="text-truncate" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" title="@userRole">@userRole</div>
+                                <div class="text-truncate @(isClientLayout ? "text-dark" : "text-white")" style="font-size: 0.9rem; font-weight: 500;" title="@userName">@userName</div>
+                                <div class="text-truncate small @(isClientLayout ? "text-secondary" : "")" style="font-size: 0.75rem; @(isClientLayout ? "" : "color: var(--text-muted);") margin-top: 2px;" title="@userRole">@userRole</div>
                             </div>
                         </div>
 
@@ -208,5 +287,9 @@
             </div>
         </div>
     </div>
+@if (isClientLayout)
+{
+    <link rel="stylesheet" href="~/css/client-portal.css" asp-append-version="true" />
+}
 </body>
 </html>

@@ -193,10 +193,147 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Transacciones</h1>
-        <div class="page-subtitle">Historial completo de movimientos bancarios</div>
+        <div class="page-subtitle">
+            @if (User.IsInRole("Cliente"))
+            {
+                <text>Registra movimientos de demostración y consulta tu historial. En tarjetas de crédito, los cargos reales provienen de la red; aquí puedes simular un pago o abono para el flujo del sistema.</text>
+            }
+            else
+            {
+                <text>Historial completo de movimientos bancarios</text>
+            }
+        </div>
     </div>
     
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background-color: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (User.IsInRole("Cliente"))
+{
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 p-4">
+        <h2 class="h5 mb-3 text-dark">Registrar movimiento</h2>
+        @if (Model.ClientAccounts == null || !Model.ClientAccounts.Any())
+        {
+            <p class="text-muted mb-0">No tienes productos activos para operar. Cuando un ejecutivo active un contrato, podrás registrar transferencias y otros movimientos simulados aquí.</p>
+        }
+        else
+        {
+            <form asp-action="RegisterTransfer" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+                <div class="col-md-6">
+                    <label class="form-label small text-secondary">Producto / cuenta</label>
+                    <select name="AccountProductId" class="form-select" required id="clientAccountSelect">
+                        <option value="">— Selecciona —</option>
+                        @foreach (var a in Model.ClientAccounts)
+                        {
+                            var isCard = !string.IsNullOrEmpty(a.FinancialProductName) &&
+                                (a.FinancialProductName.Contains("tarjeta", StringComparison.OrdinalIgnoreCase) ||
+                                 a.FinancialProductName.Contains("crédito", StringComparison.OrdinalIgnoreCase) ||
+                                 a.FinancialProductName.Contains("credito", StringComparison.OrdinalIgnoreCase));
+                            <option value="@a.Id" data-is-card="@(isCard ? "1" : "0")">@a.AccountNumber — @a.FinancialProductName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-secondary">Tipo de operación</label>
+                    <select name="OperationKind" class="form-select" id="operationKindSelect">
+                        <option value="transferencia">Transferencia (salida)</option>
+                        <option value="pago">Pago / abono (simulado; útil en tarjeta)</option>
+                        <option value="deposito">Depósito (entrada)</option>
+                        <option value="retiro">Retiro (salida)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary">Monto (DOP)</label>
+                    <input name="Amount" type="number" step="0.01" min="0.01" class="form-control" required placeholder="0.00" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary">Referencia (opcional)</label>
+                    <input name="ReferenceNumber" type="text" maxlength="60" class="form-control" placeholder="Ej. ref. banco destino" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary">Nota (opcional)</label>
+                    <input name="Description" type="text" maxlength="300" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <p class="small text-muted mb-2 d-none" id="cardHint">
+                        <i class="bi bi-info-circle"></i> Producto tipo tarjeta: en producción los consumos llegan por la red de pagos; este registro es solo para demostrar el proceso en el sistema.
+                    </p>
+                    <button type="submit" class="btn btn-primary">Registrar movimiento</button>
+                </div>
+            </form>
+            <script>
+                (function () {
+                    var sel = document.getElementById('clientAccountSelect');
+                    var hint = document.getElementById('cardHint');
+                    function sync() {
+                        var opt = sel.options[sel.selectedIndex];
+                        var isCard = opt && opt.getAttribute('data-is-card') === '1';
+                        hint.classList.toggle('d-none', !isCard);
+                    }
+                    sel.addEventListener('change', sync);
+                    sync();
+                })();
+            </script>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 p-4">
+        <h2 class="h5 mb-2 text-dark">Exportar estado de cuenta (PDF)</h2>
+        <p class="small text-muted mb-3">Descarga tus movimientos por periodo (formato tipo estado de cuenta).</p>
+        @{
+            var clientIdPdfClaim = User.Claims.FirstOrDefault(c => c.Type == "client_id")?.Value;
+        }
+        @if (!string.IsNullOrEmpty(clientIdPdfClaim) && int.TryParse(clientIdPdfClaim, out var clientIdForPdf))
+        {
+            var hoy = DateTime.Today;
+            var desdeDefault = hoy.AddDays(-30);
+            <form method="get" asp-controller="ReportsExport" asp-action="ClientTransactionStatementPdf" class="row g-3 align-items-end">
+                <input type="hidden" name="clientId" value="@clientIdForPdf" />
+                <div class="col-md-3">
+                    <label class="form-label small text-secondary">Desde</label>
+                    <input type="date" name="from" class="form-control" value="@desdeDefault.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-secondary">Hasta</label>
+                    <input type="date" name="to" class="form-control" value="@hoy.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary">Producto (opcional)</label>
+                    <select name="accountProductId" class="form-select">
+                        <option value="">Todos mis productos</option>
+                        @if (Model.ClientAccounts != null)
+                        {
+                            foreach (var acc in Model.ClientAccounts)
+                            {
+                                <option value="@acc.Id">@acc.AccountNumber — @acc.FinancialProductName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">Descargar PDF</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <p class="text-muted mb-0 small">Tu sesión no tiene un perfil de cliente vinculado para exportar.</p>
+        }
+    </div>
+}
 
 @if (ViewBag.ErrorMessage != null)
 {
