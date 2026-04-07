@@ -61,33 +61,6 @@ Las contraseñas exactas están en tu `appsettings.Development.json` del API.
 
 ### D. Cierre
 
-- Mencionar que la **API** valida roles y reglas (límites, bloqueos, pendientes).
 - Si el profesor pregunta por **tarjeta de crédito** y transferencias: en la UI se aclara que es **simulación**; en producción los cargos vienen por la red de pagos.
 
 ---
-
-## 4. Checklist mínimo el día de la presentación
-
-- [ ] MySQL arriba y migraciones aplicadas.
-- [ ] API corriendo sin errores en consola.
-- [ ] Frontend corriendo y login carga.
-- [ ] Probar al menos un login **Admin** y uno **Consulta** y uno **Cliente** (o el flujo de registro + login).
-- [ ] Tener a mano esta guía o un guion con los 3 roles.
-
----
-
-## 5. Commits recientes en `develop` (referencia)
-
-Los cambios quedaron agrupados en commits con mensajes del estilo:
-
-- `feat(api): transacciones desde portal cliente y reglas de viajes por rol`
-- `feat(frontend): página Acceso denegado y ajustes de autenticación`
-- `fix(frontend): autorización por rol y UI solo lectura para Consulta`
-- `feat(frontend): movimientos para cliente, mensajes de solicitud y resumen de cuentas`
-- `feat(frontend): helper para filtrar productos del cliente en bloqueos y viajes`
-
-Para listarlos: `git log --oneline -15`
-
----
-
-*Última actualización alineada con la rama `develop` del repositorio.*
