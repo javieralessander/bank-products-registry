@@ -49,9 +49,9 @@ namespace BankProductsRegistry.Frontend.Models
         public int Id { get; set; }
         public string AccountNumber { get; set; } = string.Empty;
 
-        // SOLUCIÓN: El tipo viene como texto ("deposito") y el canal como número (1, 2)
+        // La API serializa ambos como texto JSON (JsonStringEnumMemberName).
         public string TransactionType { get; set; } = string.Empty;
-        public int TransactionChannel { get; set; }
+        public string TransactionChannel { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
         public DateTimeOffset TransactionDate { get; set; }

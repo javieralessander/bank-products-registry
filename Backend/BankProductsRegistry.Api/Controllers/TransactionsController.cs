@@ -496,7 +496,8 @@ public sealed class TransactionsController(
             transaction.CountryCode ?? LocalCountryCode,
             !string.Equals(transaction.CountryCode ?? LocalCountryCode, LocalCountryCode, StringComparison.OrdinalIgnoreCase),
             transaction.CreatedAt,
-            transaction.UpdatedAt);
+            transaction.UpdatedAt,
+            transaction.AccountProduct?.Amount ?? 0);
 
     private async Task<ProblemDetails?> ValidateAccountProductNotBlockedAsync(
         AccountProduct accountProduct,

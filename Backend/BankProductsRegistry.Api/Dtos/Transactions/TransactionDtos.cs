@@ -64,4 +64,5 @@ public sealed record TransactionResponse(
     string CountryCode,
     bool IsInternational,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    decimal AccountProductBalance);
