@@ -169,6 +169,157 @@ namespace BankProductsRegistry.Frontend.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Limits(int id)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var page = await BuildLimitsPageAsync(id);
+            if (page == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(page);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveLimits(int id, [Bind(Prefix = "BaseForm")] AccountProductLimitEditViewModel model)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            if (!ModelState.IsValid)
+            {
+                var invalidPage = await BuildLimitsPageAsync(id, baseForm: model);
+                if (invalidPage == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                invalidPage.ErrorMessage = "Revisa los campos del formulario antes de guardar los limites base.";
+                return View("Limits", invalidPage);
+            }
+
+            var payload = new
+            {
+                model.CreditLimitTotal,
+                model.DailyConsumptionLimit,
+                model.PerTransactionLimit,
+                model.AtmWithdrawalLimit,
+                model.InternationalConsumptionLimit
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PutAsync($"api/account-products/{id}/limits", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Los limites base fueron actualizados correctamente.";
+                    return RedirectToAction(nameof(Limits), new { id });
+                }
+
+                var detail = await ApiErrorParser.ExtractMessageAsync(response);
+                var page = await BuildLimitsPageAsync(id, baseForm: model);
+                if (page == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                page.ErrorMessage = string.IsNullOrWhiteSpace(detail)
+                    ? "No se pudieron guardar los limites base."
+                    : detail;
+                return View("Limits", page);
+            }
+            catch (HttpRequestException)
+            {
+                var page = await BuildLimitsPageAsync(id, baseForm: model);
+                if (page == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                page.ErrorMessage = "Error de conexion: no se pudo contactar la API para guardar los limites.";
+                return View("Limits", page);
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTemporaryAdjustment(int id, [Bind(Prefix = "TemporaryAdjustmentForm")] AccountProductLimitTemporaryAdjustmentViewModel model)
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            if (!ModelState.IsValid)
+            {
+                var invalidPage = await BuildLimitsPageAsync(id, adjustmentForm: model);
+                if (invalidPage == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                invalidPage.ErrorMessage = "Revisa los campos del ajuste temporal antes de guardarlo.";
+                return View("Limits", invalidPage);
+            }
+
+            var payload = new
+            {
+                model.CreditLimitTotal,
+                model.DailyConsumptionLimit,
+                model.PerTransactionLimit,
+                model.AtmWithdrawalLimit,
+                model.InternationalConsumptionLimit,
+                StartsAt = ToLocalOffset(model.StartsAtLocal),
+                EndsAt = ToLocalOffset(model.EndsAtLocal),
+                model.Reason
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/account-products/{id}/limits/temporary-adjustments", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "El ajuste temporal fue programado correctamente.";
+                    return RedirectToAction(nameof(Limits), new { id });
+                }
+
+                var detail = await ApiErrorParser.ExtractMessageAsync(response);
+                var page = await BuildLimitsPageAsync(id, adjustmentForm: model);
+                if (page == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                page.ErrorMessage = string.IsNullOrWhiteSpace(detail)
+                    ? "No se pudo programar el ajuste temporal."
+                    : detail;
+                return View("Limits", page);
+            }
+            catch (HttpRequestException)
+            {
+                var page = await BuildLimitsPageAsync(id, adjustmentForm: model);
+                if (page == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                page.ErrorMessage = "Error de conexion: no se pudo contactar la API para programar el ajuste temporal.";
+                return View("Limits", page);
+            }
+        }
+
         // --- EDITAR CONTRATO (GET) ---
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
@@ -363,6 +514,94 @@ namespace BankProductsRegistry.Frontend.Controllers
             {
                 return new List<EmployeeOptionViewModel>();
             }
+        }
+
+        private async Task<AccountProductLimitsPageViewModel?> BuildLimitsPageAsync(
+            int id,
+            AccountProductLimitEditViewModel? baseForm = null,
+            AccountProductLimitTemporaryAdjustmentViewModel? adjustmentForm = null)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                var productResponse = await _httpClient.GetAsync($"api/account-products/{id}");
+                if (productResponse.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] = "No tienes permisos para consultar este producto.";
+                    return null;
+                }
+
+                if (!productResponse.IsSuccessStatusCode)
+                {
+                    TempData["ErrorMessage"] = "No se pudo cargar el producto contratado solicitado.";
+                    return null;
+                }
+
+                var productJson = await productResponse.Content.ReadAsStringAsync();
+                var product = JsonSerializer.Deserialize<AccountProductDetailsViewModel>(productJson, options);
+                if (product == null)
+                {
+                    TempData["ErrorMessage"] = "No se pudo leer la informacion del producto contratado.";
+                    return null;
+                }
+
+                var page = new AccountProductLimitsPageViewModel
+                {
+                    Product = product,
+                    CanEdit = User.IsInRole("Admin") || User.IsInRole("Operador"),
+                    BaseForm = baseForm ?? new AccountProductLimitEditViewModel(),
+                    TemporaryAdjustmentForm = adjustmentForm ?? new AccountProductLimitTemporaryAdjustmentViewModel()
+                };
+
+                var limitsResponse = await _httpClient.GetAsync($"api/account-products/{id}/limits");
+                if (limitsResponse.IsSuccessStatusCode)
+                {
+                    var limitsJson = await limitsResponse.Content.ReadAsStringAsync();
+                    page.CurrentLimits = JsonSerializer.Deserialize<AccountProductLimitSummaryViewModel>(limitsJson, options);
+
+                    if (page.CurrentLimits != null && baseForm == null)
+                    {
+                        page.BaseForm = new AccountProductLimitEditViewModel
+                        {
+                            CreditLimitTotal = page.CurrentLimits.BaseCreditLimitTotal,
+                            DailyConsumptionLimit = page.CurrentLimits.BaseDailyConsumptionLimit,
+                            PerTransactionLimit = page.CurrentLimits.BasePerTransactionLimit,
+                            AtmWithdrawalLimit = page.CurrentLimits.BaseAtmWithdrawalLimit,
+                            InternationalConsumptionLimit = page.CurrentLimits.BaseInternationalConsumptionLimit
+                        };
+                    }
+                }
+                else if (limitsResponse.StatusCode != System.Net.HttpStatusCode.NotFound)
+                {
+                    page.ErrorMessage = await ApiErrorParser.ExtractMessageAsync(limitsResponse);
+                }
+
+                var historyResponse = await _httpClient.GetAsync($"api/account-products/{id}/limits/history");
+                if (historyResponse.IsSuccessStatusCode)
+                {
+                    var historyJson = await historyResponse.Content.ReadAsStringAsync();
+                    page.History = JsonSerializer.Deserialize<List<AccountProductLimitHistoryEntryViewModel>>(historyJson, options)
+                        ?? new List<AccountProductLimitHistoryEntryViewModel>();
+                }
+                else if (historyResponse.StatusCode != System.Net.HttpStatusCode.NotFound && string.IsNullOrWhiteSpace(page.ErrorMessage))
+                {
+                    page.ErrorMessage = await ApiErrorParser.ExtractMessageAsync(historyResponse);
+                }
+
+                return page;
+            }
+            catch (HttpRequestException)
+            {
+                TempData["ErrorMessage"] = "Error de conexion: el servidor no esta disponible.";
+                return null;
+            }
+        }
+
+        private static DateTimeOffset ToLocalOffset(DateTime value)
+        {
+            var unspecified = DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
+            return new DateTimeOffset(unspecified, TimeZoneInfo.Local.GetUtcOffset(unspecified));
         }
 
         private sealed class EmployeePickItem

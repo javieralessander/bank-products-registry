@@ -63,7 +63,7 @@ public sealed class AccountProductLimitsController(
     }
 
     [HttpPut]
-    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -162,7 +162,7 @@ public sealed class AccountProductLimitsController(
     }
 
     [HttpPost("temporary-adjustments")]
-    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [Authorize(Policy = AuthPolicies.WriteAccess)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -283,7 +283,23 @@ public sealed class AccountProductLimitsController(
         int accountProductId,
         CancellationToken cancellationToken)
     {
-        if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (!await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return NotFound(BuildProblem(
+                    StatusCodes.Status404NotFound,
+                    "Producto contratado no encontrado",
+                    $"No existe un producto contratado con el id {accountProductId}."));
+            }
+        }
+        else if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
         {
             return NotFound(BuildProblem(
                 StatusCodes.Status404NotFound,

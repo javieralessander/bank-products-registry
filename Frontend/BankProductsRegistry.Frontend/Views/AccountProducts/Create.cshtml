@@ -240,8 +240,13 @@
             <div class="row mb-4">
                 <div class="col-md-6 mb-3 mb-md-0">
                     <div class="form-label-small">DATOS DE LA CUENTA</div>
-                    <label style="color: #8b94a5; font-size: 0.85rem; margin-bottom: 5px;">Número de Cuenta *</label>
-                    <input asp-for="AccountNumber" class="form-control-dark" placeholder="Ej. IN-0099123" required />
+                    <label style="color: #8b94a5; font-size: 0.85rem; margin-bottom: 5px;">Número de cuenta</label>
+                    <div class="form-control-dark" style="cursor: default; opacity: 0.95;">
+                        <span style="color: #93c5fd;">Asignación automática</span>
+                        <div style="font-size: 0.8rem; color: #6b7280; margin-top: 6px; line-height: 1.4;">
+                            Se generará al guardar con la nomenclatura <strong style="color:#a5b4fc;">BR</strong> + código de cliente + <strong style="color:#a5b4fc;">P</strong> + producto financiero + sufijo único (ej. <code style="color:#e5e7eb;">BR0042P0007A3F9E2</code>).
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-label-small">&nbsp;</div>
@@ -286,7 +291,7 @@
             </div>
 
             <div class="info-box">
-                El N° de cuenta debe ser único en el sistema.
+                El número de cuenta lo genera el sistema de forma única; no hace falta escribirlo.
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-4">

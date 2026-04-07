@@ -295,11 +295,15 @@ public sealed class AccountProductsController(
         [FromBody] AccountProductCreateRequest request,
         CancellationToken cancellationToken)
     {
+        var resolvedAccountNumber = string.IsNullOrWhiteSpace(request.AccountNumber)
+            ? await GenerateUniqueAccountNumberAsync(request.ClientId, request.FinancialProductId, cancellationToken)
+            : NormalizationHelper.NormalizeCode(request.AccountNumber);
+
         var validationResult = await ValidateRelationsAsync(
             request.ClientId,
             request.FinancialProductId,
             request.EmployeeId,
-            request.AccountNumber,
+            resolvedAccountNumber,
             null,
             cancellationToken);
 
@@ -313,7 +317,7 @@ public sealed class AccountProductsController(
             ClientId = request.ClientId,
             FinancialProductId = request.FinancialProductId,
             EmployeeId = request.EmployeeId,
-            AccountNumber = NormalizationHelper.NormalizeCode(request.AccountNumber),
+            AccountNumber = resolvedAccountNumber,
             Amount = request.Amount,
             OpenDate = request.OpenDate,
             MaturityDate = request.MaturityDate,
@@ -502,6 +506,37 @@ public sealed class AccountProductsController(
         {
             var suffix = Guid.NewGuid().ToString("N")[..8];
             var candidate = NormalizationHelper.NormalizeCode($"REQ-{clientId}-{suffix}");
+            if (candidate.Length > 30)
+            {
+                candidate = candidate[..30];
+            }
+
+            var exists = await dbContext.AccountProducts.AnyAsync(
+                accountProduct => accountProduct.AccountNumber == candidate,
+                cancellationToken);
+            if (!exists)
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException("No se pudo generar un numero de cuenta unico.");
+    }
+
+    /// <summary>
+    /// Cuentas activas/creadas por personal: BR + id cliente (4) + P + id producto financiero (4) + 6 hex aleatorios.
+    /// Ejemplo: BR0042P0007A3F9E2 (≤ 30 caracteres).
+    /// </summary>
+    private async Task<string> GenerateUniqueAccountNumberAsync(
+        int clientId,
+        int financialProductId,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 25; attempt++)
+        {
+            var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+            var raw = $"BR{clientId:D4}P{financialProductId:D4}{suffix}";
+            var candidate = NormalizationHelper.NormalizeCode(raw);
             if (candidate.Length > 30)
             {
                 candidate = candidate[..30];
