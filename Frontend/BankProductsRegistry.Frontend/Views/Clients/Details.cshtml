@@ -310,13 +310,13 @@
                         <td class="text-green">DOP @account.Deposits.ToString("N2")</td>
                         <td class="text-red">DOP @account.Withdrawals.ToString("N2")</td>
                         <td>
-                            @if (!string.IsNullOrEmpty(account.Status) && account.Status.ToUpper().Contains("ACTIV"))
+                            @if (account.IsActiveStatus())
                             {
-                                <span class="badge-active">@account.Status</span>
+                                <span class="badge-active">@account.GetStatusLabel()</span>
                             }
                             else
                             {
-                                <span class="badge-inactive">@account.Status</span>
+                                <span class="badge-inactive">@account.GetStatusLabel()</span>
                             }
                         </td>
                     </tr>

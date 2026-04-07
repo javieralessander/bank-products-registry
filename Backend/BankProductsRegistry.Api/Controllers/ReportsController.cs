@@ -22,6 +22,15 @@ public sealed class ReportsController(
         int clientId,
         CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || currentClientId.Value != clientId)
+            {
+                return Forbid();
+            }
+        }
+
         var report = await reportService.GetClientPortfolioAsync(clientId, cancellationToken);
 
         return report is null
@@ -39,6 +48,15 @@ public sealed class ReportsController(
         int clientId,
         CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || currentClientId.Value != clientId)
+            {
+                return Forbid();
+            }
+        }
+
         var report = await reportService.GetClientCreditHistoryAsync(clientId, cancellationToken);
 
         return report is null
@@ -56,6 +74,15 @@ public sealed class ReportsController(
         int clientId,
         CancellationToken cancellationToken)
     {
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue || currentClientId.Value != clientId)
+            {
+                return Forbid();
+            }
+        }
+
         var report = await reportService.GetClientCreditScoreAsync(clientId, cancellationToken);
 
         return report is null
@@ -68,6 +95,7 @@ public sealed class ReportsController(
 
     // --- NUEVO ENDPOINT PARA EL DASHBOARD ---
     [HttpGet("dashboard")]
+    [Authorize(Roles = $"{AuthRoles.Admin},{AuthRoles.Operator},{AuthRoles.ReadOnly}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<DashboardSummaryDto>> GetDashboardSummaryAsync(CancellationToken cancellationToken)
     {
@@ -78,11 +106,11 @@ public sealed class ReportsController(
         var activeProducts = await dbContext.AccountProducts
             .CountAsync(p => p.Status == AccountProductStatus.Active, cancellationToken);
 
-        // 3. Contar y Sumar Transacciones (Usamos decimal? por si la tabla está vacía)
+        // 3. Contar y Sumar Transacciones (Usamos decimal? por si la tabla est vaca)
         var totalTransactions = await dbContext.Transactions.CountAsync(cancellationToken);
         var totalVolume = await dbContext.Transactions.SumAsync(t => (decimal?)t.Amount, cancellationToken) ?? 0m;
 
-        // 4. Obtener las 5 transacciones más recientes con los datos de Cliente y Producto
+        // 4. Obtener las 5 transacciones ms recientes con los datos de Cliente y Producto
         var recentTransactions = await dbContext.Transactions
             .Include(t => t.AccountProduct)
                 .ThenInclude(ap => ap.Client)

@@ -1,6 +1,12 @@
-﻿@{
+﻿@model BankProductsRegistry.Frontend.Models.ClientPortalPageViewModel
+@using System.Globalization
+@{
     ViewData["Title"] = "Mi Portal";
+    var culture = CultureInfo.GetCultureInfo("es-DO");
+    var portfolio = Model.Portfolio;
 }
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <style>
     .welcome-text {
@@ -16,7 +22,6 @@
         margin-bottom: 30px;
     }
 
-    /* Tarjeta de Balance Principal */
     .balance-card {
         background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
         border-radius: 16px;
@@ -29,7 +34,7 @@
     }
 
         .balance-card::after {
-            content: '\F18E'; /* Icono de banco de bootstrap icons */
+            content: '\F18E';
             font-family: "bootstrap-icons";
             position: absolute;
             right: -20px;
@@ -61,7 +66,6 @@
         color: #93c5fd;
     }
 
-    /* Acciones Rápidas */
     .quick-actions {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -91,16 +95,9 @@
             color: white;
         }
 
-    .action-icon {
-        font-size: 1.8rem;
-    }
+    .action-icon { font-size: 1.8rem; }
+    .action-text { font-size: 0.9rem; font-weight: 600; }
 
-    .action-text {
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-
-    /* Mis Productos */
     .section-heading {
         color: white;
         font-size: 1.2rem;
@@ -125,7 +122,6 @@
         justify-content: space-between;
         align-items: center;
         transition: 0.2s;
-        cursor: pointer;
     }
 
         .product-item:hover {
@@ -147,9 +143,7 @@
         letter-spacing: 1px;
     }
 
-    .product-balance {
-        text-align: right;
-    }
+    .product-balance { text-align: right; }
 
         .product-balance h4 {
             color: white;
@@ -162,59 +156,117 @@
         font-size: 0.75rem;
         padding: 4px 10px;
         border-radius: 6px;
-        background: rgba(16,185,129,0.1);
-        color: #10b981;
         font-weight: 600;
         text-transform: uppercase;
+    }
+
+    .product-status-active {
+        background: rgba(16,185,129,0.1);
+        color: #10b981;
+    }
+
+    .product-status-other {
+        background: rgba(148,163,184,0.12);
+        color: #cbd5e1;
+    }
+
+    .alert-portal {
+        background-color: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.15);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 24px;
+    }
+
+    .subtle-line {
+        color: #8b94a5;
+        font-size: 0.85rem;
+        margin-top: 8px;
     }
 </style>
 
 <div>
-    <h1 class="welcome-text">Bienvenido a tu Banca Digital</h1>
-    <p class="date-text">@DateTime.Now.ToString("dd 'de' MMMM, yyyy")</p>
+    <h1 class="welcome-text">
+        @if (portfolio != null && !string.IsNullOrWhiteSpace(portfolio.ClientName))
+        {
+            @:Hola, @portfolio.ClientName
+        }
+        else
+        {
+            @:Bienvenido a tu Banca Digital
+        }
+    </h1>
+    <p class="date-text">@DateTime.Now.ToString("dd 'de' MMMM, yyyy", culture)</p>
 
-    <div class="balance-card">
-        <div class="balance-label">Balance Consolidado</div>
-        <div class="balance-amount"><span class="balance-currency">DOP</span> ***,***.00</div>
-        <div style="color: #bfdbfe; font-size: 0.9rem;"><i class="bi bi-shield-check"></i> Tus fondos están protegidos</div>
-    </div>
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert-portal">
+            <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+        </div>
+    }
 
-    <div class="section-heading">Operaciones Rápidas</div>
-    <div class="quick-actions">
-        <a href="@Url.Action("Index", "Transactions")" class="action-btn">
-            <i class="bi bi-send-fill action-icon" style="color: #10b981;"></i>
-            <span class="action-text">Transferir</span>
-        </a>
-        <a href="@Url.Action("Index", "TravelNotices")" class="action-btn">
-            <i class="bi bi-airplane-fill action-icon" style="color: #3b82f6;"></i>
-            <span class="action-text">Notificar Viaje</span>
-        </a>
-        <a href="@Url.Action("Index", "Blocks")" class="action-btn">
-            <i class="bi bi-shield-lock-fill action-icon" style="color: #ef4444;"></i>
-            <span class="action-text">Seguridad</span>
-        </a>
-        <a href="@Url.Action("Index", "Transactions")" class="action-btn">
-            <i class="bi bi-receipt action-icon" style="color: #f59e0b;"></i>
-            <span class="action-text">Movimientos</span>
-        </a>
-    </div>
-
-    <div class="section-heading mt-4">Mis Productos Activos</div>
-    <div class="product-list">
-        <div class="product-item">
-            <div class="d-flex gap-3 align-items-center">
-                <div style="width: 48px; height: 48px; background: rgba(59,130,246,0.1); color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-                    <i class="bi bi-credit-card-fill"></i>
-                </div>
-                <div class="product-info">
-                    <h5>Cuenta Ahorro Plus</h5>
-                    <p>0001002001</p>
-                </div>
+    @if (portfolio != null)
+    {
+        <div class="balance-card">
+            <div class="balance-label">Balance consolidado</div>
+            <div class="balance-amount">
+                <span class="balance-currency">DOP</span> @portfolio.CurrentBalance.ToString("N2", culture)
             </div>
-            <div class="product-balance">
-                <h4>DOP ***,***.00</h4>
-                <span class="product-status">Activo</span>
+            <div style="color: #bfdbfe; font-size: 0.9rem;"><i class="bi bi-shield-check"></i> Tus fondos están protegidos</div>
+            <div class="subtle-line">
+                <span class="me-3"><i class="bi bi-graph-up-arrow me-1"></i> Depósitos: DOP @portfolio.TotalDeposits.ToString("N2", culture)</span>
+                <span><i class="bi bi-graph-down-arrow me-1"></i> Retiros: DOP @portfolio.TotalWithdrawals.ToString("N2", culture)</span>
             </div>
         </div>
-    </div>
+
+        <div class="section-heading">Operaciones rápidas</div>
+        <div class="quick-actions">
+            <a href="@Url.Action("Index", "Transactions")" class="action-btn">
+                <i class="bi bi-send-fill action-icon" style="color: #10b981;"></i>
+                <span class="action-text">Transferir</span>
+            </a>
+            <a href="@Url.Action("Index", "TravelNotices")" class="action-btn">
+                <i class="bi bi-airplane-fill action-icon" style="color: #3b82f6;"></i>
+                <span class="action-text">Notificar viaje</span>
+            </a>
+            <a href="@Url.Action("Index", "Blocks")" class="action-btn">
+                <i class="bi bi-shield-lock-fill action-icon" style="color: #ef4444;"></i>
+                <span class="action-text">Seguridad</span>
+            </a>
+            <a href="@Url.Action("Index", "Transactions")" class="action-btn">
+                <i class="bi bi-receipt action-icon" style="color: #f59e0b;"></i>
+                <span class="action-text">Movimientos</span>
+            </a>
+        </div>
+
+        <div class="section-heading mt-4">Mis productos</div>
+        @if (portfolio.Accounts == null || !portfolio.Accounts.Any())
+        {
+            <p style="color: #8b94a5;">Aún no tienes productos contratados. Cuando el banco active un producto, aparecerá aquí.</p>
+        }
+        else
+        {
+            <div class="product-list">
+                @foreach (var account in portfolio.Accounts)
+                {
+                    <div class="product-item">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div style="width: 48px; height: 48px; background: rgba(59,130,246,0.1); color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                <i class="bi bi-credit-card-fill"></i>
+                            </div>
+                            <div class="product-info">
+                                <h5>@account.ProductName</h5>
+                                <p>@account.AccountNumber</p>
+                            </div>
+                        </div>
+                        <div class="product-balance">
+                            <h4>DOP @account.Amount.ToString("N2", culture)</h4>
+                            <span class="product-status @(account.IsActiveStatus() ? "product-status-active" : "product-status-other")">@account.GetStatusLabel()</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
 </div>
