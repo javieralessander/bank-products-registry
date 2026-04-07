@@ -149,9 +149,25 @@ public sealed class ReportService(BankProductsDbContext dbContext) : IReportServ
         }
 
         var ids = accountProducts.Select(ap => ap.Id).ToArray();
-        var allTransactions = await dbContext.Transactions
+
+        var netAfterEndByAccount = await dbContext.Transactions
             .AsNoTracking()
-            .Where(t => ids.Contains(t.AccountProductId))
+            .Where(t => ids.Contains(t.AccountProductId) && t.TransactionDate > endUtc)
+            .GroupBy(t => t.AccountProductId)
+            .Select(g => new
+            {
+                AccountProductId = g.Key,
+                NetSigned = g.Sum(t =>
+                    t.TransactionType == TransactionType.Deposit ? t.Amount : -t.Amount)
+            })
+            .ToDictionaryAsync(x => x.AccountProductId, x => x.NetSigned, cancellationToken);
+
+        var txsInRange = await dbContext.Transactions
+            .AsNoTracking()
+            .Where(t =>
+                ids.Contains(t.AccountProductId) &&
+                t.TransactionDate >= startUtc &&
+                t.TransactionDate <= endUtc)
             .OrderBy(t => t.TransactionDate)
             .ThenBy(t => t.Id)
             .ToListAsync(cancellationToken);
@@ -159,8 +175,9 @@ public sealed class ReportService(BankProductsDbContext dbContext) : IReportServ
         var sections = new List<StatementAccountSectionDto>();
         foreach (var ap in accountProducts)
         {
-            var txsForAccount = allTransactions.Where(t => t.AccountProductId == ap.Id).ToList();
-            var rows = BuildStatementRows(ap.Amount, txsForAccount, startUtc, endUtc);
+            var netAfter = netAfterEndByAccount.GetValueOrDefault(ap.Id, 0m);
+            var inRangeForAccount = txsInRange.Where(t => t.AccountProductId == ap.Id).ToList();
+            var rows = BuildStatementRows(ap.Amount, netAfter, inRangeForAccount);
             sections.Add(new StatementAccountSectionDto(
                 ap.Id,
                 ap.AccountNumber,
@@ -179,32 +196,21 @@ public sealed class ReportService(BankProductsDbContext dbContext) : IReportServ
             sections);
     }
 
+    /// <param name="netSignedAfterRangeEnd">Suma firmada (deposito +, resto -) de movimientos con fecha &gt; fin del periodo.</param>
     private static IReadOnlyList<StatementTransactionRowDto> BuildStatementRows(
         decimal currentAccountAmount,
-        List<BankTransaction> allForAccount,
-        DateTimeOffset startUtc,
-        DateTimeOffset endUtc)
+        decimal netSignedAfterRangeEnd,
+        IReadOnlyList<BankTransaction> inRangeOrdered)
     {
         static decimal Signed(BankTransaction t) =>
             t.TransactionType == TransactionType.Deposit ? t.Amount : -t.Amount;
 
-        var netAfter = allForAccount
-            .Where(t => t.TransactionDate > endUtc)
-            .Sum(Signed);
-
-        var balanceAfterLastInRange = currentAccountAmount - netAfter;
-
-        var inRange = allForAccount
-            .Where(t => t.TransactionDate >= startUtc && t.TransactionDate <= endUtc)
-            .OrderBy(t => t.TransactionDate)
-            .ThenBy(t => t.Id)
-            .ToList();
-
-        var netInRange = inRange.Sum(Signed);
+        var balanceAfterLastInRange = currentAccountAmount - netSignedAfterRangeEnd;
+        var netInRange = inRangeOrdered.Sum(Signed);
         var running = balanceAfterLastInRange - netInRange;
 
         var rows = new List<StatementTransactionRowDto>();
-        foreach (var t in inRange)
+        foreach (var t in inRangeOrdered)
         {
             running += Signed(t);
             rows.Add(new StatementTransactionRowDto(
