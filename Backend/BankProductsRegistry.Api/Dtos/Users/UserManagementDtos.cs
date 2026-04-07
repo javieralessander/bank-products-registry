@@ -33,6 +33,8 @@ public sealed record UserRoleUpdateRequest
 {
     [Required, MaxLength(20)]
     public string Role { get; init; } = string.Empty;
+
+    public int? ClientId { get; init; }
 }
 
 public sealed record UserResetPasswordRequest
@@ -48,4 +50,5 @@ public sealed record UserManagementResponse(
     string FullName,
     bool IsActive,
     bool EmailConfirmed,
+    int? ClientId,
     IReadOnlyCollection<string> Roles);

@@ -151,28 +151,34 @@
             margin-bottom: 6px;
         }
 
-        .back-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            color: #8b94a5;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: 0.2s;
+        .auth-subtitle {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            opacity: 0.95;
         }
 
-            .back-link:hover {
-                color: white;
+        @@media (max-width: 768px) {
+            body {
+                padding: 20px 14px;
             }
+
+            .auth-card {
+                max-width: 100%;
+                padding: 24px 18px;
+                border-radius: 16px;
+            }
+        }
+
     </style>
 </head>
 <body>
     <div style="position: relative; z-index: 1;">
-        <a href="@Url.Action("Index", "Home")" class="back-link"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
-
         <div class="auth-card">
             <div class="brand-logo">Bank<span class="text-blue">RED</span></div>
-            <p class="text-center text-muted mb-4" style="font-size: 0.95rem;">Abre tu cuenta digital en minutos</p>
+            <p class="auth-subtitle">Solicita tu acceso digital para validación del banco</p>
 
             @if (ViewBag.ErrorMessage != null)
             {

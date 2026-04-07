@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -41,6 +42,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                     var jsonString = await response.Content.ReadAsStringAsync();
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                     var users = JsonSerializer.Deserialize<List<UserManagementViewModel>>(jsonString, options);
+                    await LoadClientOptionsAsync();
                     return View(users ?? new List<UserManagementViewModel>());
                 }
 
@@ -95,7 +97,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return RedirectToAction("Login", "Auth");
                 }
 
-                var detail = await response.Content.ReadAsStringAsync();
+                var detail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"No se pudo crear el usuario. Detalle: {detail}";
             }
             catch (HttpRequestException)
@@ -133,7 +135,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             }
             else
             {
-                var detail = await response.Content.ReadAsStringAsync();
+                var detail = await ApiErrorParser.ExtractMessageAsync(response);
                 TempData["ErrorMessage"] = $"No se pudo actualizar el estado. {detail}";
             }
 
@@ -147,7 +149,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var payload = new { model.Role };
+            var payload = new { model.Role, model.ClientId };
             var request = new HttpRequestMessage(HttpMethod.Patch, $"api/users/{model.Id}/role")
             {
                 Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
@@ -166,7 +168,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             }
             else
             {
-                var detail = await response.Content.ReadAsStringAsync();
+                var detail = await ApiErrorParser.ExtractMessageAsync(response);
                 TempData["ErrorMessage"] = $"No se pudo actualizar el rol. {detail}";
             }
 
@@ -201,7 +203,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             }
             else
             {
-                var detail = await response.Content.ReadAsStringAsync();
+                var detail = await ApiErrorParser.ExtractMessageAsync(response);
                 TempData["ErrorMessage"] = $"No se pudo restablecer la contraseña. {detail}";
             }
 

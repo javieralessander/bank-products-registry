@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
-
+using BankProductsRegistry.Frontend.Utilities;
 namespace BankProductsRegistry.Frontend.Controllers
 {
     [Authorize]
@@ -51,8 +51,9 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // 2. Mostrar la pantalla vacía para crear un cliente
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            await LoadLinkableUsersAsync();
             return View();
         }
 
@@ -61,7 +62,11 @@ namespace BankProductsRegistry.Frontend.Controllers
         public async Task<IActionResult> Create(ClientViewModel model)
         {
             // Verificamos que los datos del formulario sean válidos antes de enviarlos
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+            {
+                await LoadLinkableUsersAsync();
+                return View(model);
+            }
 
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
@@ -70,28 +75,70 @@ namespace BankProductsRegistry.Frontend.Controllers
 
             try
             {
-                // Convertimos el modelo a JSON
-                var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+                var payload = new
+                {
+                    model.FirstName,
+                    model.LastName,
+                    model.NationalId,
+                    model.Email,
+                    model.Phone,
+                    RegisteredUserId = model.LinkUserId,
+                    model.IsActive
+                };
+                var jsonContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-                // Enviamos el POST a la API
                 var response = await _httpClient.PostAsync("api/clients", jsonContent);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Si se creó con éxito, regresamos a la pantalla de la tabla
                     return RedirectToAction("Index");
                 }
 
-                // Si la API rechaza la solicitud (ej. cédula o correo duplicado)
-                ViewBag.ErrorMessage = "Hubo un problema al crear el cliente. Verifica que la cédula o correo no estén registrados ya.";
+                var apiError = await ApiErrorParser.ExtractMessageAsync(response);
+                ViewBag.ErrorMessage = string.IsNullOrWhiteSpace(apiError)
+                    ? "Hubo un problema al crear el cliente. Verifica que la cédula o correo no estén registrados ya."
+                    : apiError;
             }
             catch (HttpRequestException)
             {
                 ViewBag.ErrorMessage = "Error de conexión: El servidor (API) no está respondiendo.";
             }
 
-            // Si falló, regresamos la vista con los datos que el usuario ya había escrito para que no empiece de cero
+            await LoadLinkableUsersAsync();
             return View(model);
+        }
+
+        private async Task LoadLinkableUsersAsync()
+        {
+            var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
+            if (string.IsNullOrEmpty(token))
+            {
+                ViewBag.LinkableUsers = new List<PendingClientUserViewModel>();
+                return;
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            try
+            {
+                var response = await _httpClient.GetAsync("api/clients/pending-users");
+                if (!response.IsSuccessStatusCode)
+                {
+                    ViewBag.LinkableUsers = new List<PendingClientUserViewModel>();
+                    return;
+                }
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var linkable = JsonSerializer.Deserialize<List<PendingClientUserViewModel>>(jsonString, options)
+                    ?? new List<PendingClientUserViewModel>();
+
+                ViewBag.LinkableUsers = linkable;
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.LinkableUsers = new List<PendingClientUserViewModel>();
+            }
         }
         // --- 4. VER PORTFOLIO (DETALLES) ---
         [HttpGet]

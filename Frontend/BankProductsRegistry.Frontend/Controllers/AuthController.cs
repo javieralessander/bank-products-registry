@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Text;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
@@ -126,13 +127,13 @@ namespace BankProductsRegistry.Frontend.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["SuccessMessage"] = "Tu cuenta digital ha sido creada con éxito. Ya puedes iniciar sesión.";
+                    TempData["SuccessMessage"] = "Tu solicitud de acceso fue registrada. Un administrador u operador debe vincular tu perfil de cliente antes de habilitar el inicio de sesión.";
                     return RedirectToAction("Login");
                 }
 
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
-                    var detail = await response.Content.ReadAsStringAsync();
+                    var detail = await ApiErrorParser.ExtractMessageAsync(response);
                     ViewBag.ErrorMessage = string.IsNullOrWhiteSpace(detail)
                         ? "No se pudo crear la cuenta. Verifica los datos."
                         : $"No se pudo crear la cuenta. {detail}";

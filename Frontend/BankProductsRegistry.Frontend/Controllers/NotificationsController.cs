@@ -14,8 +14,6 @@ namespace BankProductsRegistry.Frontend.Controllers
         public NotificationsController(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            // Asegúrate de que este sea el puerto correcto de tu backend:
-            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
         }
 
         [HttpGet]

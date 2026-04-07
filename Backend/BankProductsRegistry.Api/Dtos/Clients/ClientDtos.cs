@@ -19,6 +19,8 @@ public record ClientCreateRequest
     [Required, MaxLength(25)]
     public string Phone { get; init; } = string.Empty;
 
+    public int? RegisteredUserId { get; init; }
+
     public bool IsActive { get; init; } = true;
 }
 
@@ -54,3 +56,14 @@ public sealed record ClientResponse(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
+
+public sealed record PendingClientUserResponse(
+    int Id,
+    string UserName,
+    string FullName,
+    string Email,
+    string? FirstName,
+    string? LastName,
+    string? NationalId,
+    string? Phone,
+    bool IsActive);

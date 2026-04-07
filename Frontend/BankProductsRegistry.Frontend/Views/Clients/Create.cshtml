@@ -1,6 +1,8 @@
 ﻿@model BankProductsRegistry.Frontend.Models.ClientViewModel
+@using BankProductsRegistry.Frontend.Models
 @{
     ViewData["Title"] = "Nuevo Cliente";
+    var linkableUsers = ViewBag.LinkableUsers as IEnumerable<PendingClientUserViewModel> ?? new List<PendingClientUserViewModel>();
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -246,6 +248,41 @@
             </div>
         </div>
 
+        <div class="section-divider"></div>
+
+        <div class="section-title">
+            <i class="bi bi-link-45deg text-primary"></i> Cuenta de acceso (opcional)
+        </div>
+        <p class="small mb-3" style="color: #8b94a5;">
+            Si eliges un usuario ya registrado, se le asignará el rol <strong>Cliente</strong> y quedará vinculado a este cliente al guardar.
+        </p>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label-custom">Vincular usuario existente</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-person-check input-icon"></i>
+                    <select asp-for="LinkUserId" class="form-control-custom w-100" id="LinkUserId" style="padding-left: 45px;">
+                        <option value="">— Sin vincular —</option>
+                        @foreach (var u in linkableUsers)
+                        {
+                            <option value="@u.Id"
+                                    data-full-name="@u.FullName"
+                                    data-first-name="@u.FirstName"
+                                    data-last-name="@u.LastName"
+                                    data-email="@u.Email"
+                                    data-national-id="@u.NationalId"
+                                    data-phone="@u.Phone">
+                                @u.FullName (@u.UserName)
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="mt-2" style="color: #8b94a5; font-size: 0.82rem;">
+                    El sistema completará los datos del formulario con la información del usuario registrado para agilizar el alta.
+                </div>
+            </div>
+        </div>
+
         <div class="d-flex gap-3 justify-content-end mt-5 pt-3 border-top" style="border-color: #2d3348;">
             <a asp-action="Index" class="btn-cancel-custom">
                 <i class="bi bi-arrow-left me-1"></i> Cancelar
@@ -256,3 +293,73 @@
         </div>
     </form>
 </div>
+
+<script>
+    (function () {
+        const userSelect = document.getElementById("LinkUserId");
+        const firstNameInput = document.getElementById("FirstName");
+        const lastNameInput = document.getElementById("LastName");
+        const emailInput = document.getElementById("Email");
+        const nationalIdInput = document.getElementById("NationalId");
+        const phoneInput = document.getElementById("Phone");
+
+        function splitFullName(fullName) {
+            const value = (fullName || "").trim();
+            if (!value) {
+                return { firstName: "", lastName: "" };
+            }
+
+            const parts = value.split(/\s+/);
+            if (parts.length === 1) {
+                return { firstName: parts[0], lastName: "" };
+            }
+
+            return {
+                firstName: parts[0],
+                lastName: parts.slice(1).join(" ")
+            };
+        }
+
+        function syncFromSelectedUser() {
+            if (!userSelect) {
+                return;
+            }
+
+            const selectedOption = userSelect.options[userSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                return;
+            }
+
+            const derivedName = splitFullName(selectedOption.dataset.fullName);
+            const firstName = selectedOption.dataset.firstName || derivedName.firstName;
+            const lastName = selectedOption.dataset.lastName || derivedName.lastName;
+
+            if (firstNameInput) {
+                firstNameInput.value = firstName || "";
+            }
+
+            if (lastNameInput) {
+                lastNameInput.value = lastName || "";
+            }
+
+            if (emailInput) {
+                emailInput.value = selectedOption.dataset.email || "";
+            }
+
+            if (nationalIdInput) {
+                nationalIdInput.value = selectedOption.dataset.nationalId || "";
+            }
+
+            if (phoneInput) {
+                phoneInput.value = selectedOption.dataset.phone || "";
+            }
+        }
+
+        if (userSelect) {
+            userSelect.addEventListener("change", syncFromSelectedUser);
+            if (userSelect.value) {
+                syncFromSelectedUser();
+            }
+        }
+    })();
+</script>

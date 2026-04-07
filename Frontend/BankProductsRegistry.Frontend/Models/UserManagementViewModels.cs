@@ -55,6 +55,8 @@ namespace BankProductsRegistry.Frontend.Models
         [Required]
         [MaxLength(20)]
         public string Role { get; set; } = "Operador";
+
+        public int? ClientId { get; set; }
     }
 
     public class UserResetPasswordViewModel

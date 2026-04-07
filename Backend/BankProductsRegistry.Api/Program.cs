@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Data;
+using System.Data.Common;
 using System.Text;
 using System.Text.Json.Serialization;
 using BankProductsRegistry.Api.Configuration;
@@ -227,6 +229,7 @@ static async Task EnsureDatabaseAsync(IServiceProvider services, IConfiguration 
             await dbContext.Database.EnsureCreatedAsync();
         }
 
+        await EnsureIdentityClientLinkSchemaAsync(dbContext, logger);
         await BankProductsDbSeeder.SeedAsync(dbContext);
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -237,4 +240,151 @@ static async Task EnsureDatabaseAsync(IServiceProvider services, IConfiguration 
         logger.LogError(ex, "No se pudo inicializar la base de datos al arrancar la aplicacion.");
         throw;
     }
+}
+
+static async Task EnsureIdentityClientLinkSchemaAsync(BankProductsDbContext dbContext, ILogger logger)
+{
+    var connection = dbContext.Database.GetDbConnection();
+    var shouldCloseConnection = connection.State != ConnectionState.Open;
+
+    if (shouldCloseConnection)
+    {
+        await connection.OpenAsync();
+    }
+
+    try
+    {
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND COLUMN_NAME = 'FirstName';
+            """))
+        {
+            logger.LogWarning("La columna AspNetUsers.FirstName no existe. Se aplicara una correccion de compatibilidad.");
+
+            await ExecuteNonQueryAsync(connection, """
+                ALTER TABLE `AspNetUsers`
+                ADD COLUMN `FirstName` varchar(100) NULL;
+                """);
+        }
+
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND COLUMN_NAME = 'LastName';
+            """))
+        {
+            logger.LogWarning("La columna AspNetUsers.LastName no existe. Se aplicara una correccion de compatibilidad.");
+
+            await ExecuteNonQueryAsync(connection, """
+                ALTER TABLE `AspNetUsers`
+                ADD COLUMN `LastName` varchar(100) NULL;
+                """);
+        }
+
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND COLUMN_NAME = 'NationalId';
+            """))
+        {
+            logger.LogWarning("La columna AspNetUsers.NationalId no existe. Se aplicara una correccion de compatibilidad.");
+
+            await ExecuteNonQueryAsync(connection, """
+                ALTER TABLE `AspNetUsers`
+                ADD COLUMN `NationalId` varchar(25) NULL;
+                """);
+        }
+
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND COLUMN_NAME = 'Phone';
+            """))
+        {
+            logger.LogWarning("La columna AspNetUsers.Phone no existe. Se aplicara una correccion de compatibilidad.");
+
+            await ExecuteNonQueryAsync(connection, """
+                ALTER TABLE `AspNetUsers`
+                ADD COLUMN `Phone` varchar(25) NULL;
+                """);
+        }
+
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND COLUMN_NAME = 'ClientId';
+            """))
+        {
+            logger.LogWarning("La columna AspNetUsers.ClientId no existe. Se aplicara una correccion de compatibilidad.");
+
+            await ExecuteNonQueryAsync(connection, """
+                ALTER TABLE `AspNetUsers`
+                ADD COLUMN `ClientId` int NULL;
+                """);
+        }
+
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND INDEX_NAME = 'IX_AspNetUsers_ClientId';
+            """))
+        {
+            await ExecuteNonQueryAsync(connection, """
+                CREATE UNIQUE INDEX `IX_AspNetUsers_ClientId`
+                ON `AspNetUsers` (`ClientId`);
+                """);
+        }
+
+        if (!await SchemaObjectExistsAsync(connection, """
+            SELECT COUNT(*)
+            FROM information_schema.REFERENTIAL_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'AspNetUsers'
+              AND CONSTRAINT_NAME = 'FK_AspNetUsers_Clients_ClientId';
+            """))
+        {
+            await ExecuteNonQueryAsync(connection, """
+                ALTER TABLE `AspNetUsers`
+                ADD CONSTRAINT `FK_AspNetUsers_Clients_ClientId`
+                FOREIGN KEY (`ClientId`) REFERENCES `Clients` (`Id`)
+                ON DELETE SET NULL;
+                """);
+        }
+    }
+    finally
+    {
+        if (shouldCloseConnection)
+        {
+            await connection.CloseAsync();
+        }
+    }
+}
+
+static async Task<bool> SchemaObjectExistsAsync(DbConnection connection, string sql)
+{
+    await using var command = connection.CreateCommand();
+    command.CommandText = sql;
+    var result = await command.ExecuteScalarAsync();
+
+    return Convert.ToInt32(result) > 0;
+}
+
+static async Task ExecuteNonQueryAsync(DbConnection connection, string sql)
+{
+    await using var command = connection.CreateCommand();
+    command.CommandText = sql;
+    await command.ExecuteNonQueryAsync();
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -15,7 +16,6 @@ namespace BankProductsRegistry.Frontend.Controllers
         public TravelNoticesController(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
         }
 
         // --- DASHBOARD GLOBAL (GET) ---
@@ -91,8 +91,25 @@ namespace BankProductsRegistry.Frontend.Controllers
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Auth");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var prodRes = await _httpClient.GetAsync("api/account-products");
-            if (prodRes.IsSuccessStatusCode) ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+            try
+            {
+                var prodRes = await _httpClient.GetAsync("api/account-products");
+                if (prodRes.IsSuccessStatusCode)
+                {
+                    ViewBag.AccountProducts = await prodRes.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    var detail = await ApiErrorParser.ExtractMessageAsync(prodRes);
+                    ViewBag.ErrorMessage = string.IsNullOrWhiteSpace(detail)
+                        ? "No se pudo cargar el listado de productos contratados."
+                        : detail;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                ViewBag.ErrorMessage = "Error de conexión: la API no está disponible.";
+            }
 
             return View(new TravelNoticeCreateViewModel());
         }
@@ -119,7 +136,7 @@ namespace BankProductsRegistry.Frontend.Controllers
             var response = await _httpClient.PostAsync($"api/account-products/{model.AccountProductId}/travel-notices", jsonContent);
             if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
-            var errorDetail = await response.Content.ReadAsStringAsync();
+            var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
             ViewBag.ErrorMessage = $"Error: {errorDetail}";
 
             var prodRes = await _httpClient.GetAsync("api/account-products");

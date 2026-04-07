@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -97,7 +98,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 var response = await _httpClient.PostAsync("api/account-products", jsonContent);
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"Error al crear el contrato: {errorDetail}";
             }
             catch (Exception ex)
@@ -225,7 +226,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 var response = await _httpClient.PutAsync($"api/account-products/{id}", jsonContent);
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"Error al actualizar: {errorDetail}";
             }
             catch (Exception ex)

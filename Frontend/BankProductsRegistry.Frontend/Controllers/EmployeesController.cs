@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -78,7 +79,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return View(model);
                 }
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"No se pudo crear el empleado. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
@@ -137,7 +138,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                     return View(model);
                 }
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"No se pudo actualizar el empleado. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)

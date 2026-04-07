@@ -5,6 +5,10 @@ namespace BankProductsRegistry.Api.Models.Auth;
 
 public sealed class ApplicationUser : IdentityUser<int>
 {
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? NationalId { get; set; }
+    public string? Phone { get; set; }
     public string FullName { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public int? ClientId { get; set; }

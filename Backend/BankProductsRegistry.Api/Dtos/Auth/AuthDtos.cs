@@ -11,7 +11,7 @@ public sealed record LoginRequest
     public string Password { get; init; } = string.Empty;
 }
 
-// ---> ESTO ERA LO ÚNICO QUE TE FALTABA <---
+// ---> ESTO ERA LO ÃšNICO QUE TE FALTABA <---
 public sealed record RegisterRequest
 {
     [Required, MaxLength(100)]
@@ -52,6 +52,7 @@ public sealed record AuthenticatedUserResponse(
     string Email,
     string FullName,
     bool IsActive,
+    int? ClientId,
     IReadOnlyCollection<string> Roles);
 
 public sealed record AuthResponse(

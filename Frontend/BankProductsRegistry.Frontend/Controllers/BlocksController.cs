@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -15,7 +16,6 @@ namespace BankProductsRegistry.Frontend.Controllers
         public BlocksController(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://localhost:7039/");
         }
 
         // --- DASHBOARD DE BLOQUEOS (GET) ---
@@ -92,7 +92,6 @@ namespace BankProductsRegistry.Frontend.Controllers
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorDetail = await response.Content.ReadAsStringAsync();
                     TempData["ErrorMessage"] = $"No se pudo desbloquear. {(response.StatusCode == System.Net.HttpStatusCode.Conflict ? "Los bloqueos permanentes no se pueden liberar." : "")}";
                 }
             }
@@ -145,7 +144,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"La API rechazó el bloqueo: {errorDetail}";
             }
             catch (Exception ex)

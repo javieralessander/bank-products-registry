@@ -1,6 +1,5 @@
 using BankProductsRegistry.Api.Data;
 using BankProductsRegistry.Api.Dtos.Auth;
-using BankProductsRegistry.Api.Models;
 using BankProductsRegistry.Api.Models.Auth;
 using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Services.Interfaces;
@@ -35,15 +34,13 @@ public sealed class AuthService(
         return await IssueTokensAsync(user, remoteIpAddress, cancellationToken);
     }
 
-    // ====================================================================
-    // MùTODO DE REGISTRO DE CLIENTES
-    // ====================================================================
     public async Task<(bool Success, string ErrorMessage)> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
         var normalizedEmail = NormalizationHelper.NormalizeEmail(request.Email);
         var normalizedNationalId = NormalizationHelper.NormalizeCode(request.NationalId);
+        var normalizedPhone = NormalizationHelper.NormalizeCode(request.Phone);
 
         var existingUser = await userManager.FindByEmailAsync(normalizedEmail);
         if (existingUser != null)
@@ -51,36 +48,12 @@ public sealed class AuthService(
             return (false, "El correo electronico proporcionado ya esta en uso.");
         }
 
-        var existingClient = await dbContext.Clients
-            .FirstOrDefaultAsync(
-                client => client.Email == normalizedEmail || client.NationalId == normalizedNationalId,
-                cancellationToken);
-
-        if (existingClient is null)
+        var duplicatedNationalId = await userManager.Users.AnyAsync(
+            user => user.NationalId == normalizedNationalId,
+            cancellationToken);
+        if (duplicatedNationalId)
         {
-            existingClient = new Client
-            {
-                FirstName = NormalizationHelper.NormalizeName(request.Nombre),
-                LastName = NormalizationHelper.NormalizeName(request.Apellido),
-                NationalId = normalizedNationalId,
-                Email = normalizedEmail,
-                Phone = NormalizationHelper.NormalizeCode(request.Phone),
-                IsActive = true
-            };
-
-            dbContext.Clients.Add(existingClient);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        else
-        {
-            var hasLinkedUser = await userManager.Users.AnyAsync(
-                user => user.ClientId == existingClient.Id,
-                cancellationToken);
-
-            if (hasLinkedUser)
-            {
-                return (false, "El cliente ya tiene una cuenta de acceso asociada.");
-            }
+            return (false, "Ya existe una solicitud o usuario con la misma cedula.");
         }
 
         var userName = normalizedEmail;
@@ -88,10 +61,14 @@ public sealed class AuthService(
         {
             UserName = userName,
             Email = normalizedEmail,
-            FullName = $"{request.Nombre.Trim()} {request.Apellido.Trim()}",
-            IsActive = true,
+            FirstName = NormalizationHelper.NormalizeName(request.Nombre),
+            LastName = NormalizationHelper.NormalizeName(request.Apellido),
+            NationalId = normalizedNationalId,
+            Phone = normalizedPhone,
+            FullName = $"{NormalizationHelper.NormalizeName(request.Nombre)} {NormalizationHelper.NormalizeName(request.Apellido)}",
+            IsActive = false,
             EmailConfirmed = true,
-            ClientId = existingClient.Id
+            ClientId = null
         };
 
         var result = await userManager.CreateAsync(newUser, request.Password);
@@ -99,14 +76,6 @@ public sealed class AuthService(
         if (!result.Succeeded)
         {
             var errors = string.Join(" ", result.Errors.Select(e => e.Description));
-            return (false, errors);
-        }
-
-        var roleResult = await userManager.AddToRoleAsync(newUser, AuthRoles.Client);
-        if (!roleResult.Succeeded)
-        {
-            await userManager.DeleteAsync(newUser);
-            var errors = string.Join(" ", roleResult.Errors.Select(e => e.Description));
             return (false, errors);
         }
 
@@ -248,5 +217,6 @@ public sealed class AuthService(
             user.Email ?? string.Empty,
             user.FullName,
             user.IsActive,
+            user.ClientId,
             roles.OrderBy(role => role).ToArray());
 }

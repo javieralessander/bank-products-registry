@@ -12,6 +12,18 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
             .HasMaxLength(150)
             .IsRequired();
 
+        builder.Property(user => user.FirstName)
+            .HasMaxLength(100);
+
+        builder.Property(user => user.LastName)
+            .HasMaxLength(100);
+
+        builder.Property(user => user.NationalId)
+            .HasMaxLength(25);
+
+        builder.Property(user => user.Phone)
+            .HasMaxLength(25);
+
         builder.Property(user => user.IsActive)
             .HasDefaultValue(true);
 

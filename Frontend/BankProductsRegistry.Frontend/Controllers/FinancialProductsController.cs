@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using BankProductsRegistry.Frontend.Models;
+using BankProductsRegistry.Frontend.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -67,7 +68,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
                 // MEJORA: Capturamos el error real de la API
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"La API rechazó la creación. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)
@@ -118,7 +119,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 if (response.IsSuccessStatusCode) return RedirectToAction("Index");
 
                 // MEJORA: Capturamos el error real de la API
-                var errorDetail = await response.Content.ReadAsStringAsync();
+                var errorDetail = await ApiErrorParser.ExtractMessageAsync(response);
                 ViewBag.ErrorMessage = $"La API rechazó la actualización. Detalle: {errorDetail}";
             }
             catch (HttpRequestException)

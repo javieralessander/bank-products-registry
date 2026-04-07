@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BankProductsRegistry.Api.Controllers;
 
 [Route("api/users")]
-[Authorize(Policy = AuthPolicies.AdminOnly)]
+[Authorize(Policy = AuthPolicies.WriteAccess)]
 public sealed class UsersController(
     BankProductsDbContext dbContext,
     UserManager<ApplicationUser> userManager,
@@ -37,6 +37,7 @@ public sealed class UsersController(
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserManagementResponse>> CreateAsync(
@@ -142,6 +143,7 @@ public sealed class UsersController(
     }
 
     [HttpPatch("{id:int}/status")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -208,6 +210,15 @@ public sealed class UsersController(
                 $"El rol '{roleName}' no existe en la configuracion actual del sistema."));
         }
 
+        var isCallerAdmin = User.IsInRole(AuthRoles.Admin);
+        if (!isCallerAdmin)
+        {
+            if (!string.Equals(roleName, AuthRoles.Client, StringComparison.Ordinal) || !request.ClientId.HasValue)
+            {
+                return Forbid();
+            }
+        }
+
         var user = await userManager.Users.FirstOrDefaultAsync(currentUser => currentUser.Id == id, cancellationToken);
         if (user is null)
         {
@@ -215,6 +226,26 @@ public sealed class UsersController(
                 StatusCodes.Status404NotFound,
                 "Usuario no encontrado",
                 $"No existe un usuario con el id {id}."));
+        }
+
+        if (!isCallerAdmin)
+        {
+            var targetRoles = await userManager.GetRolesAsync(user);
+            if (targetRoles.Any(currentRole =>
+                    string.Equals(currentRole, AuthRoles.Admin, StringComparison.Ordinal) ||
+                    string.Equals(currentRole, AuthRoles.Operator, StringComparison.Ordinal)))
+            {
+                return Forbid();
+            }
+        }
+
+        if (string.Equals(roleName, AuthRoles.Client, StringComparison.Ordinal) &&
+            !await EnsureClientLinkForClientRoleAsync(user, request.ClientId, cancellationToken))
+        {
+            return Conflict(BuildProblem(
+                StatusCodes.Status409Conflict,
+                "Cliente no vinculado",
+                "Para asignar rol Cliente, primero vincula el usuario desde el mantenimiento de clientes o indica un ClientId valido."));
         }
 
         if (await WouldRemoveLastActiveAdminAsync(user, user.IsActive, roleName, cancellationToken))
@@ -260,6 +291,7 @@ public sealed class UsersController(
     }
 
     [HttpPost("{id:int}/reset-password")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResetPasswordAsync(
@@ -301,7 +333,58 @@ public sealed class UsersController(
             user.FullName,
             user.IsActive,
             user.EmailConfirmed,
+            user.ClientId,
             roles.OrderBy(role => role).ToArray());
+    }
+
+    private async Task<bool> EnsureClientLinkForClientRoleAsync(
+        ApplicationUser user,
+        int? requestedClientId,
+        CancellationToken cancellationToken)
+    {
+        if (user.ClientId.HasValue)
+        {
+            return true;
+        }
+
+        int? resolvedClientId = null;
+
+        if (requestedClientId.HasValue)
+        {
+            var exists = await dbContext.Clients.AnyAsync(client => client.Id == requestedClientId.Value, cancellationToken);
+            if (!exists)
+            {
+                return false;
+            }
+
+            resolvedClientId = requestedClientId.Value;
+        }
+        else if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            var normalizedEmail = NormalizationHelper.NormalizeEmail(user.Email);
+            resolvedClientId = await dbContext.Clients
+                .Where(client => client.Email == normalizedEmail)
+                .Select(client => (int?)client.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        if (!resolvedClientId.HasValue)
+        {
+            return false;
+        }
+
+        var alreadyLinked = await dbContext.Users.AnyAsync(
+            currentUser => currentUser.Id != user.Id && currentUser.ClientId == resolvedClientId.Value,
+            cancellationToken);
+
+        if (alreadyLinked)
+        {
+            return false;
+        }
+
+        user.ClientId = resolvedClientId.Value;
+        var updateResult = await userManager.UpdateAsync(user);
+        return updateResult.Succeeded;
     }
 
     private async Task InvalidateUserSessionsAsync(ApplicationUser user, CancellationToken cancellationToken)

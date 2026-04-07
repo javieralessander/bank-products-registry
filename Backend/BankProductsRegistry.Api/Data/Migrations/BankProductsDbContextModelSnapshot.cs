@@ -498,6 +498,13 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -508,11 +515,19 @@ namespace BankProductsRegistry.Api.Data.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
 
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("NationalId")
+                        .HasMaxLength(25)
+                        .HasColumnType("varchar(25)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -524,6 +539,10 @@ namespace BankProductsRegistry.Api.Data.Migrations
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(25)
+                        .HasColumnType("varchar(25)");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("longtext");
@@ -545,6 +564,9 @@ namespace BankProductsRegistry.Api.Data.Migrations
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("ClientId")
+                        .IsUnique();
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
@@ -1025,6 +1047,16 @@ namespace BankProductsRegistry.Api.Data.Migrations
                     b.Navigation("AccountProductBlock");
                 });
 
+            modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.ApplicationUser", b =>
+                {
+                    b.HasOne("BankProductsRegistry.Api.Models.Client", "Client")
+                        .WithOne("User")
+                        .HasForeignKey("BankProductsRegistry.Api.Models.Auth.ApplicationUser", "ClientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Client");
+                });
+
             modelBuilder.Entity("BankProductsRegistry.Api.Models.AccountProductBlock", b =>
                 {
                     b.HasOne("BankProductsRegistry.Api.Models.AccountProduct", "AccountProduct")
@@ -1200,12 +1232,16 @@ namespace BankProductsRegistry.Api.Data.Migrations
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Auth.ApplicationUser", b =>
                 {
+                    b.Navigation("Client");
+
                     b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Client", b =>
                 {
                     b.Navigation("AccountProducts");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BankProductsRegistry.Api.Models.Employee", b =>
