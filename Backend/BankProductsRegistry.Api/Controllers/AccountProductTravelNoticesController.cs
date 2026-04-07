@@ -23,7 +23,23 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         int accountProductId,
         CancellationToken cancellationToken)
     {
-        if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (!await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return NotFound(BuildProblem(
+                    StatusCodes.Status404NotFound,
+                    "Producto contratado no encontrado",
+                    $"No existe un producto contratado con el id {accountProductId}."));
+            }
+        }
+        else if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
         {
             return NotFound(BuildProblem(
                 StatusCodes.Status404NotFound,
@@ -115,11 +131,11 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
 
         dbContext.AccountProductTravelNotices.Add(notice);
 
-        // ---> NOTIFICACI”N AUTOM¡TICA DE VIAJE <---
+        // ---> NOTIFICACIùN AUTOMùTICA DE VIAJE <---
         var destinationCountries = string.Join(", ", normalizedCountries);
         dbContext.SystemNotifications.Add(new SystemNotification
         {
-            Title = $"Viaje registrado ó {actorUserName}",
+            Title = $"Viaje registrado ù {actorUserName}",
             Message = $"Viaje a {destinationCountries} del {request.StartsAt:dd/MM} al {request.EndsAt:dd/MM}. Producto contratado #{accountProductId}.",
             Type = "Viaje",
             CreatedAt = DateTimeOffset.UtcNow,
@@ -171,7 +187,7 @@ public sealed class AccountProductTravelNoticesController(BankProductsDbContext 
         notice.CancelledByUserName = actorUserName;
         notice.CancellationReason = NormalizationHelper.NormalizeOptionalText(request.Reason);
 
-        // ---> NOTIFICACI”N DE CANCELACI”N DE VIAJE <---
+        // ---> NOTIFICACIùN DE CANCELACIùN DE VIAJE <---
         dbContext.SystemNotifications.Add(new SystemNotification
         {
             Title = "Viaje cancelado",

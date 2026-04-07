@@ -58,7 +58,7 @@ public sealed class AccountProductsController(
     }
 
     [HttpGet("pending")]
-    [Authorize(Roles = $"{AuthRoles.Admin},{AuthRoles.Operator},{AuthRoles.ReadOnly}")]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<AccountProductListItemResponse>>> GetPendingAsync(
         CancellationToken cancellationToken)

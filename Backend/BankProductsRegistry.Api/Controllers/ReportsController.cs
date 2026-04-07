@@ -95,7 +95,7 @@ public sealed class ReportsController(
 
     // --- NUEVO ENDPOINT PARA EL DASHBOARD ---
     [HttpGet("dashboard")]
-    [Authorize(Roles = $"{AuthRoles.Admin},{AuthRoles.Operator},{AuthRoles.ReadOnly}")]
+    [Authorize(Roles = AuthRoles.InternalStaff)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<DashboardSummaryDto>> GetDashboardSummaryAsync(CancellationToken cancellationToken)
     {

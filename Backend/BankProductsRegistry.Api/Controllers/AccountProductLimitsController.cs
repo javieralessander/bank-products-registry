@@ -22,7 +22,23 @@ public sealed class AccountProductLimitsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AccountProductLimitResponse>> GetAsync(int accountProductId, CancellationToken cancellationToken)
     {
-        if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
+        if (IsInRole(AuthRoles.Client))
+        {
+            var currentClientId = GetCurrentClientId();
+            if (!currentClientId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (!await dbContext.ExistsForClientAsync(accountProductId, currentClientId.Value, cancellationToken))
+            {
+                return NotFound(BuildProblem(
+                    StatusCodes.Status404NotFound,
+                    "Producto contratado no encontrado",
+                    $"No existe un producto contratado con el id {accountProductId}."));
+            }
+        }
+        else if (!await dbContext.AccountProducts.AnyAsync(accountProduct => accountProduct.Id == accountProductId, cancellationToken))
         {
             return NotFound(BuildProblem(
                 StatusCodes.Status404NotFound,
