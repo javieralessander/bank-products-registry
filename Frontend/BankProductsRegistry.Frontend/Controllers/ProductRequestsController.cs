@@ -86,7 +86,7 @@ namespace BankProductsRegistry.Frontend.Controllers
                 var response = await _httpClient.PostAsync("api/account-products/me/request", content);
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["SuccessMessage"] = "Solicitud enviada. Un ejecutivo revisará y activará tu producto cuando sea aprobado.";
+                    TempData["SuccessMessage"] = "Solicitud registrada: quedará en estado Pendiente hasta que un ejecutivo la apruebe. Puedes verla aquí con el filtro «Pendiente».";
                     return RedirectToAction("Index", "AccountProducts");
                 }
 

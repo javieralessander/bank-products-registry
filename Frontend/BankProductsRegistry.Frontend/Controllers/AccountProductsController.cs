@@ -64,7 +64,9 @@ namespace BankProductsRegistry.Frontend.Controllers
             return View(dashboardData);
         }
         // --- CREAR CONTRATO (GET) ---
+        /// <summary>Alta formal de contrato: solo personal con permiso de escritura en API (Admin/Operador). El cliente usa ProductRequests.</summary>
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Create()
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -80,6 +82,8 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- CREAR CONTRATO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AccountProductCreateViewModel model)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -113,6 +117,8 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- ELIMINAR CONTRATO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -322,6 +328,7 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- EDITAR CONTRATO (GET) ---
         [HttpGet]
+        [Authorize(Roles = "Admin,Operador")]
         public async Task<IActionResult> Edit(int id)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;
@@ -359,6 +366,8 @@ namespace BankProductsRegistry.Frontend.Controllers
 
         // --- EDITAR CONTRATO (POST) ---
         [HttpPost]
+        [Authorize(Roles = "Admin,Operador")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, AccountProductEditViewModel model)
         {
             var token = User.Claims.FirstOrDefault(c => c.Type == "jwt_token")?.Value;

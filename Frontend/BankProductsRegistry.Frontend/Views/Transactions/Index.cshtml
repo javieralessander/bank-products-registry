@@ -193,10 +193,103 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Transacciones</h1>
-        <div class="page-subtitle">Historial completo de movimientos bancarios</div>
+        <div class="page-subtitle">
+            @if (User.IsInRole("Cliente"))
+            {
+                <text>Registra movimientos de demostración y consulta tu historial. En tarjetas de crédito, los cargos reales provienen de la red; aquí puedes simular un pago o abono para el flujo del sistema.</text>
+            }
+            else
+            {
+                <text>Historial completo de movimientos bancarios</text>
+            }
+        </div>
     </div>
     
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background-color: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (User.IsInRole("Cliente"))
+{
+    <div class="card-panel mb-4" style="background-color: #1a1d2d; border: 1px solid #2d3348; border-radius: 12px; padding: 24px;">
+        <h2 class="text-white h5 mb-3">Registrar movimiento</h2>
+        @if (Model.ClientAccounts == null || !Model.ClientAccounts.Any())
+        {
+            <p class="text-muted mb-0">No tienes productos activos para operar. Cuando un ejecutivo active un contrato, podrás registrar transferencias y otros movimientos simulados aquí.</p>
+        }
+        else
+        {
+            <form asp-action="RegisterTransfer" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+                <div class="col-md-6">
+                    <label class="form-label text-secondary small">Producto / cuenta</label>
+                    <select name="AccountProductId" class="form-select bg-dark text-white border-secondary" required id="clientAccountSelect">
+                        <option value="">— Selecciona —</option>
+                        @foreach (var a in Model.ClientAccounts)
+                        {
+                            var isCard = !string.IsNullOrEmpty(a.FinancialProductName) &&
+                                (a.FinancialProductName.Contains("tarjeta", StringComparison.OrdinalIgnoreCase) ||
+                                 a.FinancialProductName.Contains("crédito", StringComparison.OrdinalIgnoreCase) ||
+                                 a.FinancialProductName.Contains("credito", StringComparison.OrdinalIgnoreCase));
+                            <option value="@a.Id" data-is-card="@(isCard ? "1" : "0")">@a.AccountNumber — @a.FinancialProductName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-secondary small">Tipo de operación</label>
+                    <select name="OperationKind" class="form-select bg-dark text-white border-secondary" id="operationKindSelect">
+                        <option value="transferencia">Transferencia (salida)</option>
+                        <option value="pago">Pago / abono (simulado; útil en tarjeta)</option>
+                        <option value="deposito">Depósito (entrada)</option>
+                        <option value="retiro">Retiro (salida)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-secondary small">Monto (DOP)</label>
+                    <input name="Amount" type="number" step="0.01" min="0.01" class="form-control bg-dark text-white border-secondary" required placeholder="0.00" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-secondary small">Referencia (opcional)</label>
+                    <input name="ReferenceNumber" type="text" maxlength="60" class="form-control bg-dark text-white border-secondary" placeholder="Ej. ref. banco destino" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-secondary small">Nota (opcional)</label>
+                    <input name="Description" type="text" maxlength="300" class="form-control bg-dark text-white border-secondary" />
+                </div>
+                <div class="col-12">
+                    <p class="small text-muted mb-2 d-none" id="cardHint">
+                        <i class="bi bi-info-circle"></i> Producto tipo tarjeta: en producción los consumos llegan por la red de pagos; este registro es solo para demostrar el proceso en el sistema.
+                    </p>
+                    <button type="submit" class="btn btn-primary">Registrar movimiento</button>
+                </div>
+            </form>
+            <script>
+                (function () {
+                    var sel = document.getElementById('clientAccountSelect');
+                    var hint = document.getElementById('cardHint');
+                    function sync() {
+                        var opt = sel.options[sel.selectedIndex];
+                        var isCard = opt && opt.getAttribute('data-is-card') === '1';
+                        hint.classList.toggle('d-none', !isCard);
+                    }
+                    sel.addEventListener('change', sync);
+                    sync();
+                })();
+            </script>
+        }
+    </div>
+}
 
 @if (ViewBag.ErrorMessage != null)
 {
