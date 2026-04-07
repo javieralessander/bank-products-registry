@@ -221,7 +221,11 @@
         </div>
 
         <div class="section-heading">Operaciones rápidas</div>
-        <div class="quick-actions">
+        <div class="quick-actions" style="grid-template-columns: repeat(5, 1fr);">
+            <a href="@Url.Action("Index", "ProductRequests")" class="action-btn">
+                <i class="bi bi-plus-circle action-icon" style="color: #a78bfa;"></i>
+                <span class="action-text">Solicitar producto</span>
+            </a>
             <a href="@Url.Action("Index", "Transactions")" class="action-btn">
                 <i class="bi bi-send-fill action-icon" style="color: #10b981;"></i>
                 <span class="action-text">Transferir</span>

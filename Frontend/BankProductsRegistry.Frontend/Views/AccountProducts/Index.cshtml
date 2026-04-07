@@ -210,6 +210,12 @@
         border-color: rgba(239, 68, 68, 0.2);
     }
 
+    .status-pendiente {
+        background-color: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+
     .action-icon {
         color: #6b7280;
         cursor: pointer;
@@ -229,9 +235,26 @@
         <div class="page-subtitle">Cuentas bancarias y servicios vinculados a clientes</div>
     </div>
     <div class="header-actions">
+        @if (User.IsInRole("Admin") || User.IsInRole("Operador") || User.IsInRole("Consulta"))
+        {
+            <a href="@Url.Action("Pending", "AccountProducts")" class="btn-primary-custom text-decoration-none" style="background-color: #374151;">Solicitudes pendientes</a>
+        }
         <a href="@Url.Action("Create", "AccountProducts")" class="btn-primary-custom text-decoration-none">+ Nuevo Contrato</a>
     </div>
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="background-color: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-bottom: 20px; padding: 12px; border-radius: 8px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
 
 @if (ViewBag.ErrorMessage != null)
 {
@@ -259,6 +282,7 @@
     <input type="text" id="tableSearch" class="search-inline" placeholder="Buscar por N° cuenta, cliente o producto..." />
     <div class="filter-tabs">
         <div class="f-tab active" data-filter="Todos">Todos</div>
+        <div class="f-tab" data-filter="pendiente">Pendiente</div>
         <div class="f-tab" data-filter="activo">Activo</div>
         <div class="f-tab" data-filter="cerrado">Cerrado</div>
         <div class="f-tab" data-filter="suspendido">Suspendido</div>
@@ -299,6 +323,7 @@
                     string displayStatus = "Desconocido";
 
                     if (contract.IsBlocked) { badgeClass = "status-suspendido"; displayStatus = "Bloqueado"; rawStatus = "suspendido"; }
+                    else if (rawStatus.Contains("pendiente")) { badgeClass = "status-pendiente"; displayStatus = "Pendiente"; }
                     else if (rawStatus.Contains("activo")) { badgeClass = "status-activo"; displayStatus = "Activo"; }
                     else if (rawStatus.Contains("suspendido")) { badgeClass = "status-suspendido"; displayStatus = "Suspendido"; }
                     else if (rawStatus.Contains("mora")) { badgeClass = "status-mora"; displayStatus = "En Mora"; }
