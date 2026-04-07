@@ -12,6 +12,7 @@ El backend ya esta implementado. El frontend se encuentra en fase de definicion 
 - Repositorio GitHub: `https://github.com/javieralessander/bank-products-registry`
 - URL de produccion en Railway: `https://bank-products-registry-production.up.railway.app`
 - Swagger en produccion: `https://bank-products-registry-production.up.railway.app/swagger`
+- Informe Entregable 3 (integracion y pruebas): [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
 - Documento de requerimientos cumplidos: [Backend/Documento-Requerimientos-ejemplo.md](/Users/comunicaciones/Desktop/ALL/UNAPEC/bank-products-registry/Backend/Documento-Requerimientos-ejemplo.md)
 - Documento de descripcion del proyecto: [Backend/Documento-Descripcion-Proyecto.md](/Users/comunicaciones/Desktop/ALL/UNAPEC/bank-products-registry/Backend/Documento-Descripcion-Proyecto.md)
 
@@ -296,11 +297,12 @@ El frontend corresponde a la segunda parte del proyecto y consumira la API REST 
 
 ### Estado actual del frontend
 
-- La carpeta `Frontend/` contiene por ahora una maqueta base en `Frontend/index.html`.
-- Todavia no hay dependencias instaladas ni un flujo de build configurado.
-- La seleccion tecnologica del frontend ya esta definida, pero su implementacion completa sigue pendiente.
+- La aplicacion web esta en `Frontend/BankProductsRegistry.Frontend/` (ASP.NET Core MVC, Bootstrap 5).
+- Consume la API mediante `HttpClient` y JWT; la base URL se configura con `Api:BaseUrl`.
+- Informe de integracion y pruebas (Entregable 3): [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
+- Guion de demo / manual rapido: [docs/GUIA_PRESENTACION_FRONTEND.md](docs/GUIA_PRESENTACION_FRONTEND.md)
 
-Cuando se desarrolle el frontend, debera consumir el backend en:
+URL local tipica del API:
 
 ```text
 http://localhost:5039
