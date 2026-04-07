@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Data;
 using System.Data.Common;
@@ -170,6 +171,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (!string.Equals(user.SecurityStamp, securityStamp, StringComparison.Ordinal))
                 {
                     context.Fail("La sesion ya no es valida.");
+                    return;
+                }
+
+                // Alinear client_id con la BD en cada request (el JWT puede estar desactualizado
+                // si se vinculó ClientId después del login sin reemitir token).
+                if (context.Principal?.Identity is ClaimsIdentity claimsIdentity)
+                {
+                    foreach (var obsolete in claimsIdentity.FindAll(CustomClaimTypes.ClientId).ToList())
+                    {
+                        claimsIdentity.RemoveClaim(obsolete);
+                    }
+
+                    if (user.ClientId.HasValue)
+                    {
+                        claimsIdentity.AddClaim(new Claim(
+                            CustomClaimTypes.ClientId,
+                            user.ClientId.Value.ToString(CultureInfo.InvariantCulture)));
+                    }
                 }
             }
         };
