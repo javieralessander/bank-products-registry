@@ -14,6 +14,9 @@ public static class BankProductsDbSeeder
         await SeedAccountProductsAsync(dbContext, cancellationToken);
         await SeedAccountProductLimitsAsync(dbContext, cancellationToken);
         await SeedTransactionsAsync(dbContext, cancellationToken);
+        await SeedPresentationBlocksAsync(dbContext, cancellationToken);
+        await SeedPresentationTravelNoticesAsync(dbContext, cancellationToken);
+        await SeedPresentationNotificationsAsync(dbContext, cancellationToken);
     }
 
     private static async Task SeedFinancialProductsAsync(BankProductsDbContext dbContext, CancellationToken cancellationToken)
@@ -129,6 +132,24 @@ public static class BankProductsDbSeeder
                 Email = "carla.rodriguez@demo.local",
                 Phone = "8095550103",
                 IsActive = true
+            },
+            new Client
+            {
+                FirstName = "Esperanza",
+                LastName = "Mejia",
+                NationalId = "40200010004",
+                Email = "esperanza.mejia@demo.local",
+                Phone = "8095550104",
+                IsActive = true
+            },
+            new Client
+            {
+                FirstName = "Jorge",
+                LastName = "Castillo",
+                NationalId = "40200010005",
+                Email = "jorge.castillo@demo.local",
+                Phone = "8095550105",
+                IsActive = true
             }
         };
 
@@ -224,7 +245,11 @@ public static class BankProductsDbSeeder
             new AccountProductSeed("0001002001", "40200010001", "Cuenta Ahorro Plus", "EMP001", 35000m, UtcDate(2026, 1, 15), null, AccountProductStatus.Active),
             new AccountProductSeed("0001002002", "40200010002", "Prestamo Personal Flex", "EMP002", 180000m, UtcDate(2026, 2, 1), UtcDate(2029, 2, 1), AccountProductStatus.Active),
             new AccountProductSeed("0001002003", "40200010003", "Inversion Crece 12M", "EMP001", 90000m, UtcDate(2026, 1, 20), UtcDate(2027, 1, 20), AccountProductStatus.Active),
-            new AccountProductSeed("0001002004", "40200010001", "Tarjeta Clasica", "EMP002", 15000m, UtcDate(2026, 2, 10), null, AccountProductStatus.Active)
+            new AccountProductSeed("0001002004", "40200010001", "Tarjeta Clasica", "EMP002", 15000m, UtcDate(2026, 2, 10), null, AccountProductStatus.Active),
+            new AccountProductSeed("0001002005", "40200010004", "Certificado Premium 24M", "EMP001", 85000m, UtcDate(2025, 11, 1), UtcDate(2027, 11, 1), AccountProductStatus.Active),
+            new AccountProductSeed("0001002006", "40200010005", "Cuenta Ahorro Plus", "EMP002", 18500m, UtcDate(2026, 3, 1), null, AccountProductStatus.Active),
+            new AccountProductSeed("0001002007", "40200010001", "Cuenta Ahorro Plus", "EMP001", 2100m, UtcDate(2024, 6, 1), null, AccountProductStatus.Closed),
+            new AccountProductSeed("0001002008", "40200010002", "Prestamo Personal Flex", "EMP001", 12000m, UtcDate(2025, 8, 1), UtcDate(2028, 8, 1), AccountProductStatus.Delinquent)
         };
 
         var accountsToAdd = new List<AccountProduct>();
@@ -283,9 +308,18 @@ public static class BankProductsDbSeeder
         {
             new TransactionSeed("DEP-0001", "0001002001", TransactionType.Deposit, TransactionChannel.Branch, 20000m, UtcDate(2026, 1, 15), "Deposito inicial de apertura", "DO"),
             new TransactionSeed("DEP-0002", "0001002001", TransactionType.Deposit, TransactionChannel.Branch, 15000m, UtcDate(2026, 2, 3), "Ahorro quincenal", "DO"),
+            new TransactionSeed("RET-0001", "0001002001", TransactionType.Withdrawal, TransactionChannel.Atm, 3500m, UtcDate(2026, 3, 5), "Retiro ATM Plaza Naco", "DO"),
+            new TransactionSeed("ONL-0001", "0001002001", TransactionType.Deposit, TransactionChannel.Online, 4200m, UtcDate(2026, 3, 12), "Transferencia recibida app movil", "DO"),
             new TransactionSeed("PRE-0001", "0001002002", TransactionType.Deposit, TransactionChannel.BackOffice, 200000m, UtcDate(2026, 2, 1), "Desembolso inicial del prestamo", "DO"),
             new TransactionSeed("PAG-0001", "0001002002", TransactionType.Payment, TransactionChannel.Branch, 20000m, UtcDate(2026, 2, 28), "Pago de la primera cuota", "DO"),
-            new TransactionSeed("INV-0001", "0001002003", TransactionType.Deposit, TransactionChannel.Branch, 90000m, UtcDate(2026, 1, 20), "Aporte inicial de inversion", "DO")
+            new TransactionSeed("PAG-0002", "0001002002", TransactionType.Payment, TransactionChannel.Online, 20000m, UtcDate(2026, 3, 28), "Pago cuota marzo - mora acumulada (demo)", "DO"),
+            new TransactionSeed("INV-0001", "0001002003", TransactionType.Deposit, TransactionChannel.Branch, 90000m, UtcDate(2026, 1, 20), "Aporte inicial de inversion", "DO"),
+            new TransactionSeed("INT-0001", "0001002004", TransactionType.Fee, TransactionChannel.PointOfSale, 189m, UtcDate(2026, 3, 1), "Cargo anualidad tarjeta (demo)", "DO"),
+            new TransactionSeed("DEP-0003", "0001002005", TransactionType.Deposit, TransactionChannel.Branch, 85000m, UtcDate(2025, 11, 1), "Constitucion certificado 24M", "DO"),
+            new TransactionSeed("DEP-0004", "0001002006", TransactionType.Deposit, TransactionChannel.Branch, 12000m, UtcDate(2026, 3, 1), "Apertura cuenta ahorro Jorge Castillo", "DO"),
+            new TransactionSeed("TRF-0001", "0001002006", TransactionType.Transfer, TransactionChannel.Online, 2500m, UtcDate(2026, 3, 18), "Envio a cuenta familiar (demo)", "DO"),
+            new TransactionSeed("POS-0001", "0001002004", TransactionType.Payment, TransactionChannel.PointOfSale, 4500m, UtcDate(2026, 3, 22), "Compra supermercado POS", "DO"),
+            new TransactionSeed("PRE-0002", "0001002008", TransactionType.Deposit, TransactionChannel.BackOffice, 15000m, UtcDate(2025, 8, 1), "Desembolso prestamo secundario (cuenta en mora demo)", "DO")
         };
 
         var transactionsToAdd = new List<BankTransaction>();
@@ -347,12 +381,149 @@ public static class BankProductsDbSeeder
             });
         }
 
+        if (accounts.TryGetValue("0001002001", out var primarySavings) && !knownAccountIds.Contains(primarySavings.Id))
+        {
+            limitsToAdd.Add(new AccountProductLimit
+            {
+                AccountProductId = primarySavings.Id,
+                DailyConsumptionLimit = 25000m,
+                PerTransactionLimit = 15000m,
+                AtmWithdrawalLimit = 10000m,
+                InternationalConsumptionLimit = 5000m
+            });
+        }
+
         if (limitsToAdd.Count == 0)
         {
             return;
         }
 
         dbContext.AccountProductLimits.AddRange(limitsToAdd);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedPresentationBlocksAsync(BankProductsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        const string temporaryReason = "[SEED] Bloqueo temporal revision de limite (demo presentacion)";
+        if (await dbContext.AccountProductBlocks.AnyAsync(b => b.Reason == temporaryReason, cancellationToken))
+        {
+            return;
+        }
+
+        var creditCard = await dbContext.AccountProducts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.AccountNumber == "0001002004", cancellationToken);
+
+        if (creditCard is null)
+        {
+            return;
+        }
+
+        dbContext.AccountProductBlocks.Add(new AccountProductBlock
+        {
+            AccountProductId = creditCard.Id,
+            BlockType = AccountProductBlockType.Temporary,
+            Reason = temporaryReason,
+            StartsAt = UtcDate(2026, 4, 1),
+            EndsAt = UtcDate(2026, 4, 25),
+            AppliedByUserName = "Rosa Martinez"
+        });
+
+        const string releasedFraudReason = "[SEED] Alerta fraude revertida tras validacion (demo historico)";
+        var savings = await dbContext.AccountProducts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.AccountNumber == "0001002001", cancellationToken);
+
+        if (savings is not null &&
+            !await dbContext.AccountProductBlocks.AnyAsync(b => b.Reason == releasedFraudReason, cancellationToken))
+        {
+            dbContext.AccountProductBlocks.Add(new AccountProductBlock
+            {
+                AccountProductId = savings.Id,
+                BlockType = AccountProductBlockType.Fraud,
+                Reason = releasedFraudReason,
+                StartsAt = UtcDate(2026, 3, 8),
+                EndsAt = null,
+                AppliedByUserName = "Daniel Herrera",
+                ReleasedAt = UtcDate(2026, 3, 9),
+                ReleasedByUserName = "Rosa Martinez",
+                ReleaseReason = "Cliente verificado; falso positivo."
+            });
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedPresentationTravelNoticesAsync(BankProductsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        const string travelReason = "[SEED] Viaje negocios RD -> USA y Espana (demo)";
+        if (await dbContext.AccountProductTravelNotices.AnyAsync(n => n.Reason == travelReason, cancellationToken))
+        {
+            return;
+        }
+
+        var account = await dbContext.AccountProducts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.AccountNumber == "0001002004", cancellationToken);
+
+        if (account is null)
+        {
+            return;
+        }
+
+        var notice = new AccountProductTravelNotice
+        {
+            AccountProductId = account.Id,
+            StartsAt = UtcDate(2026, 4, 5),
+            EndsAt = UtcDate(2026, 4, 22),
+            Reason = travelReason,
+            RequestedByUserName = "Ana Perez (portal demo)"
+        };
+
+        dbContext.AccountProductTravelNotices.Add(notice);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        dbContext.AccountProductTravelNoticeCountries.AddRange(
+            new AccountProductTravelNoticeCountry { TravelNoticeId = notice.Id, CountryCode = "US" },
+            new AccountProductTravelNoticeCountry { TravelNoticeId = notice.Id, CountryCode = "ES" });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedPresentationNotificationsAsync(BankProductsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        if (await dbContext.SystemNotifications.AnyAsync(n => n.Title == "[DEMO] Bienvenida al registro", cancellationToken))
+        {
+            return;
+        }
+
+        var utc = DateTimeOffset.UtcNow;
+        dbContext.SystemNotifications.AddRange(
+            new SystemNotification
+            {
+                Title = "[DEMO] Bienvenida al registro",
+                Message = "Datos de demostracion cargados: use admin / operador / consulta / ana.cliente para probar roles.",
+                Type = "info",
+                CreatedAt = utc.AddHours(-2),
+                IsRead = false
+            },
+            new SystemNotification
+            {
+                Title = "[DEMO] Revision de limites",
+                Message = "La tarjeta ****2004 tiene un bloqueo temporal de demostracion hasta el 25 de abril.",
+                Type = "warning",
+                CreatedAt = utc.AddHours(-1),
+                IsRead = false
+            },
+            new SystemNotification
+            {
+                Title = "[DEMO] Certificados al 8.10%",
+                Message = "Producto Certificado Premium 24M visible en catalogo para clientes PYME.",
+                Type = "success",
+                CreatedAt = utc.AddMinutes(-30),
+                IsRead = true
+            });
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

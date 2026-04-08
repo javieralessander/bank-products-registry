@@ -2,6 +2,7 @@ using BankProductsRegistry.Api.Models.Auth;
 using BankProductsRegistry.Api.Security;
 using BankProductsRegistry.Api.Utilities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace BankProductsRegistry.Api.Data;
@@ -11,6 +12,7 @@ public static class BankIdentitySeeder
     public static async Task SeedAsync(
         RoleManager<IdentityRole<int>> roleManager,
         UserManager<ApplicationUser> userManager,
+        BankProductsDbContext dbContext,
         IConfiguration configuration)
     {
         foreach (var roleName in AuthRoles.All)
@@ -33,6 +35,82 @@ public static class BankIdentitySeeder
         await EnsureUserAsync(userManager, seedSection.GetSection("Admin"), AuthRoles.Admin);
         await EnsureUserAsync(userManager, seedSection.GetSection("Operator"), AuthRoles.Operator);
         await EnsureUserAsync(userManager, seedSection.GetSection("ReadOnly"), AuthRoles.ReadOnly);
+        await EnsureClientPortalUserAsync(userManager, dbContext, seedSection.GetSection("Client"));
+    }
+
+    private static async Task EnsureClientPortalUserAsync(
+        UserManager<ApplicationUser> userManager,
+        BankProductsDbContext dbContext,
+        IConfigurationSection clientSection)
+    {
+        var userName = clientSection["UserName"];
+        var email = clientSection["Email"];
+        var fullName = clientSection["FullName"];
+        var password = clientSection["Password"];
+        var nationalId = clientSection["ClientNationalId"];
+
+        if (string.IsNullOrWhiteSpace(userName) ||
+            string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(fullName) ||
+            string.IsNullOrWhiteSpace(password) ||
+            string.IsNullOrWhiteSpace(nationalId))
+        {
+            return;
+        }
+
+        var client = await dbContext.Clients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.NationalId == nationalId.Trim());
+
+        if (client is null)
+        {
+            return;
+        }
+
+        var normalizedEmail = NormalizationHelper.NormalizeEmail(email);
+        var normalizedName = NormalizationHelper.NormalizeName(fullName);
+        var normalizedUserName = userName.Trim();
+
+        var user = await userManager.FindByNameAsync(normalizedUserName) ??
+                   await userManager.FindByEmailAsync(normalizedEmail);
+
+        if (user is null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = normalizedUserName,
+                Email = normalizedEmail,
+                FullName = normalizedName,
+                FirstName = client.FirstName,
+                LastName = client.LastName,
+                ClientId = client.Id,
+                IsActive = true,
+                EmailConfirmed = true
+            };
+
+            var createResult = await userManager.CreateAsync(user, password);
+            EnsureIdentitySucceeded(createResult, $"No se pudo crear el usuario portal cliente {userName}.");
+        }
+        else
+        {
+            user.UserName = normalizedUserName;
+            user.Email = normalizedEmail;
+            user.FullName = normalizedName;
+            user.FirstName = client.FirstName;
+            user.LastName = client.LastName;
+            user.ClientId = client.Id;
+            user.IsActive = true;
+            user.EmailConfirmed = true;
+
+            var updateResult = await userManager.UpdateAsync(user);
+            EnsureIdentitySucceeded(updateResult, $"No se pudo actualizar el usuario portal cliente {userName}.");
+        }
+
+        if (!await userManager.IsInRoleAsync(user, AuthRoles.Client))
+        {
+            var addRoleResult = await userManager.AddToRoleAsync(user, AuthRoles.Client);
+            EnsureIdentitySucceeded(addRoleResult, $"No se pudo asignar el rol Cliente al usuario {userName}.");
+        }
     }
 
     private static async Task EnsureUserAsync(

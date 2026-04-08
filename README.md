@@ -13,6 +13,7 @@ El backend y el frontend estan implementados e integrados por API REST (JWT).
 - URL de produccion en Railway: `https://bank-products-registry-production.up.railway.app`
 - Swagger en produccion: `https://bank-products-registry-production.up.railway.app/swagger`
 - Informe Entregable 3 (integracion y pruebas): [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
+- MySQL local (Docker) y Railway: [docker-compose.yml](docker-compose.yml) · [docs/RAILWAY_MYSQL.md](docs/RAILWAY_MYSQL.md) · [`.env.example`](.env.example)
 - Documento de requerimientos cumplidos: [Backend/Documento-Requerimientos-ejemplo.md](Backend/Documento-Requerimientos-ejemplo.md)
 - Documento de descripcion del proyecto: [Backend/Documento-Descripcion-Proyecto.md](Backend/Documento-Descripcion-Proyecto.md)
 
@@ -24,11 +25,25 @@ bank-products-registry/
     BankProductsRegistry.Api/
   Frontend/
     BankProductsRegistry.Frontend/
+  docker-compose.yml    # MySQL local (opcional)
+  .env.example          # plantilla de variables (sin secretos)
 ```
 
 ## Backend
 
 API RESTful desarrollada con .NET 9, Entity Framework Core y MySQL.
+
+### MySQL con Docker (definido en el repositorio)
+
+Para levantar una base local sin instalar MySQL en el sistema:
+
+```bash
+docker compose up -d
+```
+
+Credenciales por defecto (solo desarrollo; ver `docker-compose.yml`): base `bank_products_registry_db`, usuario `bank_user` / `bank_dev_password`, root `dev_root_change_me`. Copia la cadena de conexion desde [`.env.example`](.env.example) hacia tu entorno o `appsettings.Development.json`.
+
+En **Railway**, el plugin MySQL no se “conecta al repo” en esa pantalla: enlaza variables con **Reference** desde el servicio del API; guia: [docs/RAILWAY_MYSQL.md](docs/RAILWAY_MYSQL.md).
 
 ### Requisitos
 
@@ -167,6 +182,8 @@ Si estas corriendo el backend desde tu maquina local, usa la URL publica:
 ```text
 MYSQL_PUBLIC_URL=mysql://root:TU_PASSWORD@centerbeam.proxy.rlwy.net:52379/railway
 ```
+
+**Railway:** el plugin MySQL suele crear la base `railway`. Si la URL que inyecta la plataforma **no lleva nombre de base en el path** (p. ej. termina en `:3306` sin `/railway`), antes podía quedar `Database` vacío y ver errores como `database '' on server 'mysql.railway.internal'`. El API ahora completa el nombre con `MYSQLDATABASE` o, en hosts Railway, con `railway` por defecto. Igual conviene **vincular el servicio MySQL al backend** en el mismo proyecto y revisar en Variables que existan credenciales y, si aplica, `MYSQLDATABASE=railway`.
 
 #### Opcion 3: Variables MYSQL
 
