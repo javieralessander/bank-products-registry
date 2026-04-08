@@ -12,8 +12,7 @@ El backend y el frontend estan implementados e integrados por API REST (JWT).
 - Repositorio GitHub: `https://github.com/javieralessander/bank-products-registry`
 - URL de produccion en Railway: `https://bank-products-registry-production.up.railway.app`
 - Swagger en produccion: `https://bank-products-registry-production.up.railway.app/swagger`
-- Informe Entregable 3 (integracion y pruebas): [docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md](docs/ENTREGABLE_3_INTEGRACION_Y_PRUEBAS.md)
-- MySQL local (Docker) y Railway: [docker-compose.yml](docker-compose.yml) · [docs/RAILWAY_MYSQL.md](docs/RAILWAY_MYSQL.md) · [`.env.example`](.env.example)
+
 - Documento de requerimientos cumplidos: [Backend/Documento-Requerimientos-ejemplo.md](Backend/Documento-Requerimientos-ejemplo.md)
 - Documento de descripcion del proyecto: [Backend/Documento-Descripcion-Proyecto.md](Backend/Documento-Descripcion-Proyecto.md)
 
