@@ -252,7 +252,7 @@ static async Task EnsureDatabaseAsync(IServiceProvider services, IConfiguration 
         await BankProductsDbSeeder.SeedAsync(dbContext);
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        await BankIdentitySeeder.SeedAsync(roleManager, userManager, configuration);
+        await BankIdentitySeeder.SeedAsync(roleManager, userManager, dbContext, configuration);
     }
     catch (Exception ex)
     {
